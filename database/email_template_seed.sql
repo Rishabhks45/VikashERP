@@ -2,11 +2,12 @@
 -- psql -U postgres -d Test123 -f database/email_template_seed.sql
 
 INSERT INTO email_templates (
-    template_key, display_name, description, subject, headline, body_html,
+    template_key, notification_type, display_name, description, subject, headline, body_html,
     preheader, button_label, button_link_token, available_tokens, is_active
 ) VALUES
 (
     'ForgotPassword',
+    1,
     'Forgot Password',
     'Sent when a user requests a password reset link.',
     'Reset Your VikashERP Password',
@@ -20,6 +21,7 @@ INSERT INTO email_templates (
 ),
 (
     'Welcome',
+    1,
     'Welcome',
     'Sent when a new user account is created.',
     'Welcome to VikashERP',
@@ -33,6 +35,7 @@ INSERT INTO email_templates (
 ),
 (
     'PasswordResetSuccess',
+    1,
     'Password Reset Success',
     'Sent after a user successfully changes their password.',
     'Your VikashERP Password Was Reset',
@@ -44,4 +47,4 @@ INSERT INTO email_templates (
     '["{{UserName}}","{{LoginUrl}}","{{ContactPhone}}","{{ContactEmail}}"]',
     TRUE
 )
-ON CONFLICT (template_key) DO NOTHING;
+ON CONFLICT (template_key, notification_type) DO NOTHING;

@@ -58,13 +58,14 @@ public class EmailTemplateService : IEmailTemplateService
         if (string.IsNullOrWhiteSpace(templateKey))
             throw new InvalidOperationException("Template key is required.");
 
-        if (await _repository.ExistsByKeyAsync(templateKey, cancellationToken: cancellationToken))
-            throw new InvalidOperationException($"Template key '{templateKey}' already exists.");
+        if (await _repository.ExistsByKeyAsync(templateKey, request.NotificationType, cancellationToken: cancellationToken))
+            throw new InvalidOperationException($"Template key '{templateKey}' already exists for {request.NotificationType}.");
 
         var now = DateTime.UtcNow;
         var template = new EmailTemplate
         {
             TemplateKey = templateKey,
+            NotificationType = request.NotificationType,
             DisplayName = request.DisplayName.Trim(),
             Description = request.Description.Trim(),
             Subject = request.Subject.Trim(),
@@ -110,6 +111,7 @@ public class EmailTemplateService : IEmailTemplateService
         new(
             template.Id,
             template.TemplateKey,
+            template.NotificationType,
             template.DisplayName,
             template.Description,
             template.Subject,
@@ -126,6 +128,7 @@ public class EmailTemplateService : IEmailTemplateService
         new(
             template.Id,
             template.TemplateKey,
+            template.NotificationType,
             template.DisplayName,
             template.Description,
             template.Subject,

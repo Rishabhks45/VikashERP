@@ -1,5 +1,6 @@
 using FluentValidation;
 using VikashERP.Application.Features.Email.DTOs;
+using VikashERP.SharedKernel.Enums;
 
 namespace VikashERP.Application.Features.Email.Validators;
 
@@ -7,6 +8,11 @@ public class CreateEmailTemplateRequestValidator : AbstractValidator<CreateEmail
 {
     public CreateEmailTemplateRequestValidator()
     {
+        RuleFor(x => x.NotificationType)
+            .IsInEnum()
+            .Must(type => type != NotificationType.None)
+            .WithMessage("Notification type is required.");
+
         RuleFor(x => x.TemplateKey)
             .NotEmpty()
             .MaximumLength(50);

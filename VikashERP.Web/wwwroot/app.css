@@ -11,6 +11,12 @@ body.email-panel-open {
     overflow: hidden;
 }
 
+/* Email template slide drawer: keep wheel scroll inside panel body */
+html.email-panel-open .email-slide-panel-body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* Sidebar drawer: inner nav scrolls, outer shell stays fixed */
 .app-drawer.mud-drawer .mud-drawer-content {
     display: flex;

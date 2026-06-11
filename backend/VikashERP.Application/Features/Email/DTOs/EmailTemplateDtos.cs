@@ -1,8 +1,11 @@
+using VikashERP.SharedKernel.Enums;
+
 namespace VikashERP.Application.Features.Email.DTOs;
 
 public record EmailTemplateListItemDto(
     int Id,
     string TemplateKey,
+    NotificationType NotificationType,
     string DisplayName,
     string Description,
     string Subject,
@@ -12,7 +15,7 @@ public record EmailTemplateListItemDto(
 public record EmailTemplateDetailDto(
     int Id,
     string TemplateKey,
-    string DisplayName,
+    NotificationType NotificationType,    string DisplayName,
     string Description,
     string Subject,
     string Headline,
@@ -38,6 +41,7 @@ public record UpdateEmailTemplateRequest(
 
 public record CreateEmailTemplateRequest(
     string TemplateKey,
+    NotificationType NotificationType,
     string DisplayName,
     string Description,
     string Subject,

@@ -31,7 +31,9 @@ public class SharedRepository : ISharedRepository
     public Task<EmailTemplate?> GetEmailTemplateAsync(EmailTemplateType templateType, CancellationToken cancellationToken = default) =>
         _context.EmailTemplates.AsNoTracking()
             .FirstOrDefaultAsync(
-                t => t.TemplateKey == templateType.ToString() && t.IsActive,
+                t => t.TemplateKey == templateType.ToString()
+                     && t.NotificationType == NotificationType.Email
+                     && t.IsActive,
                 cancellationToken);
 
     public Task<bool> SendPasswordResetEmailAsync(string toEmail, string resetLink, CancellationToken cancellationToken = default) =>

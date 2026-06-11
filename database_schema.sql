@@ -205,7 +205,8 @@ CREATE TABLE staff_salaries (
 
 CREATE TABLE email_templates (
     id SERIAL PRIMARY KEY,
-    template_key VARCHAR(50) NOT NULL UNIQUE,
+    template_key VARCHAR(50) NOT NULL,
+    notification_type INT NOT NULL DEFAULT 1,
     display_name VARCHAR(100) NOT NULL,
     description VARCHAR(500) NOT NULL,
     subject VARCHAR(255) NOT NULL,
@@ -217,5 +218,6 @@ CREATE TABLE email_templates (
     available_tokens TEXT NOT NULL DEFAULT '[]',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (template_key, notification_type)
 );

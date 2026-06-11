@@ -1,9 +1,12 @@
 namespace VikashERP.Domain.Entities;
 
+using VikashERP.SharedKernel.Enums;
+
 public class EmailTemplate
 {
     public int Id { get; set; }
     public string TemplateKey { get; set; } = string.Empty;
+    public NotificationType NotificationType { get; set; } = NotificationType.Email;
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;

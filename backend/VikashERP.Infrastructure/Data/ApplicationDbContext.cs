@@ -374,6 +374,7 @@ internal static class ErpSchemaConfiguration
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.TemplateKey).HasColumnName("template_key").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.NotificationType).HasColumnName("notification_type").IsRequired();
             entity.Property(e => e.DisplayName).HasColumnName("display_name").IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasColumnName("description").IsRequired().HasMaxLength(500);
             entity.Property(e => e.Subject).HasColumnName("subject").IsRequired().HasMaxLength(255);
@@ -386,7 +387,7 @@ internal static class ErpSchemaConfiguration
             entity.Property(e => e.IsActive).HasColumnName("is_active");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
-            entity.HasIndex(e => e.TemplateKey).IsUnique();
+            entity.HasIndex(e => new { e.TemplateKey, e.NotificationType }).IsUnique();
         });
     }
 }

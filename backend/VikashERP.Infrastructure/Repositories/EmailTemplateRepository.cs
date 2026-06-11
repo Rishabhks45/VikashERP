@@ -3,6 +3,8 @@ using VikashERP.Application.Interfaces;
 using VikashERP.Domain.Entities;
 using VikashERP.Infrastructure.Data;
 
+using VikashERP.SharedKernel.Enums;
+
 namespace VikashERP.Infrastructure.Repositories;
 
 public class EmailTemplateRepository : IEmailTemplateRepository
@@ -23,14 +25,23 @@ public class EmailTemplateRepository : IEmailTemplateRepository
     public async Task<EmailTemplate?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         await _context.EmailTemplates.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 
-    public async Task<EmailTemplate?> GetByKeyAsync(string templateKey, CancellationToken cancellationToken = default) =>
+    public async Task<EmailTemplate?> GetByKeyAsync(
+        string templateKey,
+        NotificationType notificationType = NotificationType.Email,
+        CancellationToken cancellationToken = default) =>
         await _context.EmailTemplates.FirstOrDefaultAsync(
-            t => t.TemplateKey == templateKey && t.IsActive,
+            t => t.TemplateKey == templateKey && t.NotificationType == notificationType && t.IsActive,
             cancellationToken);
 
-    public async Task<bool> ExistsByKeyAsync(string templateKey, int? excludeId = null, CancellationToken cancellationToken = default)
+    public async Task<bool> ExistsByKeyAsync(
+        string templateKey,
+        NotificationType notificationType,
+        int? excludeId = null,
+        CancellationToken cancellationToken = default)
     {
-        var query = _context.EmailTemplates.Where(t => t.TemplateKey == templateKey);
+        var query = _context.EmailTemplates.Where(t =>
+            t.TemplateKey == templateKey && t.NotificationType == notificationType);
+
         if (excludeId.HasValue)
             query = query.Where(t => t.Id != excludeId.Value);
 

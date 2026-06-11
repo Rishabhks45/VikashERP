@@ -12,24 +12,58 @@
 <PageTitle>Email Templates</PageTitle>
 
 <MudStack Class="email-templates-page" Spacing="3">
-    <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-header">
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h4" HtmlTag="h1">Email / SMS Templates</MudText>
-            <MudText Typo="Typo.body2" Class="dashboard-subtitle">
+    <div class="et-hero">
+        <div class="et-hero-copy">
+            <MudText Typo="Typo.overline" Class="dashboard-eyebrow">Notifications</MudText>
+            <MudText Typo="Typo.h4" HtmlTag="h1" Class="et-title">Email / SMS Templates</MudText>
+            <MudText Typo="Typo.body2" Class="dashboard-subtitle et-subtitle">
                 Manage email templates for password reset, welcome messages, and other notifications.
             </MudText>
-        </MudStack>
+        </div>
 
         <MudButton Variant="Variant.Filled"
-                   Class="dashboard-action-primary"
+                   Class="dashboard-action-primary et-add-btn"
                    StartIcon="@Icons.Material.Filled.Add"
                    Disabled="@(_loading || _saving || _deleting)"
                    OnClick="ShowCreatePanel">
             Add Template
         </MudButton>
-    </MudStack>
+    </div>
 
-    <MudPaper Elevation="0" Class="email-templates-panel">
+    @if (!_loading && _loadError is null)
+    {
+        <div class="et-stats">
+            <div class="et-stat-card">
+                <div class="et-stat-icon et-stat-icon-total">
+                    <MudIcon Icon="@Icons.Material.Filled.DashboardCustomize" />
+                </div>
+                <div class="et-stat-body">
+                    <span class="et-stat-label">Total templates</span>
+                    <strong class="et-stat-value">@TotalTemplateCount</strong>
+                </div>
+            </div>
+            <div class="et-stat-card">
+                <div class="et-stat-icon et-stat-icon-active">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                </div>
+                <div class="et-stat-body">
+                    <span class="et-stat-label">Active</span>
+                    <strong class="et-stat-value">@ActiveTemplateCount</strong>
+                </div>
+            </div>
+            <div class="et-stat-card">
+                <div class="et-stat-icon et-stat-icon-email">
+                    <MudIcon Icon="@Icons.Material.Filled.Sms" />
+                </div>
+                <div class="et-stat-body">
+                    <span class="et-stat-label">SMS channel</span>
+                    <strong class="et-stat-value">@SmsTemplateCount</strong>
+                </div>
+            </div>
+        </div>
+    }
+
+    <MudPaper Elevation="0" Class="et-panel">
         @if (_loading)
         {
             <MudStack AlignItems="AlignItems.Center" Class="email-loading-state" Spacing="2">
@@ -39,108 +73,142 @@
         }
         else if (_loadError is not null)
         {
-            <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+            <MudAlert Severity="Severity.Error" Class="et-alert">@_loadError</MudAlert>
         }
         else
         {
-            <MudTable Items="@FilteredTemplates"
-                      Hover="true"
-                      Dense="true"
-                      Breakpoint="Breakpoint.Sm"
-                      Elevation="0"
-                      Class="email-template-table">
-                <ToolBarContent>
-                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="email-toolbar-filters">
-                        <MudTextField @bind-Value="_searchString"
-                                      Placeholder="Search templates..."
-                                      Adornment="Adornment.Start"
-                                      AdornmentIcon="@Icons.Material.Filled.Search"
-                                      IconSize="Size.Medium"
-                                      Immediate="true"
-                                      Margin="Margin.Dense"
-                                      Class="email-search-field" />
-                        <MudSelect T="string?"
-                                   @bind-Value="_filterTemplateKey"
-                                   Label="Template key"
-                                   Variant="Variant.Outlined"
-                                   Margin="Margin.Dense"
-                                   Dense="true"
-                                   Clearable="true"
-                                   Placeholder="All templates"
-                                   PopoverFixed="true"
-                                   Class="email-key-filter">
-                            @foreach (var templateType in Enum.GetValues<EmailTemplateType>())
+            <div class="et-toolbar">
+                <div class="et-toolbar-search">
+                    <MudIcon Icon="@Icons.Material.Filled.Search" Class="et-toolbar-search-icon" />
+                    <input type="text"
+                           class="et-toolbar-search-input"
+                           placeholder="Search by name, subject, or key..."
+                           @bind="_searchString"
+                           @bind:event="oninput" />
+                </div>
+
+                <MudSelect T="string?"
+                           @bind-Value="_filterTemplateKey"
+                           Label="Template key"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Dense="true"
+                           Clearable="true"
+                           Placeholder="All templates"
+                           PopoverFixed="true"
+                           Class="et-key-filter">
+                    @foreach (var templateType in Enum.GetValues<EmailTemplateType>())
+                    {
+                        <MudSelectItem T="string?" Value="@templateType.ToString()">@templateType.ToDisplayName()</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <div class="et-toolbar-meta">
+                    <span class="et-result-count">@FilteredTemplateCount shown</span>
+                </div>
+            </div>
+
+            <div class="et-table-wrap">
+                <MudTable Items="@FilteredTemplates"
+                          Hover="true"
+                          Dense="true"
+                          Breakpoint="Breakpoint.Sm"
+                          Elevation="0"
+                          Class="et-table">
+                    <HeaderContent>
+                        <MudTh Class="et-th">Template</MudTh>
+                        <MudTh Class="et-th"><MudTableSortLabel SortBy="new Func<EmailTemplateListItem, object>(x => x.Subject)">Subject</MudTableSortLabel></MudTh>
+                        <MudTh Class="et-th et-th-center"><MudTableSortLabel SortBy="new Func<EmailTemplateListItem, object>(x => x.NotificationType)">Channel</MudTableSortLabel></MudTh>
+                        <MudTh Class="et-th et-th-center"><MudTableSortLabel SortBy="new Func<EmailTemplateListItem, object>(x => x.IsActive)">Status</MudTableSortLabel></MudTh>
+                        <MudTh Class="et-th"><MudTableSortLabel SortBy="new Func<EmailTemplateListItem, object>(x => x.UpdatedAt)">Last updated</MudTableSortLabel></MudTh>
+                        <MudTh Class="et-th et-th-actions">Actions</MudTh>
+                    </HeaderContent>
+
+                    <RowTemplate>
+                        <MudTd DataLabel="Template" Class="et-td-template">
+                            <div class="et-template-cell">
+                                <div class="et-template-icon @GetTemplateIconClass(context.TemplateKey)">
+                                    <MudIcon Icon="@GetTemplateIcon(context.TemplateKey)" />
+                                </div>
+                                <div class="et-template-copy">
+                                    <div class="et-template-name">@GetKeyDisplayName(context.TemplateKey)</div>
+                                    <div class="et-template-key">@context.TemplateKey</div>
+                                </div>
+                            </div>
+                        </MudTd>
+                        <MudTd DataLabel="Subject" Class="et-td-subject">
+                            <span class="et-subject-text" title="@context.Subject">@context.Subject</span>
+                        </MudTd>
+                        <MudTd DataLabel="Channel" Class="et-td-center">
+                            <span class="et-channel-badge @GetChannelBadgeClass(context.NotificationType)">
+                                <MudIcon Icon="@GetChannelIcon(context.NotificationType)" Class="et-channel-badge-icon" />
+                                @GetChannelText(context.NotificationType)
+                            </span>
+                        </MudTd>
+                        <MudTd DataLabel="Status" Class="et-td-center">
+                            <span class="et-status @((context.IsActive ? "et-status-active" : "et-status-inactive"))">
+                                <span class="et-status-dot"></span>
+                                @(context.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </MudTd>
+                        <MudTd DataLabel="Last updated" Class="et-td-updated">
+                            <span class="et-updated-date">@context.UpdatedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
+                            <span class="et-updated-time">@context.UpdatedAt.ToLocalTime().ToString("HH:mm")</span>
+                        </MudTd>
+                        <MudTd DataLabel="Actions" Class="et-td-actions">
+                            <div class="et-action-group">
+                                <MudTooltip Text="Preview">
+                                    <button type="button"
+                                            class="et-action-btn et-action-preview"
+                                            disabled="@(_previewLoading || _saving || _deleting)"
+                                            @onclick="@(() => PreviewTemplateFromListAsync(context))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Visibility" />
+                                    </button>
+                                </MudTooltip>
+                                <MudTooltip Text="Edit">
+                                    <button type="button"
+                                            class="et-action-btn et-action-edit"
+                                            disabled="@(_saving || _deleting)"
+                                            @onclick="@(() => EditTemplateAsync(context))">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" />
+                                    </button>
+                                </MudTooltip>
+                                <MudTooltip Text="Delete">
+                                    <button type="button"
+                                            class="et-action-btn et-action-delete"
+                                            disabled="@(_saving || _deleting)"
+                                            @onclick="@(() => DeleteTemplateAsync(context))">
+                                        <MudIcon Icon="@Icons.Material.Filled.DeleteOutline" />
+                                    </button>
+                                </MudTooltip>
+                            </div>
+                        </MudTd>
+                    </RowTemplate>
+
+                    <NoRecordsContent>
+                        <div class="et-empty">
+                            <div class="et-empty-icon">
+                                <MudIcon Icon="@Icons.Material.Filled.MarkEmailUnread" />
+                            </div>
+                            <MudText Typo="Typo.subtitle1" Class="et-empty-title">No templates found</MudText>
+                            <MudText Typo="Typo.body2" Class="et-empty-text">
+                                @(string.IsNullOrWhiteSpace(_searchString) && string.IsNullOrWhiteSpace(_filterTemplateKey)
+                                    ? "Get started by adding your first notification template."
+                                    : "Try adjusting your search or filter.")
+                            </MudText>
+                            @if (string.IsNullOrWhiteSpace(_searchString) && string.IsNullOrWhiteSpace(_filterTemplateKey))
                             {
-                                <MudSelectItem T="string?" Value="@templateType.ToString()">@templateType.ToDisplayName()</MudSelectItem>
+                                <MudButton Variant="Variant.Filled"
+                                           Class="dashboard-action-primary et-empty-btn"
+                                           StartIcon="@Icons.Material.Filled.Add"
+                                           OnClick="ShowCreatePanel">
+                                    Add Template
+                                </MudButton>
                             }
-                        </MudSelect>
-                    </MudStack>
-                </ToolBarContent>
-
-                <HeaderContent>
-                    <MudTh><MudTableSortLabel SortBy="new Func<EmailTemplateListItem, object>(x => GetChannelText(x.TemplateKey))">Notification Type</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<EmailTemplateListItem, object>(x => GetKeyDisplayName(x.TemplateKey))">Template Key</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<EmailTemplateListItem, object>(x => x.Subject)">Subject</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<EmailTemplateListItem, object>(x => x.IsActive)">Status</MudTableSortLabel></MudTh>
-                    <MudTh><MudTableSortLabel SortBy="new Func<EmailTemplateListItem, object>(x => x.UpdatedAt)">Updated</MudTableSortLabel></MudTh>
-                    <MudTh Class="email-table-actions-header">Action</MudTh>
-                </HeaderContent>
-
-                <RowTemplate>
-                    <MudTd DataLabel="Notification Type">
-                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info">
-                            @GetChannelText(context.TemplateKey)
-                        </MudChip>
-                    </MudTd>
-                    <MudTd DataLabel="Template Key">
-                        <div class="email-template-list-name">@GetKeyDisplayName(context.TemplateKey)</div>
-                        <div class="email-template-list-desc">@context.TemplateKey</div>
-                    </MudTd>
-                    <MudTd DataLabel="Subject">@context.Subject</MudTd>
-                    <MudTd DataLabel="Status">
-                        <MudChip T="string"
-                                 Size="Size.Small"
-                                 Color="@(context.IsActive ? Color.Success : Color.Default)"
-                                 Variant="Variant.Filled">
-                            @(context.IsActive ? "Active" : "Inactive")
-                        </MudChip>
-                    </MudTd>
-                    <MudTd DataLabel="Updated">@context.UpdatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</MudTd>
-                    <MudTd DataLabel="Action" Class="email-table-actions">
-                        <MudStack Row="true" Spacing="0" Justify="Justify.FlexEnd">
-                            <MudTooltip Text="Preview">
-                                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                                               Size="Size.Small"
-                                               Color="Color.Info"
-                                               Disabled="@(_previewLoading || _saving || _deleting)"
-                                               OnClick="@(() => PreviewTemplateFromListAsync(context))" />
-                            </MudTooltip>
-                            <MudTooltip Text="Edit">
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                               Size="Size.Small"
-                                               Color="Color.Default"
-                                               Disabled="@(_saving || _deleting)"
-                                               OnClick="@(() => EditTemplateAsync(context))" />
-                            </MudTooltip>
-                            <MudTooltip Text="Delete">
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                               Size="Size.Small"
-                                               Color="Color.Error"
-                                               Disabled="@(_saving || _deleting)"
-                                               OnClick="@(() => DeleteTemplateAsync(context))" />
-                            </MudTooltip>
-                        </MudStack>
-                    </MudTd>
-                </RowTemplate>
-
-                <NoRecordsContent>
-                    <MudStack AlignItems="AlignItems.Center" Class="email-empty-state" Spacing="1">
-                        <MudIcon Icon="@Icons.Material.Filled.Inbox" Size="Size.Large" Color="Color.Default" />
-                        <MudText Typo="Typo.subtitle1">No templates found</MudText>
-                        <MudText Typo="Typo.caption">Get started by adding your first template</MudText>
-                    </MudStack>
-                </NoRecordsContent>
-            </MudTable>
+                        </div>
+                    </NoRecordsContent>
+                </MudTable>
+            </div>
         }
     </MudPaper>
 </MudStack>
@@ -150,26 +218,31 @@
     <div class="email-slide-overlay @(_panelClosing ? "fade-out" : "fade-in")" @onclick="HidePanel">
         <div class="email-slide-panel @(_panelClosing ? "slide-out-right" : "slide-in-right")" @onclick:stopPropagation="true">
             <div class="email-slide-panel-inner">
-                <div class="email-slide-panel-header">
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6" HtmlTag="h2">@(_isCreate ? "Add Template" : "Update Template")</MudText>
-                        <MudText Typo="Typo.caption">
-                            @(_isCreate ? "Create a new email template with custom content." : "Update the template details below.")
-                        </MudText>
-                    </MudStack>
-                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                                   Color="Color.Inherit"
-                                   Disabled="_previewLoading"
-                                   OnClick="PreviewFromFormAsync" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="HidePanel" />
+                <div class="et-drawer-header">
+                    <div class="et-drawer-header-main">
+                        <div class="et-drawer-header-icon">
+                            <MudIcon Icon="@(_isCreate ? Icons.Material.Filled.PostAdd : Icons.Material.Filled.EditNote)" />
+                        </div>
+                        <div class="et-drawer-header-copy">
+                            <h2 class="et-drawer-header-title">@(_isCreate ? "Add Template" : "Update Template")</h2>
+                            <p class="et-drawer-header-sub">
+                                @(_isCreate ? "Configure subject, body, and tokens for a new email." : "Save changes to subject, body, or tokens.")
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="et-drawer-close" aria-label="Close panel" @onclick="HidePanel">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" />
+                    </button>
                 </div>
 
-                <EditForm Model="_upsertModel" OnValidSubmit="SaveTemplateAsync" Class="email-slide-panel-form">
-                    <DataAnnotationsValidator />
-                    <div class="email-slide-panel-body" tabindex="-1">
+                <div class="email-slide-panel-main">
+                    <EditForm Model="_upsertModel" OnValidSubmit="SaveTemplateAsync" Class="email-slide-panel-form">
+                        <DataAnnotationsValidator />
+                        <div class="email-slide-panel-body" tabindex="-1">
                         <MudStack Spacing="2">
                             <MudSelect T="NotificationType"
-                                       @bind-Value="_upsertModel.NotificationType"
+                                       Value="_upsertModel.NotificationType"
+                                       ValueChanged="OnNotificationTypeChanged"
                                        Label="Notification type"
                                        Variant="Variant.Outlined"
                                        Margin="Margin.Dense"
@@ -319,6 +392,7 @@
                         </MudStack>
                     </div>
                 </EditForm>
+                </div>
             </div>
         </div>
     </div>
@@ -445,6 +519,12 @@
         await JS.InvokeVoidAsync("eval", "document.documentElement.classList.remove('email-panel-open');document.body.classList.remove('email-panel-open')");
     }
 
+    private int TotalTemplateCount => _templates.Count;
+
+    private int ActiveTemplateCount => _templates.Count(t => t.IsActive);
+
+    private int FilteredTemplateCount => FilteredTemplates.Count();
+
     private IEnumerable<EmailTemplateListItem> FilteredTemplates
     {
         get
@@ -466,19 +546,35 @@
         }
     }
 
-    private IEnumerable<EmailTemplateType> AvailableTemplateTypesForCreate =>
-        Enum.GetValues<EmailTemplateType>().Where(type => !TemplateKeyExists(type.ToString()));
+    private int SmsTemplateCount => _templates.Count(t => t.NotificationType == NotificationType.Sms);
 
-    private bool TemplateKeyExists(string key) =>
-        _templates.Any(t => t.TemplateKey.Equals(key, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<EmailTemplateType> AvailableTemplateTypesForCreate =>
+        Enum.GetValues<EmailTemplateType>()
+            .Where(type => !TemplateKeyExists(type.ToString(), _upsertModel.NotificationType));
+
+    private bool TemplateKeyExists(string key, NotificationType notificationType) =>
+        _templates.Any(t =>
+            t.TemplateKey.Equals(key, StringComparison.OrdinalIgnoreCase) &&
+            t.NotificationType == notificationType);
 
     private string? GetSelectedTemplateKey() =>
         string.IsNullOrWhiteSpace(_upsertModel.TemplateKey) ? null : _upsertModel.TemplateKey;
 
     private string GetTemplateKeyHelperText() =>
         AvailableTemplateTypesForCreate.Any()
-            ? "Select the notification template type"
-            : "All template keys are already configured. Edit an existing template instead.";
+            ? $"Select a template key for {_upsertModel.NotificationType} notifications"
+            : $"All {_upsertModel.NotificationType} template keys are already configured. Edit an existing template instead.";
+
+    private void OnNotificationTypeChanged(NotificationType notificationType)
+    {
+        _upsertModel.NotificationType = notificationType;
+
+        if (!_isCreate)
+            return;
+
+        _upsertModel.TemplateKey = string.Empty;
+        _upsertModel.DisplayName = string.Empty;
+    }
 
     private Task OnTemplateKeySelected(string? key)
     {
@@ -530,7 +626,6 @@
     private void OnTemplateKeyChanged(string key)
     {
         _upsertModel.TemplateKey = key;
-        _upsertModel.NotificationType = NotificationType.Email;
 
         if (Enum.TryParse<EmailTemplateType>(key, ignoreCase: true, out var templateType))
             _upsertModel.DisplayName = templateType.ToDisplayName();
@@ -578,7 +673,8 @@
         if (_saving || BodyPlainTextLength > 5000)
             return;
 
-        if (_isCreate && (string.IsNullOrWhiteSpace(_upsertModel.TemplateKey) || TemplateKeyExists(_upsertModel.TemplateKey)))
+        if (_isCreate && (string.IsNullOrWhiteSpace(_upsertModel.TemplateKey) ||
+            TemplateKeyExists(_upsertModel.TemplateKey, _upsertModel.NotificationType)))
         {
             NotificationService.Warning("Please select a template key.");
             return;
@@ -594,6 +690,7 @@
                 var response = await client.PostAsJsonAsync("api/email-templates", new CreateEmailTemplateRequest
                 {
                     TemplateKey = _upsertModel.TemplateKey.Trim(),
+                    NotificationType = _upsertModel.NotificationType,
                     DisplayName = _upsertModel.DisplayName.Trim(),
                     Description = _upsertModel.Description.Trim(),
                     Subject = _upsertModel.Subject.Trim(),
@@ -902,7 +999,15 @@
             ? type.ToDisplayName()
             : templateKey;
 
-    private static string GetChannelText(string templateKey) => NotificationType.Email.ToString();
+    private static string GetChannelText(NotificationType notificationType) => notificationType.ToString();
+
+    private static string GetChannelIcon(NotificationType notificationType) =>
+        notificationType == NotificationType.Sms
+            ? Icons.Material.Filled.Sms
+            : Icons.Material.Filled.Email;
+
+    private static string GetChannelBadgeClass(NotificationType notificationType) =>
+        notificationType == NotificationType.Sms ? "et-channel-badge-sms" : "et-channel-badge-email";
 
     private static string GetTemplateIcon(string templateKey) => templateKey switch
     {
@@ -912,10 +1017,19 @@
         _ => Icons.Material.Filled.Email
     };
 
+    private static string GetTemplateIconClass(string templateKey) => templateKey switch
+    {
+        "ForgotPassword" => "et-icon-reset",
+        "Welcome" => "et-icon-welcome",
+        "PasswordResetSuccess" => "et-icon-success",
+        _ => "et-icon-default"
+    };
+
     private sealed class EmailTemplateListItem
     {
         public int Id { get; set; }
         public string TemplateKey { get; set; } = string.Empty;
+        public NotificationType NotificationType { get; set; } = NotificationType.Email;
         public string DisplayName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
@@ -927,6 +1041,7 @@
     {
         public int Id { get; set; }
         public string TemplateKey { get; set; } = string.Empty;
+        public NotificationType NotificationType { get; set; } = NotificationType.Email;
         public string DisplayName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
@@ -964,7 +1079,7 @@
         public static UpsertEmailTemplateModel FromDetail(EmailTemplateDetail detail) => new()
         {
             Id = detail.Id,
-            NotificationType = NotificationType.Email,
+            NotificationType = detail.NotificationType,
             TemplateKey = detail.TemplateKey,
             DisplayName = detail.DisplayName,
             Description = detail.Description,
@@ -983,6 +1098,7 @@
     private sealed class CreateEmailTemplateRequest
     {
         public string TemplateKey { get; set; } = string.Empty;
+        public NotificationType NotificationType { get; set; } = NotificationType.Email;
         public string DisplayName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
