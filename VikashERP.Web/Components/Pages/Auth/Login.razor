@@ -1,0 +1,154 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@using VikashERP.Web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAuthService AuthService
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthStateProvider
+@layout VikashERP.Web.Components.Layout.AuthLayout
+
+<div class="login-title">Welcome back</div>
+<div class="login-subtitle">Sign in to your account to continue</div>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">@ErrorMessage</MudAlert>
+}
+
+<EditForm Model="@Model" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+
+    <div style="margin-bottom: 20px;">
+        <span class="field-label">Email or Username</span>
+        <MudTextField @bind-Value="Model.Email"
+                      Placeholder="superadmin@vikashironix.com"
+                      Variant="Variant.Filled"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Outlined.AlternateEmail"
+                      Margin="Margin.Dense"
+                      FullWidth="true"
+                      For="@(() => Model.Email)" />
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <div class="field-row">
+            <span class="field-label" style="margin-bottom:0;">Password</span>
+            <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+        </div>
+        <MudTextField @bind-Value="Model.Password"
+                      Placeholder="••••••••"
+                      Variant="Variant.Filled"
+                      InputType="@_passwordInput"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@_passwordInputIcon"
+                      OnAdornmentClick="TogglePasswordVisibility"
+                      Margin="Margin.Dense"
+                      FullWidth="true"
+                      For="@(() => Model.Password)" />
+    </div>
+
+    <div style="margin-bottom: 24px;">
+        <MudCheckBox @bind-Value="Model.RememberMe"
+                     Label="Keep me signed in for 7 days"
+                     Color="Color.Primary"
+                     Dense="true"
+                     Size="Size.Small" />
+    </div>
+
+    <MudButton ButtonType="ButtonType.Submit"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               FullWidth="true"
+               Disabled="@IsLoading"
+               Style="border-radius: 10px; font-weight: 700; letter-spacing: 1px; height: 48px; font-size: 0.9rem;">
+        @if (IsLoading)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="margin-right: 8px;" />
+            <span>SIGNING IN...</span>
+        }
+        else
+        {
+            <span>SIGN IN</span>
+        }
+    </MudButton>
+
+    <div style="text-align: center; margin-top: 2rem;">
+        <span class="status-badge">
+            <span class="status-dot"></span>
+            All systems operational
+        </span>
+    </div>
+</EditForm>
+
+@code {
+    private LoginModel Model = new();
+    private string ErrorMessage = string.Empty;
+    private bool IsLoading = false;
+
+    private bool _passwordVisibility;
+    private InputType _passwordInput = InputType.Password;
+    private string _passwordInputIcon = Icons.Material.Outlined.VisibilityOff;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+            NavManager.NavigateTo("/", forceLoad: true);
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        if (_passwordVisibility)
+        {
+            _passwordVisibility = false;
+            _passwordInputIcon = Icons.Material.Outlined.VisibilityOff;
+            _passwordInput = InputType.Password;
+        }
+        else
+        {
+            _passwordVisibility = true;
+            _passwordInputIcon = Icons.Material.Outlined.Visibility;
+            _passwordInput = InputType.Text;
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        IsLoading = true;
+        ErrorMessage = string.Empty;
+        StateHasChanged();
+
+        var result = await AuthService.LoginAsync(Model.Email, Model.Password);
+
+        if (!result.Success || result.Response is null)
+        {
+            ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                ? "Invalid email or password."
+                : result.Message;
+            IsLoading = false;
+            return;
+        }
+
+        var login = result.Response;
+        var signInUrl =
+            $"/account/signin?token={Uri.EscapeDataString(login.Token)}" +
+            $"&refreshToken={Uri.EscapeDataString(login.RefreshToken)}" +
+            $"&rememberMe={Model.RememberMe.ToString().ToLowerInvariant()}" +
+            $"&expiresIn={login.ExpiresIn}";
+
+        NavManager.NavigateTo(signInUrl, forceLoad: true);
+    }
+
+    public class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Email is required")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Invalid email format")]
+        public string Email { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Password is required")]
+        public string Password { get; set; } = "";
+
+        public bool RememberMe { get; set; }
+    }
+}

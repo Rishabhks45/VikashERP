@@ -1,0 +1,116 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="@VikashTheme.DefaultTheme" @bind-IsDarkMode="@_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout Class="app-layout">
+    <MudAppBar Elevation="0" Fixed="true" Class="app-topbar" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Class="app-topbar-menu"
+                       OnClick="@DrawerToggle" />
+
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudIconButton Icon="@Icons.Material.Filled.Search" Class="app-topbar-icon" />
+        </MudHidden>
+
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <div class="appbar-search">
+                <MudIcon Icon="@Icons.Material.Filled.Search" Class="appbar-search-icon" />
+                <input type="text" placeholder="Search anything..." class="appbar-search-input" />
+                <span class="appbar-search-kbd">⌘K</span>
+            </div>
+        </MudHidden>
+
+        <MudSpacer />
+
+        <div class="app-topbar-actions">
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Class="app-topbar-icon"
+                           OnClick="@ToggleDarkMode" />
+
+            <MudBadge Content="3" Color="Color.Primary" Overlap="true" Class="app-topbar-badge">
+                <MudIconButton Icon="@Icons.Material.Filled.Notifications" Class="app-topbar-icon" />
+            </MudBadge>
+
+            <MudMenu AnchorOrigin="Origin.BottomRight"
+                     TransformOrigin="Origin.TopRight"
+                     PopoverClass="appbar-profile-popover"
+                     Class="appbar-profile-menu">
+                <ActivatorContent>
+                    <div class="appbar-profile">
+                        <MudAvatar Size="Size.Small" Color="Color.Primary" Class="appbar-avatar">@_userInitials</MudAvatar>
+                        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                            <div class="appbar-profile-text">
+                                <div class="appbar-profile-name">@_userName</div>
+                                <div class="appbar-profile-role">@(!string.IsNullOrWhiteSpace(_userEmail) ? _userEmail : _userRole)</div>
+                            </div>
+                        </MudHidden>
+                        <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Class="appbar-profile-chevron" />
+                    </div>
+                </ActivatorContent>
+                <ChildContent>
+                    <div class="appbar-profile-menu-header">
+                        <div class="appbar-profile-menu-name">@_userName</div>
+                        @if (!string.IsNullOrWhiteSpace(_userEmail))
+                        {
+                            <div class="appbar-profile-menu-email">@_userEmail</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_userRole))
+                        {
+                            <div class="appbar-profile-menu-role">@_userRole</div>
+                        }
+                    </div>
+                    <MudDivider />
+                    <MudMenuItem Icon="@Icons.Material.Filled.Person" OnClick="NavigateToProfile">
+                        Profile
+                    </MudMenuItem>
+                    <MudDivider />
+                    <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="Logout">
+                        Log out
+                    </MudMenuItem>
+                </ChildContent>
+            </MudMenu>
+        </div>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen"
+               Elevation="0"
+               Variant="DrawerVariant.Responsive"
+               ClipMode="DrawerClipMode.Never"
+               Breakpoint="Breakpoint.Md"
+               Class="app-drawer">
+        <div class="app-drawer-inner">
+            <div class="app-drawer-header">
+                <img src="logo.png" alt="Vikash Ironix" class="app-drawer-logo" />
+                <div class="app-drawer-brand">Vikash Ironix</div>
+            </div>
+
+            <div class="app-drawer-nav">
+                <NavMenu />
+            </div>
+
+            <div class="app-drawer-footer">
+                <div class="app-drawer-help">
+                    <div class="app-drawer-help-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.HelpOutline" />
+                    </div>
+                    <div>
+                        <div class="app-drawer-help-title">Need Help?</div>
+                        <div class="app-drawer-help-sub">
+                            Check our documentation
+                            <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Style="font-size: 12px;" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </MudDrawer>
+
+    <MudMainContent Class="app-main">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="app-main-container">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>

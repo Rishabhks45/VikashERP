@@ -1,0 +1,147 @@
+/* Vikash ERP - Premium Auth Styles (Steel Dark Theme) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --steel-bg: #0f172a;
+    --steel-surface: rgba(30, 41, 59, 0.7);
+    --steel-border: rgba(255, 255, 255, 0.1);
+    --steel-accent: #38bdf8;
+    --steel-accent-hover: #0284c7;
+    --steel-text-main: #f8fafc;
+    --steel-text-muted: #94a3b8;
+}
+
+.auth-body {
+    background: radial-gradient(circle at top right, #1e293b, #0f172a 70%);
+    font-family: 'Outfit', sans-serif;
+    color: var(--steel-text-main);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 450px;
+    padding: 2rem;
+    perspective: 1000px;
+}
+
+.glass-card {
+    background: var(--steel-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--steel-border);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.auth-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    background: linear-gradient(to right, #e2e8f0, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: var(--steel-text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #cbd5e1;
+}
+
+.glass-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--steel-border);
+    border-radius: 0.75rem;
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.glass-input:focus {
+    border-color: var(--steel-accent);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.glass-input::placeholder {
+    color: var(--steel-text-muted);
+}
+
+.btn-primary-glass {
+    width: 100%;
+    padding: 0.875rem;
+    background: var(--steel-accent);
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 1rem;
+    border: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Outfit', sans-serif;
+}
+
+.btn-primary-glass:hover {
+    background: var(--steel-accent-hover);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(2, 132, 199, 0.4);
+}
+
+.btn-primary-glass:active {
+    transform: translateY(1px);
+}
+
+.auth-links {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+}
+
+.auth-link {
+    color: var(--steel-accent);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.auth-link:hover {
+    color: white;
+}
+
+@keyframes fade-in-up {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

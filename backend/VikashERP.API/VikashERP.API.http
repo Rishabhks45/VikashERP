@@ -1,0 +1,6 @@
+@VikashERP.API_HostAddress = http://localhost:5263
+
+GET {{VikashERP.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

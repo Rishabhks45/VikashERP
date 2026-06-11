@@ -1,0 +1,65 @@
+@inherits LayoutComponentBase
+
+<div class="auth-page">
+    <!-- Left Panel: Purple Gradient Branding -->
+    <div class="auth-left">
+        <div class="auth-brand">
+            <img src="logo.png" alt="Vikash Ironix" style="width: 44px; height: 44px; border-radius: 10px; object-fit: cover;" />
+            <div>
+                <div class="auth-brand-name">Vikashironix</div>
+                <div class="auth-brand-tag">EXECUTIVE SUITE</div>
+            </div>
+        </div>
+
+        <div class="auth-hero-title">
+            Manage your iron<br/>business smarter.
+        </div>
+        <div class="auth-hero-desc">
+            Complete suite for billing, inventory, payroll and customer management — all in one place.
+        </div>
+
+        <div class="auth-feature-card">
+            <div class="auth-feature-icon pink">
+                <MudIcon Icon="@Icons.Material.Filled.Analytics" />
+            </div>
+            <div>
+                <div class="auth-feature-title">Real-time Analytics</div>
+                <div class="auth-feature-desc">Track revenue, stock & customers live</div>
+            </div>
+        </div>
+
+        <div class="auth-feature-card">
+            <div class="auth-feature-icon blue">
+                <MudIcon Icon="@Icons.Material.Filled.Inventory2" />
+            </div>
+            <div>
+                <div class="auth-feature-title">Smart Inventory</div>
+                <div class="auth-feature-desc">Full material catalog with stock alerts</div>
+            </div>
+        </div>
+
+        <div class="auth-feature-card">
+            <div class="auth-feature-icon teal">
+                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" />
+            </div>
+            <div>
+                <div class="auth-feature-title">Billing & Ledger</div>
+                <div class="auth-feature-desc">Invoices, udhaar tracking & daily audits</div>
+            </div>
+        </div>
+
+        <div class="auth-version">v4.0.0 PRO - Enterprise</div>
+    </div>
+
+    <!-- Right Panel: Login Form -->
+    <div class="auth-right">
+        <div class="auth-right-inner">
+            @Body
+        </div>
+        <div class="auth-footer-links">
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+            <a href="#">Support</a>
+        </div>
+    </div>
+</div>

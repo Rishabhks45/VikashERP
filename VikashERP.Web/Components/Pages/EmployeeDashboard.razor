@@ -1,0 +1,210 @@
+@page "/employee-dashboard"
+
+<PageTitle>Employee Dashboard</PageTitle>
+
+<MudStack Class="dashboard-page" Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-header">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.overline" Class="dashboard-eyebrow">Employee Workspace</MudText>
+            <MudText Typo="Typo.h4" HtmlTag="h1">My Dashboard</MudText>
+            <MudText Typo="Typo.body2" Class="dashboard-subtitle">
+                Daily shift view for attendance, assigned work, pending approvals, and personal payroll updates.
+            </MudText>
+        </MudStack>
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="dashboard-header-actions">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.EventAvailable" Class="dashboard-action-secondary">
+                Apply Leave
+            </MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Fingerprint" Class="dashboard-action-primary">
+                Check In
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Spacing="2" Class="dashboard-kpis">
+        @foreach (var metric in Metrics)
+        {
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="@($"dashboard-kpi-icon {metric.IconClass}")">
+                        <MudIcon Icon="@metric.Icon" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">@metric.Label</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@metric.Value</MudText>
+                        <MudText Typo="Typo.caption" Class="@metric.TrendClass">@metric.Trend</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+
+    <MudGrid Spacing="2" Class="dashboard-grid">
+        <MudItem xs="12" lg="8">
+            <MudPaper Elevation="0" Class="dashboard-panel dashboard-panel-wide">
+                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Weekly Work Progress</MudText>
+                        <MudText Typo="Typo.caption">Assigned tasks completed against planned workload</MudText>
+                    </MudStack>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">Current week</MudChip>
+                </MudStack>
+
+                <MudStack Row="true" Class="revenue-bars">
+                    @foreach (var item in WorkProgress)
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Spacing="1" Class="revenue-day">
+                            <div class="revenue-track">
+                                <div class="revenue-bar sales" style="height:@($"{item.Planned}%")"></div>
+                                <div class="revenue-bar collected" style="height:@($"{item.Completed}%")"></div>
+                            </div>
+                            <MudText Typo="Typo.caption">@item.Day</MudText>
+                        </MudStack>
+                    }
+                </MudStack>
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="dashboard-legend">
+                    <MudText Typo="Typo.caption"><i class="legend-dot sales"></i>Planned</MudText>
+                    <MudText Typo="Typo.caption"><i class="legend-dot collected"></i>Completed</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="4">
+            <MudPaper Elevation="0" Class="dashboard-panel">
+                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Today&apos;s Assignments</MudText>
+                        <MudText Typo="Typo.caption">Work queued for your shift</MudText>
+                    </MudStack>
+                    <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn" Class="dashboard-panel-icon" />
+                </MudStack>
+
+                <MudStack Spacing="2" Class="dispatch-list">
+                    @foreach (var assignment in Assignments)
+                    {
+                        <MudPaper Elevation="0" Class="dispatch-item">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.subtitle2">@assignment.Title</MudText>
+                                <MudText Typo="Typo.caption">@assignment.Detail</MudText>
+                            </MudStack>
+                            <MudChip T="string" Size="Size.Small" Class="@assignment.StatusClass">@assignment.Status</MudChip>
+                        </MudPaper>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="4">
+            <MudPaper Elevation="0" Class="dashboard-panel">
+                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Shift Timeline</MudText>
+                        <MudText Typo="Typo.caption">Attendance and break progress</MudText>
+                    </MudStack>
+                    <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="dashboard-panel-icon warning" />
+                </MudStack>
+
+                <MudStack Spacing="0" Class="stock-list">
+                    @foreach (var shift in ShiftTimeline)
+                    {
+                        <div class="stock-row">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.subtitle2">@shift.Label</MudText>
+                                <MudText Typo="Typo.caption">@shift.Time</MudText>
+                            </MudStack>
+                            <MudProgressLinear Value="@shift.Progress"
+                                               Rounded="true"
+                                               Size="Size.Small"
+                                               Class="stock-progress" />
+                            <MudText Typo="Typo.caption" Class="stock-count">@shift.Status</MudText>
+                        </div>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="8">
+            <MudPaper Elevation="0" Class="dashboard-panel dashboard-panel-wide">
+                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">My Requests</MudText>
+                        <MudText Typo="Typo.caption">Recent leave, salary, and HR updates</MudText>
+                    </MudStack>
+                    <MudButton Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward" Size="Size.Small">View all</MudButton>
+                </MudStack>
+
+                <MudTable Items="@Requests" Dense="true" Hover="true" Elevation="0" Class="invoice-table" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Request</MudTh>
+                        <MudTh>Category</MudTh>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="request">
+                        <MudTd DataLabel="Request">@request.Title</MudTd>
+                        <MudTd DataLabel="Category">@request.Category</MudTd>
+                        <MudTd DataLabel="Date">
+                            <MudText Typo="Typo.body2" Class="invoice-amount">@request.Date</MudText>
+                        </MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip T="string" Size="Size.Small" Class="@request.StatusClass">@request.Status</MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    private sealed record Metric(string Label, string Value, string Trend, string Icon, string IconClass, string TrendClass);
+    private sealed record WorkProgressPoint(string Day, int Planned, int Completed);
+    private sealed record AssignmentItem(string Title, string Detail, string Status, string StatusClass);
+    private sealed record ShiftItem(string Label, string Time, int Progress, string Status);
+    private sealed record RequestItem(string Title, string Category, string Date, string Status, string StatusClass);
+
+    private static readonly Metric[] Metrics =
+    [
+        new("Attendance", "Present", "Checked in at 09:12 AM", Icons.Material.Filled.FactCheck, "accent-green", "trend-up"),
+        new("Shift Time", "8h 30m", "General shift: 9:00 AM - 6:00 PM", Icons.Material.Filled.Schedule, "accent-blue", "trend-neutral"),
+        new("Open Tasks", "6", "2 high priority today", Icons.Material.Filled.TaskAlt, "accent-amber", "trend-alert"),
+        new("Leave Balance", "12 Days", "1 request pending approval", Icons.Material.Filled.EventAvailable, "accent-red", "trend-down")
+    ];
+
+    private static readonly WorkProgressPoint[] WorkProgress =
+    [
+        new("Mon", 80, 74),
+        new("Tue", 72, 68),
+        new("Wed", 84, 76),
+        new("Thu", 90, 64),
+        new("Fri", 78, 58),
+        new("Sat", 54, 38),
+        new("Sun", 24, 18)
+    ];
+
+    private static readonly AssignmentItem[] Assignments =
+    [
+        new("Verify stock issue slips", "Main Godown, 18 pending entries", "In progress", "chip-info"),
+        new("Load dispatch check", "Vehicle JH 05 CK 2841", "Priority", "chip-warning"),
+        new("Customer invoice handover", "Sinha Steel Works", "Ready", "chip-success"),
+        new("Update material count", "GI Pipe rack inspection", "Pending", "chip-danger")
+    ];
+
+    private static readonly ShiftItem[] ShiftTimeline =
+    [
+        new("Check-in", "09:12 AM", 100, "Done"),
+        new("First half", "09:00 AM - 01:00 PM", 88, "Active"),
+        new("Lunch break", "01:00 PM - 01:30 PM", 35, "Next"),
+        new("Check-out", "Expected 06:00 PM", 12, "Later")
+    ];
+
+    private static readonly RequestItem[] Requests =
+    [
+        new("Casual leave", "Leave", "12 Jun 2026", "Pending", "chip-warning"),
+        new("May salary slip", "Payroll", "31 May 2026", "Ready", "chip-success"),
+        new("Address proof update", "Profile", "28 May 2026", "Approved", "chip-success"),
+        new("Overtime correction", "Attendance", "24 May 2026", "Review", "chip-info")
+    ];
+}

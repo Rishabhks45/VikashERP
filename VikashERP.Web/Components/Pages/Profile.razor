@@ -1,0 +1,50 @@
+@page "/profile"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Profile</PageTitle>
+
+<MudPaper Class="pa-6" Elevation="0" Outlined="true">
+    <MudText Typo="Typo.h5" Class="mb-4">My Profile</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        <MudStack Spacing="3" Style="max-width: 420px;">
+            <MudTextField Label="Name" Value="@_userName" ReadOnly="true" Variant="Variant.Outlined" />
+            <MudTextField Label="Email" Value="@_userEmail" ReadOnly="true" Variant="Variant.Outlined" />
+            <MudTextField Label="Role" Value="@_userRole" ReadOnly="true" Variant="Variant.Outlined" />
+        </MudStack>
+    }
+</MudPaper>
+
+@code {
+    private bool _loading = true;
+    private string _userName = string.Empty;
+    private string _userEmail = string.Empty;
+    private string _userRole = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        _userName = user.FindFirst(ClaimTypes.Name)?.Value
+            ?? user.FindFirst("name")?.Value
+            ?? string.Empty;
+        _userEmail = user.FindFirst(ClaimTypes.Email)?.Value
+            ?? user.FindFirst(JwtRegisteredClaimNames.Email)?.Value
+            ?? user.FindFirst("email")?.Value
+            ?? string.Empty;
+        _userRole = user.FindFirst(ClaimTypes.Role)?.Value
+            ?? user.FindFirst("roles")?.Value
+            ?? string.Empty;
+
+        _loading = false;
+    }
+}
