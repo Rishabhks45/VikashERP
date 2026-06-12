@@ -166,28 +166,59 @@ h1:focus {
     gap: 12px;
     position: relative;
     z-index: 10;
+    margin-bottom: 2rem;
 }
 
-.auth-brand-logo {
-    width: min(100%, 280px);
-    max-height: 96px;
+.auth-logo-wrap {
+    height: 40px;
+    width: 40px;
+    border-radius: 10px;
+    background: white;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.auth-logo-img {
+    height: 100%;
+    width: 100%;
     object-fit: contain;
-    display: block;
+}
+
+.auth-brand-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
 }
 
 .auth-brand-name {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #ffffff;
-    letter-spacing: -0.5px;
-    line-height: 1.1;
+    font-family: 'Literata', 'Georgia', serif;
+    font-weight: 900;
+    font-size: 20px;
+    color: white;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
-.auth-brand-tag {
+.auth-brand-subtitle {
     font-size: 0.65rem;
     font-weight: 700;
-    color: var(--org-accent, #818cf8);
-    letter-spacing: 1px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #90caf9 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+    line-height: 1.2;
 }
 
 .auth-hero-title {
@@ -785,6 +816,89 @@ h1:focus {
 .chip-info {
     background: #dbeafe !important;
     color: #1d4ed8 !important;
+}
+
+.app-dark-mode {
+    color-scheme: dark;
+}
+
+.app-dark-mode .app-main {
+    background: #0b1220 !important;
+}
+
+.app-dark-mode .app-page,
+.app-dark-mode .dashboard-page {
+    color: #f8fafc;
+}
+
+.app-dark-mode .dashboard-kpi,
+.app-dark-mode .dashboard-panel,
+.app-dark-mode .dispatch-item,
+.app-dark-mode .invoice-table {
+    background: #111827 !important;
+    border-color: #263244 !important;
+    box-shadow: none;
+}
+
+.app-dark-mode .dispatch-item {
+    background: #0f172a !important;
+}
+
+.app-dark-mode .dashboard-kpi-body span,
+.app-dark-mode .dashboard-panel-header span,
+.app-dark-mode .dashboard-subtitle,
+.app-dark-mode .dashboard-legend,
+.app-dark-mode .revenue-day,
+.app-dark-mode .dispatch-item span,
+.app-dark-mode .stock-row span,
+.app-dark-mode .invoice-table .mud-table-head .mud-table-cell {
+    color: #94a3b8 !important;
+}
+
+.app-dark-mode .dashboard-kpi-body strong,
+.app-dark-mode .dashboard-panel-header h2,
+.app-dark-mode .dispatch-item strong,
+.app-dark-mode .stock-row strong,
+.app-dark-mode .stock-count,
+.app-dark-mode .invoice-amount,
+.app-dark-mode .invoice-table .mud-table-cell {
+    color: #f8fafc !important;
+}
+
+.app-dark-mode .revenue-track,
+.app-dark-mode .invoice-table .mud-table-head {
+    background: #0b1220 !important;
+}
+
+.app-dark-mode .invoice-table .mud-table-cell,
+.app-dark-mode .stock-row {
+    border-color: #263244 !important;
+}
+
+.app-dark-mode .dashboard-action-secondary {
+    background: #111827 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+.app-dark-mode .chip-success {
+    background: rgba(22, 101, 52, 0.25) !important;
+    color: #86efac !important;
+}
+
+.app-dark-mode .chip-warning {
+    background: rgba(146, 64, 14, 0.28) !important;
+    color: #fcd34d !important;
+}
+
+.app-dark-mode .chip-danger {
+    background: rgba(153, 27, 27, 0.28) !important;
+    color: #fca5a5 !important;
+}
+
+.app-dark-mode .chip-info {
+    background: rgba(29, 78, 216, 0.28) !important;
+    color: #93c5fd !important;
 }
 
 @media (max-width: 720px) {

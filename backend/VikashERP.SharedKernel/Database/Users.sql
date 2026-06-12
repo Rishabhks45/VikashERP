@@ -11,7 +11,9 @@ CREATE TABLE "Users" (
     "RefreshToken" text NULL,
     "RefreshTokenExpiry" timestamp with time zone NULL,
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "UpdatedAt" timestamp with time zone NULL
+    "UpdatedAt" timestamp with time zone NULL,
+    "IsActive" boolean NOT NULL DEFAULT TRUE,
+    "LastLoginAt" timestamp with time zone NULL
 );
 
 CREATE UNIQUE INDEX "IX_Users_Email" ON "Users" ("Email");

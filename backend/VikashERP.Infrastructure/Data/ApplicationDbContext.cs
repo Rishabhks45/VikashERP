@@ -70,6 +70,9 @@ internal static class ErpSchemaConfiguration
                       value => UserRoleExtensions.FromString(value) ?? UserRole.Customer)
                   .IsRequired()
                   .HasMaxLength(50);
+            entity.Property(e => e.IsActive)
+                  .HasDefaultValue(true);
+            entity.Property(e => e.LastLoginAt);
         });
 
         modelBuilder.Entity<PasswordResetToken>(entity =>

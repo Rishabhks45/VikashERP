@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.JSInterop;
 using VikashERP.Web.Services.Interfaces;
 
 namespace VikashERP.Web.Components.Layout;
@@ -12,6 +13,8 @@ public partial class MainLayout : IDisposable
     [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
     [Inject] private IDarkModeService DarkModeService { get; set; } = default!;
     [Inject] private IOrganizationBrandingService OrganizationBranding { get; set; } = default!;
+    [Inject] private IUserProfileService UserProfileService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     private bool _drawerOpen;
     private string _userName = "User";
@@ -26,6 +29,7 @@ public partial class MainLayout : IDisposable
         AuthStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
         DarkModeService.OnChange += OnDarkModeChanged;
         OrganizationBranding.OnChange += OnBrandingChanged;
+        UserProfileService.OnProfileUpdated += HandleProfileUpdated;
         await OrganizationBranding.InitializeAsync();
         await LoadUserAsync();
     }
@@ -37,6 +41,7 @@ public partial class MainLayout : IDisposable
     private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
     {
         await LoadUserAsync();
+        await LoadUserProfileFromStorageAsync();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -62,6 +67,69 @@ public partial class MainLayout : IDisposable
             ?? string.Empty;
         _userInitials = GetInitials(_userName);
         _userProfilePictureUrl = GetClaim(user, "picture", ClaimTypes.Uri);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadUserProfileFromStorageAsync();
+        }
+    }
+
+    private async Task LoadUserProfileFromStorageAsync()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(_userEmail))
+            {
+                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+                _userEmail = GetClaim(user, ClaimTypes.Email, JwtRegisteredClaimNames.Email, "email") ?? string.Empty;
+            }
+
+            if (!string.IsNullOrEmpty(_userEmail))
+            {
+                var key = $"user_profile_{_userEmail}";
+                var storedJson = await JSRuntime.InvokeAsync<string>("localStorage.getItem", key);
+                if (!string.IsNullOrEmpty(storedJson))
+                {
+                    var deserialized = System.Text.Json.JsonSerializer.Deserialize<UserProfileDto>(storedJson);
+                    if (deserialized != null)
+                    {
+                        if (!string.IsNullOrEmpty(deserialized.FirstName) || !string.IsNullOrEmpty(deserialized.LastName))
+                        {
+                            _userName = $"{deserialized.FirstName} {deserialized.LastName}".Trim();
+                            _userInitials = GetInitials(_userName);
+                        }
+                        if (!string.IsNullOrEmpty(deserialized.ProfilePictureUrl))
+                        {
+                            _userProfilePictureUrl = deserialized.ProfilePictureUrl;
+                        }
+                        StateHasChanged();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user profile from storage: {ex.Message}");
+        }
+    }
+
+    private void HandleProfileUpdated(UserProfileDto profile)
+    {
+        if (profile != null && profile.Email == _userEmail)
+        {
+            _userName = $"{profile.FirstName} {profile.LastName}".Trim();
+            if (string.IsNullOrEmpty(_userName))
+            {
+                _userName = profile.Email;
+            }
+            _userInitials = GetInitials(_userName);
+            _userProfilePictureUrl = profile.ProfilePictureUrl;
+            InvokeAsync(StateHasChanged);
+        }
     }
 
     private static string? GetClaim(ClaimsPrincipal user, params string[] types)
@@ -99,5 +167,6 @@ public partial class MainLayout : IDisposable
         AuthStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
         DarkModeService.OnChange -= OnDarkModeChanged;
         OrganizationBranding.OnChange -= OnBrandingChanged;
+        UserProfileService.OnProfileUpdated -= HandleProfileUpdated;
     }
 }

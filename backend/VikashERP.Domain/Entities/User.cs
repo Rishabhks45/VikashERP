@@ -15,6 +15,8 @@ public class User
     public DateTime? RefreshTokenExpiry { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime? LastLoginAt { get; set; }
 
     public UserCustomerMapping? CustomerMapping { get; set; }
 }

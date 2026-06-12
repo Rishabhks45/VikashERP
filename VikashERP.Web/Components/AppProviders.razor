@@ -14,7 +14,7 @@
     }
 </HeadContent>
 
-<div class="org-branded-root" style="@OrganizationBranding.CssVariables">
+<div class="@RootCssClass" style="@OrganizationBranding.CssVariables">
     <MudThemeProvider Theme="@OrganizationBranding.GetTheme()"
                       IsDarkMode="@DarkModeService.IsDarkMode"
                       IsDarkModeChanged="OnDarkModeChanged" />
@@ -27,6 +27,11 @@
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string RootCssClass =>
+        DarkModeService.IsDarkMode
+            ? "org-branded-root app-dark-mode"
+            : "org-branded-root app-light-mode";
 
     protected override void OnInitialized()
     {

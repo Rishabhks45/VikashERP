@@ -12,23 +12,33 @@
         <div class="auth-brand">
             @if (!string.IsNullOrWhiteSpace(OrganizationBranding.LogoSrc))
             {
-                <img src="@OrganizationBranding.LogoSrc" alt="@OrganizationBranding.Current.DisplayName" class="auth-brand-logo" />
+                <div class="auth-logo-wrap">
+                    <img src="@OrganizationBranding.LogoSrc" alt="@OrganizationBranding.Current.DisplayName" class="auth-logo-img" loading="eager" />
+                </div>
             }
-            else if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.DisplayName))
-            {
-                <div class="auth-brand-name">@OrganizationBranding.Current.DisplayName</div>
-            }
+            <div class="auth-brand-text">
+                @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.DisplayName))
+                {
+                    <div class="auth-brand-name">@OrganizationBranding.Current.DisplayName</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.Tagline))
+                {
+                    <div class="auth-brand-subtitle">@OrganizationBranding.Current.Tagline</div>
+                }
+            </div>
         </div>
 
-        @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.Tagline))
-        {
-            <div class="auth-hero-title">@OrganizationBranding.Current.Tagline</div>
-        }
+        <div class="auth-hero-title">
+            @(string.IsNullOrWhiteSpace(OrganizationBranding.Current.MetaTitle) 
+                ? "Manage your iron business smarter." 
+                : OrganizationBranding.Current.MetaTitle)
+        </div>
 
-        @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.MetaDescription))
-        {
-            <div class="auth-hero-desc">@OrganizationBranding.Current.MetaDescription</div>
-        }
+        <div class="auth-hero-desc">
+            @(string.IsNullOrWhiteSpace(OrganizationBranding.Current.MetaDescription) 
+                ? "Complete suite for billing, inventory, payroll and customer management — all in one place." 
+                : OrganizationBranding.Current.MetaDescription)
+        </div>
 
         <div class="auth-feature-card">
             <div class="auth-feature-icon pink">
@@ -83,16 +93,11 @@
 @code {
     [Inject] private IDarkModeService DarkModeService { get; set; } = default!;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         DarkModeService.OnChange += HandleDarkModeChanged;
         OrganizationBranding.OnChange += HandleBrandingChanged;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-            await OrganizationBranding.InitializeAsync();
+        await OrganizationBranding.InitializeAsync();
     }
 
     private void HandleDarkModeChanged() => InvokeAsync(StateHasChanged);

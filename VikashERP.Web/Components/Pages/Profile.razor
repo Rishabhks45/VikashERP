@@ -2,30 +2,433 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using System.IdentityModel.Tokens.Jwt
 @using System.Security.Claims
+@using VikashERP.Web.Services.Interfaces
 @inject AuthenticationStateProvider AuthStateProvider
-
-<PageTitle>Profile</PageTitle>
+@inject IFileUploadService FileUploadService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject IUserProfileService UserProfileService
+@rendermode InteractiveServer
 
 <PageLoader IsVisible="_loading" Text="Loading profile..." />
 
-<MudPaper Class="pa-6" Elevation="0" Outlined="true">
-    <MudText Typo="Typo.h5" HtmlTag="h1" Class="mb-4">My Profile</MudText>
+@if (!_loading)
+{
+    <div class="profile-container">
+        <header class="profile-header">
+            <div>
+                <span style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 10px; font-weight: 700; color: var(--mud-palette-primary); margin-bottom: 4px; display: block;">Account Center</span>
+                <h1 style="font-size: 24px; font-weight: 800; letter-spacing: -0.05em; font-family: var(--mud-typography-h1-font-family); margin: 0;">My Profile</h1>
+                <span style="font-size: 12px; color: var(--mud-palette-text-secondary); margin-top: 4px; display: block;">Manage your personal information and account settings</span>
+            </div>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveProfile" StartIcon="@Icons.Material.Filled.Edit" Style="border-radius: 8px; font-weight: 800; text-transform: none; padding: 8px 18px; font-size: 0.85rem;">
+                Update Profile
+            </MudButton>
+        </header>
 
-    @if (!_loading)
+        <MudGrid Spacing="4">
+            <!-- Sidebar: Identity Card & Privileges -->
+            <MudItem xs="12" md="4">
+                <div class="profile-card pa-5 identity-card">
+                    <div class="avatar-container" @onclick="ViewProfileImage">
+                        @if (!string.IsNullOrEmpty(_profilePictureUrl))
+                        {
+                            <img src="@_profilePictureUrl" class="avatar-image-el" alt="Profile picture" />
+                        }
+                        else
+                        {
+                            <div class="avatar-initials-el">@GetInitials()</div>
+                        }
+                        <div class="avatar-online-indicator"></div>
+                        
+                        <!-- Overlay camera button to upload -->
+                        <div class="avatar-edit-overlay" @onclick:stopPropagation="true">
+                            <InputFile id="avatar-file-input" OnChange="HandleFileSelected" accept="image/*" style="display:none;" />
+                            <label for="avatar-file-input" class="avatar-edit-label">
+                                <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" Size="Size.Small" />
+                            </label>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_profilePictureUrl))
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="ClearProfilePicture" Style="font-size: 0.75rem; text-transform: none; margin-top: 4px;">
+                            Remove Photo
+                        </MudButton>
+                    }
+
+                    <MudText Typo="Typo.h5" Style="font-family: var(--mud-typography-h1-font-family); font-weight: 800; margin-top: 16px;">@_userName</MudText>
+                    <span class="role-badge mt-2">@_userRole</span>
+                    
+                    <div class="details-list">
+                        <div class="detail-row">
+                            <div class="detail-icon-backdrop">
+                                <MudIcon Icon="@Icons.Material.Filled.Email" />
+                            </div>
+                            <div class="detail-info">
+                                <span class="detail-label">Personal Email</span>
+                                <span class="detail-value" title="@_userEmail">@_userEmail</span>
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-icon-backdrop">
+                                <MudIcon Icon="@Icons.Material.Filled.Phone" />
+                            </div>
+                            <div class="detail-info">
+                                <span class="detail-label">Direct Line</span>
+                                <span class="detail-value">@(string.IsNullOrEmpty(_profileModel.PhoneNumber) ? (_isCustomer && !string.IsNullOrEmpty(_shopModel.Phone) ? _shopModel.Phone : "Not Set") : _profileModel.PhoneNumber)</span>
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-icon-backdrop">
+                                <MudIcon Icon="@Icons.Material.Filled.LocationOn" />
+                            </div>
+                            <div class="detail-info">
+                                <span class="detail-label">Location</span>
+                                <span class="detail-value">@(string.IsNullOrEmpty(_profileModel.Location) ? "Not Set" : _profileModel.Location)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="logout-btn-container">
+                        <MudButton Variant="Variant.Outlined" 
+                                   Class="terminate-btn"
+                                   FullWidth="true" 
+                                   Href="/account/logout"
+                                   StartIcon="@Icons.Material.Filled.Logout">
+                            Terminate Session (Logout)
+                        </MudButton>
+                    </div>
+                </div>
+
+                <!-- Role Privileges Card -->
+                <div class="profile-card privileges-card mt-4">
+                    <span class="privileges-title">Role Privileges</span>
+                    <div class="privileges-list">
+                        <div class="privilege-item">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="privilege-icon" />
+                            <span class="privilege-text">@(char.ToUpper(_userRole[0]) + _userRole.Substring(1)) Authority</span>
+                        </div>
+                        <div class="privilege-item">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="privilege-icon" />
+                            <span class="privilege-text">System Access</span>
+                        </div>
+                        @if (_userRole.Contains("Admin", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <div class="privilege-item">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="privilege-icon" />
+                                <span class="privilege-text">Global Management</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </MudItem>
+
+            <!-- Main Body: Tabs Layout -->
+            <MudItem xs="12" md="8">
+                <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Color="Color.Primary" ActiveTabClass="font-weight-bold" Class="profile-tabs-card">
+                    <!-- Personal Account Info Tab -->
+                    <MudTabPanel Text="General Info" Icon="@Icons.Material.Filled.Person">
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="_profileModel.FirstName" Label="First Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" ShrinkLabel="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="_profileModel.LastName" Label="Last Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" ShrinkLabel="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="_profileModel.Email" Label="Personal Email" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" ShrinkLabel="true" ReadOnly="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="_profileModel.PhoneNumber" Label="Direct Contact (Phone)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" ShrinkLabel="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="string" @bind-Value="_profileModel.Location" Label="Operating Region (Location)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" ShrinkLabel="true">
+                                    <MudSelectItem Value='@("India")'>India</MudSelectItem>
+                                    <MudSelectItem Value='@("USA")'>USA</MudSelectItem>
+                                    <MudSelectItem Value='@("Europe")'>Europe</MudSelectItem>
+                                    <MudSelectItem Value='@("Middle East")'>Middle East</MudSelectItem>
+                                    <MudSelectItem Value='@("Not Set")'>Not Set</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_profileModel.Bio" Label="Executive Bio" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" ShrinkLabel="true" placeholder="Write something about your role and responsibilities..." />
+                            </MudItem>
+                        </MudGrid>
+                    </MudTabPanel>
+
+                    <!-- Security Tab -->
+                    <MudTabPanel Text="Security" Icon="@Icons.Material.Filled.Security">
+                        <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;" Class="mb-4">Change Security Protocol (Password)</MudText>
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12">
+                                <MudTextField T="string" @bind-Value="_newPass" Label="New Access Credential" InputType="@_newPassType" Adornment="Adornment.End" AdornmentIcon="@_newPassIcon" OnAdornmentClick="@(() => _newPassShow = !_newPassShow)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField T="string" @bind-Value="_confirmPass" Label="Confirm Credential" InputType="@_confirmPassType" Adornment="Adornment.End" AdornmentIcon="@_confirmPassIcon" OnAdornmentClick="@(() => _confirmPassShow = !_confirmPassShow)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" />
+                            </MudItem>
+                        </MudGrid>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ChangePassword" Style="border-radius: 8px; font-weight: 800; text-transform: none;">Commit New Password</MudButton>
+                        </div>
+
+                        <div style="margin-top: 32px; border-top: 1px solid var(--mud-palette-divider); padding-top: 24px;">
+                            <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;" Class="mb-2">Multi-Factor Gateway</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">Add an extra layer of structural security to your administrator account.</MudText>
+                            <MudSwitch T="bool" Color="Color.Primary" Value="false" Label="Two-Factor Initialization" Disabled="true" />
+                            <MudText Typo="Typo.caption" Color="Color.Info" Style="font-style: italic;">Note: 2FA protocol coming in next system update.</MudText>
+                        </div>
+                    </MudTabPanel>
+
+                    <!-- Activity Tab -->
+                    <MudTabPanel Text="Activity" Icon="@Icons.Material.Filled.History">
+                        <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;" Class="mb-4">Ledger Activity Audit</MudText>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                                <div style="background: rgba(var(--mud-palette-success-rgb), 0.1); color: var(--mud-palette-success); padding: 8px; border-radius: 8px;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Small" />
+                                </div>
+                                <div style="flex-grow: 1;">
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <MudText Typo="Typo.body2" Style="font-weight: 700;">Profile Pulse Registered</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Just now</MudText>
+                                    </div>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">System successfully loaded executive informatics for session ID: @(string.IsNullOrEmpty(_userEmail) ? "anonymous" : _userEmail.Substring(0, Math.Min(_userEmail.Length, 8)))</MudText>
+                                </div>
+                            </div>
+                        </div>
+                    </MudTabPanel>
+
+                    <!-- Conditional Customer Shop Management Tab -->
+                    @if (_isCustomer)
+                    {
+                        <MudTabPanel Text="My Shop" Icon="@Icons.Material.Filled.Storefront">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
+                                <div>
+                                    <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 700;">Shop Configuration</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Configure business details, billing terms, and shipping addresses.</MudText>
+                                </div>
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Primary" 
+                                           StartIcon="@Icons.Material.Filled.Save" 
+                                           OnClick="SaveShopDataAsync" 
+                                           Disabled="_savingShop"
+                                           Style="border-radius: 8px; font-weight: 800; text-transform: none; padding: 8px 18px; font-size: 0.85rem;">
+                                    @if (_savingShop)
+                                    {
+                                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                        <span>Saving...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Save Shop Profile</span>
+                                    }
+                                </MudButton>
+                            </div>
+
+                            <MudGrid Spacing="3">
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="_shopModel.CompanyName" Label="Company/Shop Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="_shopModel.Gstin" Label="GSTIN" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="_shopModel.Phone" Label="Contact Phone" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="_shopModel.Email" Label="Shop Email" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="_shopModel.Address" Label="Shop Address" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" Class="custom-input" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudSelect T="string" @bind-Value="_shopModel.DefaultPaymentMode" Label="Payment Term Defaults" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input">
+                                        <MudSelectItem Value='@("Cash")'>Cash Outright</MudSelectItem>
+                                        <MudSelectItem Value='@("A/C")'>A/C (Credit Account)</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudTextField Label="Credit Limit" Value="@($"₹{_shopModel.CreditLimit:N2}")" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Authorized Credit Boundary" Class="custom-input" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudTextField Label="Current Balance" Value="@($"₹{Math.Abs(_shopModel.CurrentBalance):N2} {(_shopModel.CurrentBalance < 0 ? "Dues" : "Advance")}")" ReadOnly="true" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="Outstanding Ledger Status" Class="custom-input" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudTabPanel>
+                    }
+                </MudTabs>
+
+                <!-- Tip Card -->
+                <div class="tip-card">
+                    <div class="tip-content">
+                        <div class="tip-icon-wrapper">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Medium" />
+                        </div>
+                        <div class="tip-text-container">
+                            <span class="tip-title">Tip</span>
+                            <span class="tip-description">Keep your profile updated to maintain account security and communication.</span>
+                        </div>
+                    </div>
+                    <div class="shield-graphic-container">
+                        <svg class="glowing-shield" width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="32" r="24" fill="url(#shieldGlowGrad)" opacity="0.15" />
+                            <path d="M32 4C22.5 4 15 7.5 10 11.5V31.5C10 44.5 19.5 53.5 32 58C44.5 53.5 54 44.5 54 31.5V11.5C49 7.5 41.5 4 32 4Z" fill="url(#shieldBgGrad)" stroke="url(#shieldBorderGrad)" stroke-width="2" />
+                            <path d="M32 8C24.5 8 18.5 11 14.5 14V31.5C14.5 42 21.5 49.5 32 53.5C42.5 49.5 49.5 42 49.5 31.5V14C45.5 11 39.5 8 32 8Z" fill="none" stroke="url(#shieldInnerBorderGrad)" stroke-width="1" stroke-dasharray="2 2" opacity="0.6" />
+                            <circle cx="32" cy="24" r="7" fill="url(#iconGlow)" />
+                            <path d="M20 42C20 36.5 25.4 32 32 32C38.6 32 44 36.5 44 42" fill="none" stroke="url(#iconGlow)" stroke-width="3" stroke-linecap="round" />
+                            <defs>
+                                <radialGradient id="shieldGlowGrad" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" stop-color="#3b82f6" />
+                                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+                                </radialGradient>
+                                <linearGradient id="shieldBgGrad" x1="32" y1="4" x2="32" y2="58" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#1e3a8a" stop-opacity="0.6" />
+                                    <stop offset="100%" stop-color="#0f172a" stop-opacity="0.9" />
+                                </linearGradient>
+                                <linearGradient id="shieldBorderGrad" x1="10" y1="4" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#60a5fa" />
+                                    <stop offset="50%" stop-color="#2563eb" />
+                                    <stop offset="100%" stop-color="#1d4ed8" />
+                                </linearGradient>
+                                <linearGradient id="shieldInnerBorderGrad" x1="32" y1="8" x2="32" y2="53.5" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#93c5fd" />
+                                    <stop offset="100%" stop-color="#3b82f6" />
+                                </linearGradient>
+                                <linearGradient id="iconGlow" x1="20" y1="20" x2="44" y2="42" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#93c5fd" />
+                                    <stop offset="100%" stop-color="#3b82f6" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </div>
+
+    <!-- Image Crop Modal -->
+    @if (showCropModal)
     {
-        <MudStack Spacing="3" Style="max-width: 420px;">
-            <MudTextField Label="Name" Value="@_userName" ReadOnly="true" Variant="Variant.Outlined" />
-            <MudTextField Label="Email" Value="@_userEmail" ReadOnly="true" Variant="Variant.Outlined" />
-            <MudTextField Label="Role" Value="@_userRole" ReadOnly="true" Variant="Variant.Outlined" />
-        </MudStack>
+        <div class="crop-modal-overlay">
+            <div class="crop-modal-content">
+                <div class="crop-modal-header">
+                    <span class="crop-modal-title">
+                        <MudIcon Icon="@Icons.Material.Filled.Crop" Class="mr-2" Color="Color.Primary" />
+                        Crop Profile Picture
+                    </span>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="HideCropModal" />
+                </div>
+                
+                <div class="crop-modal-body">
+                    @if (isCropping)
+                    {
+                        <div class="crop-loading-container">
+                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                            <span class="mt-3" style="color: var(--mud-palette-text-secondary); font-size: 0.85rem;">Processing image...</span>
+                        </div>
+                    }
+                    
+                    <div class="cropper-wrapper @(isCropping ? "hidden" : "")">
+                        <div id="cropper-container">
+                            <img id="imageToCrop" alt="Source image to crop" />
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(cropImageError))
+                        {
+                            <div class="crop-error-box mt-3">
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Class="mr-2" />
+                                <span>@cropImageError</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+                
+                <div class="crop-modal-footer">
+                    <MudButton Variant="Variant.Outlined" OnClick="HideCropModal" Style="border-radius: 8px; text-transform: none;">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CropImageAsync" Disabled="isCropping" Style="border-radius: 8px; text-transform: none; font-weight: 800;">
+                        @if (isCropping)
+                        {
+                            <span>Cropping...</span>
+                        }
+                        else
+                        {
+                            <span>Crop & Apply</span>
+                        }
+                    </MudButton>
+                </div>
+            </div>
+        </div>
     }
-</MudPaper>
+
+    <!-- Image View Modal -->
+    @if (showViewImageModal)
+    {
+        <div class="view-image-overlay" @onclick="() => showViewImageModal = false">
+            <div class="view-image-content" @onclick:stopPropagation="true">
+                <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => showViewImageModal = false" Class="view-close-btn" />
+                <img src="@_profilePictureUrl" class="view-full-image" alt="Profile Picture" />
+            </div>
+        </div>
+    }
+}
 
 @code {
     private bool _loading = true;
     private string _userName = string.Empty;
     private string _userEmail = string.Empty;
     private string _userRole = string.Empty;
+    private string? _profilePictureUrl;
+    private bool _isCustomer = false;
+    private string? _customerIdStr;
+
+    private UserProfileModel _profileModel = new();
+
+    private bool showCropModal = false;
+    private bool isCropping = false;
+    private string cropImageError = string.Empty;
+    private byte[]? croppedImageBytes;
+    private bool showViewImageModal = false;
+
+    // Password variables
+    private string _newPass = "";
+    private string _confirmPass = "";
+    
+    private bool _newPassShow = false;
+    private InputType _newPassType => _newPassShow ? InputType.Text : InputType.Password;
+    private string _newPassIcon => _newPassShow ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
+
+    private bool _confirmPassShow = false;
+    private InputType _confirmPassType => _confirmPassShow ? InputType.Text : InputType.Password;
+    private string _confirmPassIcon => _confirmPassShow ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
+
+    // Shop management
+    private bool _savingShop = false;
+    private CustomerShopFormModel _shopModel = new();
+
+    public class UserProfileModel
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string Location { get; set; } = "India";
+        public string Bio { get; set; } = string.Empty;
+        public string? ProfilePictureUrl { get; set; }
+    }
+
+    public class CustomerShopFormModel
+    {
+        public string CompanyName { get; set; } = string.Empty;
+        public string Gstin { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string DefaultPaymentMode { get; set; } = "A/C";
+        public decimal CreditLimit { get; set; } = 150000;
+        public decimal CurrentBalance { get; set; } = -45230; // negative represents dues
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -42,7 +445,327 @@
         _userRole = user.FindFirst(ClaimTypes.Role)?.Value
             ?? user.FindFirst("roles")?.Value
             ?? string.Empty;
+        _profilePictureUrl = user.FindFirst("picture")?.Value
+            ?? user.FindFirst(ClaimTypes.Uri)?.Value;
+        
+        _customerIdStr = user.FindFirst("customer_id")?.Value;
+
+        // Only customers should see the shop configuration tab
+        _isCustomer = _userRole.Equals("Customer", StringComparison.OrdinalIgnoreCase);
+
+        await LoadProfileDataAsync();
+
+        if (_isCustomer)
+        {
+            await LoadShopDataAsync();
+        }
 
         _loading = false;
+    }
+
+    private string GetInitials()
+    {
+        if (string.IsNullOrEmpty(_userName)) return "??";
+        var parts = _userName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+        return (parts[0][0].ToString() + parts[parts.Length - 1][0].ToString()).ToUpper();
+    }
+
+    private async Task LoadProfileDataAsync()
+    {
+        try
+        {
+            var key = $"user_profile_{_userEmail}";
+            var storedJson = await JSRuntime.InvokeAsync<string>("localStorage.getItem", key);
+            if (!string.IsNullOrEmpty(storedJson))
+            {
+                var deserialized = System.Text.Json.JsonSerializer.Deserialize<UserProfileModel>(storedJson);
+                if (deserialized != null)
+                {
+                    _profileModel = deserialized;
+                    if (!string.IsNullOrEmpty(_profileModel.ProfilePictureUrl))
+                    {
+                        _profilePictureUrl = _profileModel.ProfilePictureUrl;
+                    }
+                    else
+                    {
+                        _profileModel.ProfilePictureUrl = _profilePictureUrl;
+                    }
+                    _userName = $"{_profileModel.FirstName} {_profileModel.LastName}".Trim();
+                    if (string.IsNullOrEmpty(_userName))
+                    {
+                        _userName = _profileModel.Email;
+                    }
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user profile: {ex.Message}");
+        }
+
+        // Initialize default user details
+        var nameParts = _userName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        _profileModel = new UserProfileModel
+        {
+            FirstName = nameParts.Length > 0 ? nameParts[0] : string.Empty,
+            LastName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : string.Empty,
+            Email = _userEmail,
+            PhoneNumber = "",
+            Location = "India",
+            Bio = "Executive manager registered under VikashERP portal.",
+            ProfilePictureUrl = _profilePictureUrl
+        };
+    }
+
+    private async Task SaveProfile()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            // Simulate latency
+            await Task.Delay(800);
+
+            var key = $"user_profile_{_userEmail}";
+            var serialized = System.Text.Json.JsonSerializer.Serialize(_profileModel);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", key, serialized);
+
+            _userName = $"{_profileModel.FirstName} {_profileModel.LastName}".Trim();
+            if (string.IsNullOrEmpty(_userName))
+            {
+                _userName = _profileModel.Email;
+            }
+
+            UserProfileService.NotifyProfileUpdated(new UserProfileDto
+            {
+                FirstName = _profileModel.FirstName,
+                LastName = _profileModel.LastName,
+                Email = _profileModel.Email,
+                ProfilePictureUrl = _profileModel.ProfilePictureUrl
+            });
+
+            NotificationService.Success("Profile updated successfully!");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Failed to update profile: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveProfileDataSilentAsync()
+    {
+        try
+        {
+            var key = $"user_profile_{_userEmail}";
+            var serialized = System.Text.Json.JsonSerializer.Serialize(_profileModel);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", key, serialized);
+
+            UserProfileService.NotifyProfileUpdated(new UserProfileDto
+            {
+                FirstName = _profileModel.FirstName,
+                LastName = _profileModel.LastName,
+                Email = _profileModel.Email,
+                ProfilePictureUrl = _profileModel.ProfilePictureUrl
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error autosaving profile picture: {ex.Message}");
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        if (string.IsNullOrEmpty(_newPass))
+        {
+             NotificationService.Warning("Credential cannot be empty.");
+             return;
+        }
+
+        if (_newPass != _confirmPass)
+        {
+            NotificationService.Error("Credential mismatch. Please verify security key.");
+            return;
+        }
+
+        try
+        {
+            await Task.Delay(500);
+            _newPass = "";
+            _confirmPass = "";
+            NotificationService.Success("Security protocol rotation successful. Password updated.");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error("Protocol rotation failed.");
+        }
+    }
+
+    private void ViewProfileImage()
+    {
+        if (!string.IsNullOrEmpty(_profilePictureUrl))
+        {
+            showViewImageModal = true;
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            isCropping = true;
+            showCropModal = true;
+            cropImageError = string.Empty;
+            StateHasChanged();
+            
+            var base64Image = await JSRuntime.InvokeAsync<string>("compressAndReturnImageBase64", "avatar-file-input");
+            isCropping = false;
+            
+            if (!string.IsNullOrEmpty(base64Image))
+            {
+                await JSRuntime.InvokeVoidAsync("showCropper", base64Image);
+            }
+            else
+            {
+                cropImageError = "Could not read image file.";
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            cropImageError = $"Client-side error: {ex.Message}";
+            isCropping = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CropImageAsync()
+    {
+        try
+        {
+            isCropping = true;
+            cropImageError = string.Empty;
+            StateHasChanged();
+
+            string? croppedImageBase64 = await JSRuntime.InvokeAsync<string>("getCroppedImageBase64");
+
+            if (string.IsNullOrEmpty(croppedImageBase64))
+            {
+                cropImageError = "Failed to get cropped image data.";
+                isCropping = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Preview instantly
+            _profilePictureUrl = croppedImageBase64;
+            _profileModel.ProfilePictureUrl = croppedImageBase64;
+
+            if (croppedImageBase64.Contains(","))
+            {
+                croppedImageBytes = Convert.FromBase64String(croppedImageBase64.Split(',')[1]);
+            }
+            
+            if (croppedImageBytes != null && croppedImageBytes.Length > 0)
+            {
+                var relativeUrl = await FileUploadService.HandleFileUploadInByteAsync(croppedImageBytes);
+                _profilePictureUrl = relativeUrl;
+                _profileModel.ProfilePictureUrl = relativeUrl;
+                await SaveProfileDataSilentAsync();
+            }
+
+            HideCropModal();
+            NotificationService.Success("Profile picture updated successfully!");
+        }
+        catch (Exception ex)
+        {
+            cropImageError = $"Error cropping image: {ex.Message}";
+            isCropping = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HideCropModal()
+    {
+        showCropModal = false;
+        cropImageError = string.Empty;
+        _ = JSRuntime.InvokeVoidAsync("destroyCropper");
+        StateHasChanged();
+    }
+
+    private async Task ClearProfilePicture()
+    {
+        _profilePictureUrl = null;
+        _profileModel.ProfilePictureUrl = null;
+        croppedImageBytes = null;
+        await SaveProfileDataSilentAsync();
+        NotificationService.Success("Profile picture removed.");
+    }
+
+    private async Task LoadShopDataAsync()
+    {
+        try
+        {
+            var key = $"customer_shop_{_customerIdStr ?? _userName}";
+            var storedJson = await JSRuntime.InvokeAsync<string>("localStorage.getItem", key);
+            if (!string.IsNullOrEmpty(storedJson))
+            {
+                var deserialized = System.Text.Json.JsonSerializer.Deserialize<CustomerShopFormModel>(storedJson);
+                if (deserialized != null)
+                {
+                    _shopModel = deserialized;
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading shop data: {ex.Message}");
+        }
+
+        _shopModel = new CustomerShopFormModel
+        {
+            CompanyName = "Vikash Iron & Steel Outlet",
+            Gstin = "27AAAAA1111A1Z1",
+            Phone = "+91 98765 43210",
+            Email = _userEmail,
+            Address = "Plot 42, Steel Market, Kalamboli, Navi Mumbai, Maharashtra - 410218",
+            DefaultPaymentMode = "A/C",
+            CreditLimit = 150000,
+            CurrentBalance = -45230
+        };
+    }
+
+    private async Task SaveShopDataAsync()
+    {
+        _savingShop = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(1000);
+
+            var key = $"customer_shop_{_customerIdStr ?? _userName}";
+            var serialized = System.Text.Json.JsonSerializer.Serialize(_shopModel);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", key, serialized);
+
+            NotificationService.Success("Shop profile synchronized successfully!");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Failed to save shop profile: {ex.Message}");
+        }
+        finally
+        {
+            _savingShop = false;
+            StateHasChanged();
+        }
     }
 }

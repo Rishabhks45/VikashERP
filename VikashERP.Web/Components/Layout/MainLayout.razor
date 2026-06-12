@@ -86,21 +86,23 @@
                Class="app-drawer">
         <div class="app-drawer-inner">
             <div class="app-drawer-header">
-                <div class="app-drawer-brand-block">
+                <div class="sidebar-logo-container">
                     @if (!string.IsNullOrWhiteSpace(OrganizationBranding.LogoSrc))
                     {
-                        <div class="app-drawer-logo-wrap">
-                            <img src="@OrganizationBranding.LogoSrc" alt="@OrganizationBranding.Current.DisplayName" class="app-drawer-logo" />
+                        <div class="sidebar-logo-wrap">
+                            <img src="@OrganizationBranding.LogoSrc" alt="@OrganizationBranding.Current.DisplayName" class="sidebar-logo-img" loading="eager" />
                         </div>
                     }
-                    else if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.DisplayName))
-                    {
-                        <div class="app-drawer-brand">@OrganizationBranding.Current.DisplayName</div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.Tagline))
-                    {
-                        <div class="app-drawer-tagline-only">@OrganizationBranding.Current.Tagline</div>
-                    }
+                    <div class="sidebar-brand-text">
+                        @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.DisplayName))
+                        {
+                            <span class="sidebar-logo-title">@OrganizationBranding.Current.DisplayName</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.Tagline))
+                        {
+                            <span class="sidebar-logo-subtitle">@OrganizationBranding.Current.Tagline</span>
+                        }
+                    </div>
                 </div>
             </div>
 

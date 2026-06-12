@@ -1,0 +1,485 @@
+@page "/admin/staff"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IAsyncDisposable
+@using System.Net.Http.Json
+@using MudBlazor
+@using VikashERP.Web.Services.Interfaces
+@using VikashERP.Web.Models.Forms
+@using VikashERP.Web.Validation
+@inject IHttpClientFactory HttpClientFactory
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Staff Accounts</PageTitle>
+
+<PageLoader IsVisible="@_loading" Text="Syncing staff directory..." />
+
+<MudStack Class="staff-page" Spacing="4">
+    <!-- Header Hero -->
+    <div class="org-hero">
+        <MudStack Spacing="0" Class="org-hero-copy">
+            <MudText Typo="Typo.h5" HtmlTag="h1">Staff Accounts</MudText>
+            <MudText Typo="Typo.body2" Class="dashboard-subtitle org-subtitle">
+                Administer user profiles, allocate roles, reset credentials, and monitor system authentication activity.
+            </MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Filled"
+                   Class="dashboard-action-primary org-save-btn"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="OpenAddDrawer"
+                   Disabled="@_loading">
+            New Account
+        </MudButton>
+    </div>
+
+    @if (!_loading)
+    {
+        <!-- KPI Cards -->
+        <MudGrid Spacing="2" Class="dashboard-kpis">
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-blue">
+                        <MudIcon Icon="@Icons.Material.Filled.Groups" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Accounts</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@StaffList.Count</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-up">Active directory</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-green">
+                        <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Administrators</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@StaffList.Count(u => u.Role == "Super Admin")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">System owners</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-amber">
+                        <MudIcon Icon="@Icons.Material.Filled.SupportAgent" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Office & Managers</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@StaffList.Count(u => u.Role == "Back Office User" || u.Role == "Manager")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Operations</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-purple">
+                        <MudIcon Icon="@Icons.Material.Filled.Engineering" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Employees</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@StaffList.Count(u => u.Role == "Employee")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Field agents</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Main Datagrid Panel -->
+        <MudPaper Elevation="0" Class="org-tab-panel pa-6">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+                <MudTextField @bind-Value="_searchQuery"
+                               Placeholder="Search by name or email..."
+                               Adornment="Adornment.Start"
+                               AdornmentIcon="@Icons.Material.Filled.Search"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="search-bar"
+                               Immediate="true" />
+            </MudStack>
+
+            <MudDataGrid Items="@FilteredStaff" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Filterable="true" Loading="@_loading" Class="invoice-table">
+                <Columns>
+                    <TemplateColumn Title="Profile" HeaderStyle="width: 60px;">
+                        <CellTemplate>
+                            @if (!string.IsNullOrEmpty(context.Item.ProfilePictureUrl))
+                            {
+                                <img src="@context.Item.ProfilePictureUrl" class="user-cell-avatar" alt="Avatar" />
+                            }
+                            else
+                            {
+                                <div class="user-cell-initials">@GetInitials(context.Item)</div>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Name">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">@($"{context.Item.FirstName} {context.Item.LastName}".Trim())</MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                    <PropertyColumn Property="x => x.Role" Title="Role">
+                        <CellTemplate>
+                            <span class="@($"role-chip {GetRoleClass(context.Item.Role)}")">@context.Item.Role</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.LastLoginAt" Title="Last Login">
+                        <CellTemplate>
+                            @(context.Item.LastLoginAt.HasValue ? context.Item.LastLoginAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss") : "")
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            <span class="et-status @((context.Item.IsActive ? "et-status-active" : "et-status-inactive"))">
+                                <span class="et-status-dot"></span>
+                                @(context.Item.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditDrawer(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => ConfirmDeleteAsync(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudStack>
+
+<!-- Slide-out Creation & Edit Drawer -->
+@if (_drawerOpen)
+{
+    <div class="email-slide-overlay @(_drawerClosing ? "fade-out" : "fade-in")" @onclick="CloseDrawer">
+        <div class="email-slide-panel @(_drawerClosing ? "slide-out-right" : "slide-in-right")" @onclick:stopPropagation="true">
+            <div class="email-slide-panel-inner">
+                <div class="et-drawer-header">
+                    <div class="et-drawer-header-main">
+                        <div class="et-drawer-header-icon">
+                            <MudIcon Icon="@(_isNewUser ? Icons.Material.Filled.PersonAdd : Icons.Material.Filled.ManageAccounts)" />
+                        </div>
+                        <div class="et-drawer-header-copy">
+                            <h2 class="et-drawer-header-title">@(_isNewUser ? "New Staff Account" : "Modify User Profile")</h2>
+                            <p class="et-drawer-header-sub">
+                                @(_isNewUser ? "Create a new system user with login credentials." : "Update profile information or rotate key.")
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="et-drawer-close" aria-label="Close panel" @onclick="CloseDrawer">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" />
+                    </button>
+                </div>
+
+                <div class="email-slide-panel-main">
+                    <EditForm Model="@_editModel" OnValidSubmit="SaveUserAsync" Class="email-slide-panel-form" novalidate>
+                        <FluentValidationValidator />
+                        <div class="email-slide-panel-body" tabindex="-1">
+                            <MudStack Spacing="4">
+                                <MudTextField @bind-Value="_editModel.FirstName" Label="First Name *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.FirstName)" />
+                                
+                                <MudTextField @bind-Value="_editModel.LastName" Label="Last Name *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.LastName)" />
+                                
+                                <MudTextField @bind-Value="_editModel.Email" Label="Email Address *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.Email)" InputType="InputType.Email" Disabled="@(!_isNewUser)" />
+
+                                <MudSelect T="string" @bind-Value="_editModel.Role" Label="System Role *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.Role)" PopoverFixed="true">
+                                    <MudSelectItem Value="@("Super Admin")">Super Admin</MudSelectItem>
+                                    <MudSelectItem Value="@("Back Office User")">Back Office User</MudSelectItem>
+                                    <MudSelectItem Value="@("Manager")">Manager</MudSelectItem>
+                                    <MudSelectItem Value="@("Employee")">Employee</MudSelectItem>
+                                    <MudSelectItem Value="@("Customer")">Customer</MudSelectItem>
+                                </MudSelect>
+
+                                <MudSwitch T="bool" @bind-Value="_editModel.IsActive" Label="Is Active Account" Color="Color.Success" />
+
+                                <MudTextField @bind-Value="_editModel.Password" 
+                                               Label="@(_isNewUser ? "Security Key (Password) *" : "Rotate Security Key (Optional)")" 
+                                               Variant="Variant.Outlined" 
+                                               Margin="Margin.Dense" 
+                                               For="@(() => _editModel.Password)" 
+                                               InputType="InputType.Password" 
+                                               Placeholder="@(_isNewUser ? "" : "••••••••")" />
+                            </MudStack>
+                        </div>
+
+                        <div class="email-slide-panel-footer">
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton Variant="Variant.Text" Disabled="_saving" OnClick="CloseDrawer">Cancel</MudButton>
+                                <MudSpacer />
+                                <MudButton Variant="Variant.Filled"
+                                           Class="dashboard-action-primary save-btn"
+                                           ButtonType="ButtonType.Submit"
+                                           Disabled="_saving">
+                                    @(_saving ? "Synchronizing..." : (_isNewUser ? "Create Account" : "Update Profile"))
+                                </MudButton>
+                            </MudStack>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<ConfirmationModal IsVisible="@_showDeleteModal"
+                   Title="Terminate Account"
+                   Message="@($"Are you sure you want to permanently revoke system access for {_userToDelete?.FirstName} {_userToDelete?.LastName}?")"
+                   SubMessage="@(_userToDelete?.Email)"
+                   ConfirmButtonText="Revoke Access"
+                   CancelButtonText="Cancel"
+                   IsProcessing="@_deletingProcess"
+                   ProcessingText="Revoking..."
+                   OnConfirm="ExecuteDeleteAsync"
+                   OnCancel="CancelDelete" />
+
+@code {
+    private List<UserAccountDto> StaffList = [];
+    private string _searchQuery = string.Empty;
+    private bool _loading = true;
+    private bool _saving = false;
+
+    private bool _drawerOpen = false;
+    private bool _drawerClosing = false;
+    private bool _bodyScrollLocked = false;
+    private bool _isNewUser = true;
+    private UserFormModel _editModel = new();
+    private Guid _editingUserId;
+
+    private bool _showDeleteModal = false;
+    private bool _deletingProcess = false;
+    private UserAccountDto? _userToDelete = null;
+
+    private IEnumerable<UserAccountDto> FilteredStaff => 
+        string.IsNullOrWhiteSpace(_searchQuery) 
+            ? StaffList 
+            : StaffList.Where(u => 
+                u.FirstName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                u.LastName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                u.Email.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            var client = HttpClientFactory.CreateClient("VikashERP.Api");
+            var result = await client.GetFromJsonAsync<List<UserAccountDto>>("api/users");
+            if (result is not null)
+            {
+                StaffList = result;
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Failed to sync staff directory: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OpenAddDrawer()
+    {
+        _editModel = new UserFormModel { Role = "Employee", IsNewUser = true, IsActive = true };
+        _isNewUser = true;
+        _drawerOpen = true;
+    }
+
+    private void OpenEditDrawer(UserAccountDto user)
+    {
+        _editModel = new UserFormModel
+        {
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Role = user.Role,
+            Password = string.Empty,
+            IsNewUser = false,
+            IsActive = user.IsActive
+        };
+        _editingUserId = user.Id;
+        _isNewUser = false;
+        _drawerOpen = true;
+    }
+
+    private async Task CloseDrawer()
+    {
+        if (_drawerClosing)
+            return;
+
+        _drawerClosing = true;
+        StateHasChanged();
+        await Task.Delay(300);
+        _drawerOpen = false;
+        _drawerClosing = false;
+        _editModel = new UserFormModel();
+    }
+
+    private async Task SaveUserAsync()
+    {
+        _saving = true;
+        StateHasChanged();
+        try
+        {
+            var client = HttpClientFactory.CreateClient("VikashERP.Api");
+            
+            if (_isNewUser)
+            {
+                if (string.IsNullOrWhiteSpace(_editModel.Password))
+                {
+                    NotificationService.Warning("Password is required for new accounts.");
+                    _saving = false;
+                    return;
+                }
+
+                var response = await client.PostAsJsonAsync("api/users", _editModel);
+                if (response.IsSuccessStatusCode)
+                {
+                    NotificationService.Success("Staff account created successfully.");
+                    _drawerOpen = false;
+                    await LoadUsersAsync();
+                }
+                else
+                {
+                    var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                    NotificationService.Error(err?.Message ?? "Failed to create user.");
+                }
+            }
+            else
+            {
+                var response = await client.PutAsJsonAsync($"api/users/{_editingUserId}", _editModel);
+                if (response.IsSuccessStatusCode)
+                {
+                    NotificationService.Success("User profile synchronized.");
+                    _drawerOpen = false;
+                    await LoadUsersAsync();
+                }
+                else
+                {
+                    var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                    NotificationService.Error(err?.Message ?? "Failed to update user.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"API connection lost: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ConfirmDeleteAsync(UserAccountDto user)
+    {
+        _userToDelete = user;
+        _showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        _showDeleteModal = false;
+        _userToDelete = null;
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        if (_userToDelete is null) return;
+        _deletingProcess = true;
+        StateHasChanged();
+        try
+        {
+            var client = HttpClientFactory.CreateClient("VikashERP.Api");
+            var response = await client.DeleteAsync($"api/users/{_userToDelete.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                NotificationService.Success("Account access revoked.");
+                _showDeleteModal = false;
+                _userToDelete = null;
+                await LoadUsersAsync();
+            }
+            else
+            {
+                NotificationService.Error("Failed to delete user account.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"API execution error: {ex.Message}");
+        }
+        finally
+        {
+            _deletingProcess = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetInitials(UserAccountDto user)
+    {
+        var f = !string.IsNullOrEmpty(user.FirstName) ? user.FirstName[0].ToString() : "";
+        var l = !string.IsNullOrEmpty(user.LastName) ? user.LastName[0].ToString() : "";
+        return (f + l).ToUpper();
+    }
+
+    private string GetRoleClass(string role) => role switch
+    {
+        "Super Admin" => "role-admin",
+        "Manager" => "role-manager",
+        "Back Office User" => "role-office",
+        "Employee" => "role-employee",
+        _ => "role-customer"
+    };
+
+    public class UserAccountDto
+    {
+        public Guid Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string? ProfilePictureUrl { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime? LastLoginAt { get; set; }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var shouldLock = _drawerOpen && !_drawerClosing;
+        if (shouldLock == _bodyScrollLocked)
+            return;
+
+        _bodyScrollLocked = shouldLock;
+        await JSRuntime.InvokeVoidAsync("eval", shouldLock
+            ? "document.documentElement.classList.add('email-panel-open');document.body.classList.add('email-panel-open')"
+            : "document.documentElement.classList.remove('email-panel-open');document.body.classList.remove('email-panel-open')");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_bodyScrollLocked)
+            return;
+
+        await JSRuntime.InvokeVoidAsync("eval", "document.documentElement.classList.remove('email-panel-open');document.body.classList.remove('email-panel-open')");
+    }
+
+    public class ErrorResponse
+    {
+        public string Message { get; set; } = string.Empty;
+    }
+}

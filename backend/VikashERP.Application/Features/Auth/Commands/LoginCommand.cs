@@ -55,6 +55,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, UserLoginRespon
 
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+        user.LastLoginAt = DateTime.UtcNow;
         await _userRepository.UpdateUserAsync(user, cancellationToken);
 
         return new UserLoginResponse
