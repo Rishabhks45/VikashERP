@@ -1,6 +1,12 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 
 <div class="auth-page">
+    <MudIconButton Icon="@(DarkModeService.IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                   Class="auth-dark-toggle"
+                   Color="Color.Inherit"
+                   AriaLabel="Toggle dark mode"
+                   OnClick="@ToggleDarkMode" />
     <!-- Left Panel: Purple Gradient Branding -->
     <div class="auth-left">
         <div class="auth-brand">
@@ -53,7 +59,7 @@
 
     <!-- Right Panel: Login Form -->
     <div class="auth-right">
-        <div class="auth-right-inner">
+        <div class="auth-right-inner app-page">
             @Body
         </div>
         <div class="auth-footer-links">
@@ -63,3 +69,17 @@
         </div>
     </div>
 </div>
+
+@code {
+    [Inject] private IDarkModeService DarkModeService { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+        DarkModeService.OnChange += HandleDarkModeChanged;
+
+    private void HandleDarkModeChanged() => InvokeAsync(StateHasChanged);
+
+    private Task ToggleDarkMode() => DarkModeService.ToggleAsync();
+
+    public void Dispose() =>
+        DarkModeService.OnChange -= HandleDarkModeChanged;
+}

@@ -1,10 +1,5 @@
 @inherits LayoutComponentBase
 
-<MudThemeProvider Theme="@VikashTheme.DefaultTheme" @bind-IsDarkMode="@_isDarkMode" />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
-
 <MudLayout Class="app-layout">
     <MudAppBar Elevation="0" Fixed="true" Class="app-topbar" Dense="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
@@ -26,49 +21,57 @@
         <MudSpacer />
 
         <div class="app-topbar-actions">
-            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+            <MudIconButton Icon="@(DarkModeService.IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
                            Class="app-topbar-icon"
                            OnClick="@ToggleDarkMode" />
 
-            <MudBadge Content="3" Color="Color.Primary" Overlap="true" Class="app-topbar-badge">
-                <MudIconButton Icon="@Icons.Material.Filled.Notifications" Class="app-topbar-icon" />
-            </MudBadge>
+            <div class="notification-badge-container">
+                <MudIconButton Icon="@Icons.Material.Filled.Notifications"
+                               Color="Color.Inherit"
+                               Class="app-topbar-icon"
+                               AriaLabel="Notifications" />
+                <span class="notification-badge">3</span>
+            </div>
 
             <MudMenu AnchorOrigin="Origin.BottomRight"
                      TransformOrigin="Origin.TopRight"
                      PopoverClass="appbar-profile-popover"
-                     Class="appbar-profile-menu">
+                     Class="appbar-profile-menu"
+                     ActivationEvent="MouseEvent.MouseOver"
+                     Dense="true">
                 <ActivatorContent>
-                    <div class="appbar-profile">
-                        <MudAvatar Size="Size.Small" Color="Color.Primary" Class="appbar-avatar">@_userInitials</MudAvatar>
+                    <div class="user-avatar-trigger">
+                        @if (!string.IsNullOrEmpty(_userProfilePictureUrl))
+                        {
+                            <img src="@_userProfilePictureUrl" class="user-avatar-img" alt="Profile" />
+                        }
+                        else
+                        {
+                            <MudAvatar Color="Color.Dark" Class="user-avatar">@_userInitials</MudAvatar>
+                        }
                         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-                            <div class="appbar-profile-text">
-                                <div class="appbar-profile-name">@_userName</div>
-                                <div class="appbar-profile-role">@(!string.IsNullOrWhiteSpace(_userEmail) ? _userEmail : _userRole)</div>
+                            <div class="user-profile-details">
+                                <span class="user-profile-name">@_userName</span>
+                                <span class="user-profile-role">@_displayRole</span>
                             </div>
                         </MudHidden>
-                        <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Class="appbar-profile-chevron" />
                     </div>
                 </ActivatorContent>
                 <ChildContent>
-                    <div class="appbar-profile-menu-header">
-                        <div class="appbar-profile-menu-name">@_userName</div>
-                        @if (!string.IsNullOrWhiteSpace(_userEmail))
-                        {
-                            <div class="appbar-profile-menu-email">@_userEmail</div>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(_userRole))
-                        {
-                            <div class="appbar-profile-menu-role">@_userRole</div>
-                        }
+                    <div class="menu-profile-header">
+                        <MudText Typo="Typo.subtitle2" Class="menu-profile-username">@_userName</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@_displayRole</MudText>
                     </div>
                     <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.Person" OnClick="NavigateToProfile">
-                        Profile
+                    <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="/profile" Class="menu-item-text">
+                        My Profile
                     </MudMenuItem>
                     <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="Logout">
-                        Log out
+                    <MudMenuItem Icon="@Icons.Material.Filled.Logout"
+                                 Color="Color.Error"
+                                 Class="menu-item-text"
+                                 OnClick="@Logout">
+                        Logout
                     </MudMenuItem>
                 </ChildContent>
             </MudMenu>
@@ -117,7 +120,9 @@
 
     <MudMainContent Class="app-main">
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="app-main-container">
-            @Body
+            <div class="app-page">
+                @Body
+            </div>
         </MudContainer>
     </MudMainContent>
 </MudLayout>

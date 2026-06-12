@@ -6,14 +6,12 @@
 
 <PageTitle>Profile</PageTitle>
 
-<MudPaper Class="pa-6" Elevation="0" Outlined="true">
-    <MudText Typo="Typo.h5" Class="mb-4">My Profile</MudText>
+<PageLoader IsVisible="_loading" Text="Loading profile..." />
 
-    @if (_loading)
-    {
-        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
-    }
-    else
+<MudPaper Class="pa-6" Elevation="0" Outlined="true">
+    <MudText Typo="Typo.h5" HtmlTag="h1" Class="mb-4">My Profile</MudText>
+
+    @if (!_loading)
     {
         <MudStack Spacing="3" Style="max-width: 420px;">
             <MudTextField Label="Name" Value="@_userName" ReadOnly="true" Variant="Variant.Outlined" />

@@ -1,0 +1,100 @@
+@if (IsVisible)
+{
+    <div class="confirm-modal-overlay fade-in" @onclick="HandleCancel">
+        <MudPaper Class="confirm-modal-dialog" Elevation="12" @onclick:stopPropagation="true">
+            <div class="confirm-modal-header">
+                <div class="confirm-modal-header-main">
+                    <div class="confirm-modal-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.WarningAmber" />
+                    </div>
+                    <MudText Typo="Typo.h6" HtmlTag="h2" Class="confirm-modal-title">@Title</MudText>
+                </div>
+                <button type="button"
+                        class="confirm-modal-close"
+                        aria-label="Close"
+                        disabled="@IsProcessing"
+                        @onclick="HandleCancel">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" />
+                </button>
+            </div>
+
+            <div class="confirm-modal-body">
+                <MudText Typo="Typo.body2" Class="confirm-modal-message">
+                    @if (MessageContent is not null)
+                    {
+                        @MessageContent
+                    }
+                    else
+                    {
+                        @Message
+                    }
+                </MudText>
+                @if (!string.IsNullOrWhiteSpace(SubMessage))
+                {
+                    <MudText Typo="Typo.caption" Class="confirm-modal-submessage">@SubMessage</MudText>
+                }
+            </div>
+
+            <div class="confirm-modal-footer">
+                <MudButton Variant="Variant.Text"
+                           Disabled="@IsProcessing"
+                           OnClick="HandleCancel">
+                    @CancelButtonText
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Error"
+                           Disabled="@IsProcessing"
+                           OnClick="HandleConfirm">
+                    @if (IsProcessing)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+                        <span>@ProcessingText</span>
+                    }
+                    else
+                    {
+                        <span>@ConfirmButtonText</span>
+                    }
+                </MudButton>
+            </div>
+        </MudPaper>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+
+    [Parameter] public string Title { get; set; } = "Confirm";
+
+    [Parameter] public string Message { get; set; } = "Are you sure you want to continue?";
+
+    [Parameter] public RenderFragment? MessageContent { get; set; }
+
+    [Parameter] public string? SubMessage { get; set; }
+
+    [Parameter] public string ConfirmButtonText { get; set; } = "Delete";
+
+    [Parameter] public string CancelButtonText { get; set; } = "Cancel";
+
+    [Parameter] public string ProcessingText { get; set; } = "Deleting...";
+
+    [Parameter] public bool IsProcessing { get; set; }
+
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task HandleConfirm()
+    {
+        if (OnConfirm.HasDelegate)
+            await OnConfirm.InvokeAsync();
+    }
+
+    private async Task HandleCancel()
+    {
+        if (IsProcessing)
+            return;
+
+        if (OnCancel.HasDelegate)
+            await OnCancel.InvokeAsync();
+    }
+}

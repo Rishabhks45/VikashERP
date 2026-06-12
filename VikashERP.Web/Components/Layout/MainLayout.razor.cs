@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using VikashERP.Web.Services.Interfaces;
 
 namespace VikashERP.Web.Components.Layout;
 
@@ -9,19 +10,24 @@ public partial class MainLayout : IDisposable
 {
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+    [Inject] private IDarkModeService DarkModeService { get; set; } = default!;
 
     private bool _drawerOpen;
-    private bool _isDarkMode;
     private string _userName = "User";
     private string _userEmail = string.Empty;
     private string _userRole = string.Empty;
     private string _userInitials = "U";
+    private string? _userProfilePictureUrl;
+    private string _displayRole => string.IsNullOrWhiteSpace(_userRole) ? "Staff" : _userRole;
 
     protected override async Task OnInitializedAsync()
     {
         AuthStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+        DarkModeService.OnChange += OnDarkModeChanged;
         await LoadUserAsync();
     }
+
+    private void OnDarkModeChanged() => InvokeAsync(StateHasChanged);
 
     private async void OnAuthenticationStateChanged(Task<AuthenticationState> task)
     {
@@ -40,6 +46,7 @@ public partial class MainLayout : IDisposable
             _userEmail = string.Empty;
             _userRole = string.Empty;
             _userInitials = "U";
+            _userProfilePictureUrl = null;
             return;
         }
 
@@ -77,12 +84,13 @@ public partial class MainLayout : IDisposable
 
     private void DrawerToggle() => _drawerOpen = !_drawerOpen;
 
-    private void ToggleDarkMode() => _isDarkMode = !_isDarkMode;
-
-    private void NavigateToProfile() => Navigation.NavigateTo("/profile");
+    private Task ToggleDarkMode() => DarkModeService.ToggleAsync();
 
     private void Logout() => Navigation.NavigateTo("/account/logout", forceLoad: true);
 
-    public void Dispose() =>
+    public void Dispose()
+    {
         AuthStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        DarkModeService.OnChange -= OnDarkModeChanged;
+    }
 }

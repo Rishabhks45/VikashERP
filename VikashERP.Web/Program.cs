@@ -1,7 +1,9 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using MudBlazor.Services;
+using VikashERP.Web.Validation;
 using VikashERP.Web.Auth;
 using VikashERP.Web.Components;
 using VikashERP.Web.Services;
@@ -69,6 +71,8 @@ builder.Services.AddScoped<AuthenticationStateProvider, ServerAuthenticationStat
 builder.Services.AddScoped<TokenValidator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDarkModeService, DarkModeService>();
+builder.Services.AddValidatorsFromAssemblyContaining<LoginFormModelValidator>();
 
 var app = builder.Build();
 

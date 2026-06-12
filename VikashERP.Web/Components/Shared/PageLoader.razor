@@ -1,0 +1,24 @@
+@if (IsVisible)
+{
+    <div class="page-loader-overlay">
+        <div class="page-loader-content">
+            <div class="page-loader-pulse">
+                <div class="page-loader-ring"></div>
+                <div class="page-loader-ring-outer"></div>
+                <div class="page-loader-dot"></div>
+            </div>
+            @if (!string.IsNullOrEmpty(Text))
+            {
+                <div class="page-loader-text">@Text</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+
+    [Parameter]
+    public string Text { get; set; } = "Loading...";
+}

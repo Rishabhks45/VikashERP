@@ -11,11 +11,12 @@
 
 <PageTitle>Email Templates</PageTitle>
 
+<PageLoader IsVisible="@(_loading || _saving || _deleting)" Text="@GetLoaderText()" />
+
 <MudStack Class="email-templates-page" Spacing="3">
     <div class="et-hero">
         <div class="et-hero-copy">
-            <MudText Typo="Typo.overline" Class="dashboard-eyebrow">Notifications</MudText>
-            <MudText Typo="Typo.h4" HtmlTag="h1" Class="et-title">Email / SMS Templates</MudText>
+            <MudText Typo="Typo.h5" HtmlTag="h1" Class="et-title">Email / SMS Templates</MudText>
             <MudText Typo="Typo.body2" Class="dashboard-subtitle et-subtitle">
                 Manage email templates for password reset, welcome messages, and other notifications.
             </MudText>
@@ -64,18 +65,11 @@
     }
 
     <MudPaper Elevation="0" Class="et-panel">
-        @if (_loading)
-        {
-            <MudStack AlignItems="AlignItems.Center" Class="email-loading-state" Spacing="2">
-                <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Medium" />
-                <MudText Typo="Typo.body2">Loading templates...</MudText>
-            </MudStack>
-        }
-        else if (_loadError is not null)
+        @if (_loadError is not null)
         {
             <MudAlert Severity="Severity.Error" Class="et-alert">@_loadError</MudAlert>
         }
-        else
+        else if (!_loading)
         {
             <div class="et-toolbar">
                 <div class="et-toolbar-search">
@@ -236,13 +230,14 @@
                 </div>
 
                 <div class="email-slide-panel-main">
-                    <EditForm Model="_upsertModel" OnValidSubmit="SaveTemplateAsync" Class="email-slide-panel-form">
-                        <DataAnnotationsValidator />
+                    <EditForm Model="_upsertModel" OnValidSubmit="SaveTemplateAsync" Class="email-slide-panel-form" novalidate>
+                        <FluentValidationValidator />
                         <div class="email-slide-panel-body" tabindex="-1">
                         <MudStack Spacing="2">
                             <MudSelect T="NotificationType"
                                        Value="_upsertModel.NotificationType"
                                        ValueChanged="OnNotificationTypeChanged"
+                                       For="@(() => _upsertModel.NotificationType)"
                                        Label="Notification type"
                                        Variant="Variant.Outlined"
                                        Margin="Margin.Dense"
@@ -259,10 +254,10 @@
                                 <MudSelect T="string?"
                                            Value="@GetSelectedTemplateKey()"
                                            ValueChanged="OnTemplateKeySelected"
-                                           Label="Template key"
+                                           For="@(() => _upsertModel.TemplateKey)"
+                                           Label="Template key *"
                                            Variant="Variant.Outlined"
                                            Margin="Margin.Dense"
-                                           Required="true"
                                            Placeholder="Select template key"
                                            PopoverFixed="true"
                                            HelperText="@GetTemplateKeyHelperText()">
@@ -286,32 +281,32 @@
                             }
 
                             <MudTextField @bind-Value="_upsertModel.DisplayName"
-                                          Label="Display name"
+                                          For="@(() => _upsertModel.DisplayName)"
+                                          Label="Display name *"
                                           Variant="Variant.Outlined"
-                                          Margin="Margin.Dense"
-                                          Required="true" />
+                                          Margin="Margin.Dense" />
 
                             <MudTextField @bind-Value="_upsertModel.Description"
-                                          Label="Description"
+                                          For="@(() => _upsertModel.Description)"
+                                          Label="Description *"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
-                                          Lines="2"
-                                          Required="true" />
+                                          Lines="2" />
 
                             <MudTextField @bind-Value="_upsertModel.Subject"
                                           @bind-Value:after="ScheduleLivePreviewRefresh"
-                                          Label="Subject"
+                                          For="@(() => _upsertModel.Subject)"
+                                          Label="Subject *"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
-                                          Required="true"
                                           Immediate="true" />
 
                             <MudTextField @bind-Value="_upsertModel.Headline"
                                           @bind-Value:after="ScheduleLivePreviewRefresh"
-                                          Label="Header headline"
+                                          For="@(() => _upsertModel.Headline)"
+                                          Label="Header headline *"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
-                                          Required="true"
                                           Immediate="true" />
 
                             <MudTextField @bind-Value="_upsertModel.Preheader"
@@ -331,11 +326,11 @@
 
                             <MudTextField @bind-Value="_upsertModel.BodyHtml"
                                           @bind-Value:after="ScheduleLivePreviewRefresh"
-                                          Label="Body HTML"
+                                          For="@(() => _upsertModel.BodyHtml)"
+                                          Label="Body HTML *"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
                                           Lines="10"
-                                          Required="true"
                                           Immediate="true" />
 
                             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
@@ -453,30 +448,23 @@
     </div>
 }
 
-@if (_templateToDelete is not null)
-{
-    <div class="email-slide-overlay fade-in" @onclick="CancelDelete">
-        <MudPaper Class="email-delete-dialog" Elevation="8" @onclick:stopPropagation="true">
-            <MudText Typo="Typo.h6" HtmlTag="h2">Delete Email Template</MudText>
-            <MudText Typo="Typo.body2" Class="email-delete-message">
-                Are you sure you want to delete <strong>@_templateToDelete.DisplayName</strong>?
-            </MudText>
-            <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" Class="email-delete-actions">
-                <MudButton Variant="Variant.Text" Disabled="_deleting" OnClick="CancelDelete">Cancel</MudButton>
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Error"
-                           Disabled="_deleting"
-                           OnClick="ConfirmDeleteAsync">
-                    @(_deleting ? "Deleting..." : "Delete")
-                </MudButton>
-            </MudStack>
-        </MudPaper>
-    </div>
-}
+<ConfirmationModal IsVisible="@(_templateToDelete is not null)"
+                   Title="Delete Email Template"
+                   SubMessage="This action cannot be undone."
+                   ConfirmButtonText="Delete"
+                   CancelButtonText="Cancel"
+                   ProcessingText="Deleting..."
+                   IsProcessing="_deleting"
+                   OnConfirm="ConfirmDeleteAsync"
+                   OnCancel="CancelDelete">
+    <MessageContent>
+        Are you sure you want to delete <strong>@_templateToDelete?.DisplayName</strong>?
+    </MessageContent>
+</ConfirmationModal>
 
 @code {
     private readonly List<EmailTemplateListItem> _templates = [];
-    private UpsertEmailTemplateModel _upsertModel = new();
+    private UpsertEmailTemplateFormModel _upsertModel = new();
     private string _searchString = string.Empty;
     private string? _filterTemplateKey;
     private string _previewHtml = "<p style='padding:16px;font-family:sans-serif;color:#64748b;'>Preview will appear here.</p>";
@@ -524,6 +512,14 @@
     private int ActiveTemplateCount => _templates.Count(t => t.IsActive);
 
     private int FilteredTemplateCount => FilteredTemplates.Count();
+
+    private string GetLoaderText() => (_loading, _saving, _deleting) switch
+    {
+        (true, _, _) => "Loading templates...",
+        (_, true, _) => "Saving template...",
+        (_, _, true) => "Deleting template...",
+        _ => "Loading..."
+    };
 
     private IEnumerable<EmailTemplateListItem> FilteredTemplates
     {
@@ -614,7 +610,7 @@
     private void ShowCreatePanel()
     {
         _isCreate = true;
-        _upsertModel = new UpsertEmailTemplateModel
+        _upsertModel = new UpsertEmailTemplateFormModel
         {
             IsActive = true,
             NotificationType = NotificationType.Email
@@ -636,7 +632,7 @@
         try
         {
             var client = HttpClientFactory.CreateClient("VikashERP.Api");
-            var detail = await client.GetFromJsonAsync<EmailTemplateDetail>($"api/email-templates/{item.Id}");
+            var detail = await client.GetFromJsonAsync<EmailTemplateDetailDto>($"api/email-templates/{item.Id}");
 
             if (detail is null)
             {
@@ -645,7 +641,7 @@
             }
 
             _isCreate = false;
-            _upsertModel = UpsertEmailTemplateModel.FromDetail(detail);
+            _upsertModel = EmailTemplateDetailDto.ToFormModel(detail);
             _panelClosing = false;
             _panelVisible = true;
         }
@@ -665,7 +661,7 @@
         await Task.Delay(300);
         _panelVisible = false;
         _panelClosing = false;
-        _upsertModel = new UpsertEmailTemplateModel();
+        _upsertModel = new UpsertEmailTemplateFormModel();
     }
 
     private async Task SaveTemplateAsync()
@@ -807,7 +803,7 @@
         try
         {
             var client = HttpClientFactory.CreateClient("VikashERP.Api");
-            var detail = await client.GetFromJsonAsync<EmailTemplateDetail>($"api/email-templates/{item.Id}");
+            var detail = await client.GetFromJsonAsync<EmailTemplateDetailDto>($"api/email-templates/{item.Id}");
 
             if (detail is null)
             {
@@ -1035,64 +1031,6 @@
         public string Subject { get; set; } = string.Empty;
         public bool IsActive { get; set; }
         public DateTime UpdatedAt { get; set; }
-    }
-
-    private sealed class EmailTemplateDetail
-    {
-        public int Id { get; set; }
-        public string TemplateKey { get; set; } = string.Empty;
-        public NotificationType NotificationType { get; set; } = NotificationType.Email;
-        public string DisplayName { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string Subject { get; set; } = string.Empty;
-        public string Headline { get; set; } = string.Empty;
-        public string BodyHtml { get; set; } = string.Empty;
-        public string? Preheader { get; set; }
-        public string? ButtonLabel { get; set; }
-        public string? ButtonLinkToken { get; set; }
-        public List<string> AvailableTokens { get; set; } = [];
-        public bool IsActive { get; set; }
-    }
-
-    private sealed class UpsertEmailTemplateModel
-    {
-        public int Id { get; set; }
-        public NotificationType NotificationType { get; set; } = NotificationType.Email;
-        public string TemplateKey { get; set; } = string.Empty;
-        public string DisplayName { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string Subject { get; set; } = string.Empty;
-        public string Headline { get; set; } = string.Empty;
-        public string BodyHtml { get; set; } = string.Empty;
-        public string? Preheader { get; set; }
-        public string? ButtonLabel { get; set; }
-        public string? ButtonLinkToken { get; set; }
-        public string AvailableTokensText { get; set; } = string.Empty;
-        public List<string> AvailableTokens { get; set; } = [];
-        public bool IsActive { get; set; } = true;
-
-        public IEnumerable<string> TokenList =>
-            AvailableTokens.Count > 0
-                ? AvailableTokens
-                : AvailableTokensText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        public static UpsertEmailTemplateModel FromDetail(EmailTemplateDetail detail) => new()
-        {
-            Id = detail.Id,
-            NotificationType = detail.NotificationType,
-            TemplateKey = detail.TemplateKey,
-            DisplayName = detail.DisplayName,
-            Description = detail.Description,
-            Subject = detail.Subject,
-            Headline = detail.Headline,
-            BodyHtml = detail.BodyHtml,
-            Preheader = detail.Preheader,
-            ButtonLabel = detail.ButtonLabel,
-            ButtonLinkToken = detail.ButtonLinkToken,
-            AvailableTokens = detail.AvailableTokens,
-            AvailableTokensText = string.Join(", ", detail.AvailableTokens),
-            IsActive = detail.IsActive
-        };
     }
 
     private sealed class CreateEmailTemplateRequest

@@ -8,24 +8,39 @@ public static class VikashTheme
     {
         PaletteLight = new PaletteLight()
         {
-            Primary = "#6f42c1", // Deep purple from "SIGN IN" button
-            Secondary = "#1e293b", // Navy sidebar color
+            Primary = "#6f42c1",
+            Secondary = "#1e293b",
             AppbarBackground = "#ffffff",
-            AppbarText = "#424242",
-            Background = "#f4f6f8",
-            DrawerBackground = "#111827", // Deep navy for drawer
+            AppbarText = "#334155",
+            Background = "#f8fafc",
+            Surface = "#ffffff",
+            TextPrimary = "#0f172a",
+            TextSecondary = "#64748b",
+            Divider = "#e2e8f0",
+            LinesDefault = "#e2e8f0",
+            TableLines = "#e2e8f0",
+            DrawerBackground = "#0f172a",
             DrawerText = "#e2e8f0",
-            DrawerIcon = "#94a3b8"
+            DrawerIcon = "#94a3b8",
+            ActionDefault = "#64748b"
         },
         PaletteDark = new PaletteDark()
         {
-            Primary = "#8b5cf6",
-            Secondary = "#0f172a",
+            Primary = "#a78bfa",
+            Secondary = "#94a3b8",
             AppbarBackground = "#1e293b",
-            Background = "#0f172a",
-            DrawerBackground = "#0f172a",
-            DrawerText = "#f8fafc",
-            DrawerIcon = "#cbd5e1"
+            AppbarText = "#f1f5f9",
+            Background = "#0b1220",
+            Surface = "#1e293b",
+            TextPrimary = "#f8fafc",
+            TextSecondary = "#94a3b8",
+            Divider = "#334155",
+            LinesDefault = "#334155",
+            TableLines = "#334155",
+            DrawerBackground = "#0b1220",
+            DrawerText = "#e2e8f0",
+            DrawerIcon = "#94a3b8",
+            ActionDefault = "#cbd5e1"
         },
         LayoutProperties = new LayoutProperties()
         {
