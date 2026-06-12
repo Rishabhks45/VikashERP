@@ -17,15 +17,18 @@ public class SharedRepository : ISharedRepository
     private readonly ApplicationDbContext _context;
     private readonly IEmailSender _emailSender;
     private readonly IConfiguration _configuration;
+    private readonly IOrganizationRepository _organizationRepository;
 
     public SharedRepository(
         ApplicationDbContext context,
         IEmailSender emailSender,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IOrganizationRepository organizationRepository)
     {
         _context = context;
         _emailSender = emailSender;
         _configuration = configuration;
+        _organizationRepository = organizationRepository;
     }
 
     public Task<EmailTemplate?> GetEmailTemplateAsync(EmailTemplateType templateType, CancellationToken cancellationToken = default) =>
@@ -79,7 +82,7 @@ public class SharedRepository : ISharedRepository
         if (template is null)
             return false;
 
-        var tokens = BuildPlaceholders(placeholders);
+        var tokens = await BuildPlaceholdersAsync(placeholders, cancellationToken);
         var content = RenderTemplate(template, tokens);
         return await _emailSender.SendEmailAsync(toEmail.Trim(), content.Subject, content.HtmlBody);
     }
@@ -94,14 +97,18 @@ public class SharedRepository : ISharedRepository
             template.ButtonLinkToken,
             tokens);
 
-    private Dictionary<string, string> BuildPlaceholders(IReadOnlyDictionary<string, string>? placeholders)
+    private async Task<Dictionary<string, string>> BuildPlaceholdersAsync(
+        IReadOnlyDictionary<string, string>? placeholders,
+        CancellationToken cancellationToken)
     {
+        var organization = await _organizationRepository.GetOrCreateDefaultAsync(cancellationToken);
+
         var tokens = new Dictionary<string, string>
         {
             [EmailTemplateTokens.LoginUrl] = GetLoginUrl(),
             [EmailTemplateTokens.ExpiryMinutes] = "15",
-            [EmailTemplateTokens.ContactPhone] = _configuration["Company:ContactPhone"] ?? "+91 98765 43210",
-            [EmailTemplateTokens.ContactEmail] = _configuration["Company:ContactEmail"] ?? "support@vikashironix.com"
+            [EmailTemplateTokens.ContactPhone] = organization.Phone ?? string.Empty,
+            [EmailTemplateTokens.ContactEmail] = organization.Email ?? string.Empty
         };
 
         if (placeholders is null)

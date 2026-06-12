@@ -87,13 +87,20 @@
         <div class="app-drawer-inner">
             <div class="app-drawer-header">
                 <div class="app-drawer-brand-block">
-                    <div class="app-drawer-logo-wrap">
-                        <img src="logo.png" alt="Vikash Ironix" class="app-drawer-logo" />
-                    </div>
-                    <div class="app-drawer-brand-text">
-                        <div class="app-drawer-brand">Vikash Ironix</div>
-                        <div class="app-drawer-tagline">Enterprise ERP</div>
-                    </div>
+                    @if (!string.IsNullOrWhiteSpace(OrganizationBranding.LogoSrc))
+                    {
+                        <div class="app-drawer-logo-wrap">
+                            <img src="@OrganizationBranding.LogoSrc" alt="@OrganizationBranding.Current.DisplayName" class="app-drawer-logo" />
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.DisplayName))
+                    {
+                        <div class="app-drawer-brand">@OrganizationBranding.Current.DisplayName</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.Tagline))
+                    {
+                        <div class="app-drawer-tagline-only">@OrganizationBranding.Current.Tagline</div>
+                    }
                 </div>
             </div>
 

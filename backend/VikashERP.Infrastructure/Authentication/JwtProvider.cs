@@ -43,7 +43,7 @@ public class JwtProvider : IJwtProvider
         };
     }
 
-    public string GenerateToken(Guid userId, string email, string userName, string role)
+    public string GenerateToken(Guid userId, string email, string userName, string role, string? profilePictureUrl = null, int? customerId = null)
     {
         var claims = new List<Claim>
         {
@@ -54,6 +54,12 @@ public class JwtProvider : IJwtProvider
             new(ClaimTypes.Role, role),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (!string.IsNullOrWhiteSpace(profilePictureUrl))
+            claims.Add(new Claim("picture", profilePictureUrl));
+
+        if (customerId.HasValue)
+            claims.Add(new Claim("customer_id", customerId.Value.ToString()));
 
         var credentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
 

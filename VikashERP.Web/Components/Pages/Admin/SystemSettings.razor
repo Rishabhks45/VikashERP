@@ -1,0 +1,459 @@
+@page "/admin/system"
+@using System.Net.Http.Json
+@using VikashERP.Web.Models.Forms
+@using VikashERP.Web.Services.Interfaces
+@inject IHttpClientFactory HttpClientFactory
+@inject INotificationService NotificationService
+@inject IOrganizationBrandingService OrganizationBranding
+@inject IFileUploadService FileUploadService
+
+<PageTitle>System Dynamics</PageTitle>
+
+<PageLoader IsVisible="@(_loading || _saving)" Text="@(_saving ? "Saving configuration..." : "Loading organization settings...")" />
+
+<MudStack Class="org-settings-page" Spacing="3">
+    <div class="org-hero">
+        <MudStack Spacing="0" Class="org-hero-copy">
+            <MudText Typo="Typo.h5" HtmlTag="h1">System Dynamics</MudText>
+            <MudText Typo="Typo.body2" Class="dashboard-subtitle org-subtitle">
+                Configure company profile, website branding, notifications, and regional defaults for the entire application.
+            </MudText>
+            @if (_lastUpdated.HasValue)
+            {
+                <MudText Typo="Typo.caption" Class="org-updated">Last saved @_lastUpdated.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</MudText>
+            }
+        </MudStack>
+
+        <MudButton Variant="Variant.Filled"
+                   Class="dashboard-action-primary org-save-btn"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@(_loading || _saving || _loadError is not null)"
+                   OnClick="SaveAsync">
+            Save Configuration
+        </MudButton>
+    </div>
+
+    @if (_loadError is not null)
+    {
+        <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+    }
+    else if (!_loading)
+    {
+        <EditForm Model="@Model" OnValidSubmit="SaveAsync" novalidate>
+            <FluentValidationValidator />
+
+            <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="org-tab-panel">
+                <MudTabPanel Text="Company" Icon="@Icons.Material.Filled.Business">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.LegalName" Label="Legal name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.LegalName)" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.DisplayName" Label="Display name (website title)" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.DisplayName)" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Model.Tagline" Label="Tagline" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudTextField @bind-Value="Model.LogoUrl" Label="Logo URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                <InputFile id="logo-file-input" OnChange="@((InputFileChangeEventArgs e) => UploadBrandingFileAsync(e, "logo"))" accept="image/*" style="display:none;" />
+                                <MudIconButton HtmlTag="label" for="logo-file-input" Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" Style="margin-top: 6px;" />
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudTextField @bind-Value="Model.FaviconUrl" Label="Favicon URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                <InputFile id="favicon-file-input" OnChange="@((InputFileChangeEventArgs e) => UploadBrandingFileAsync(e, "favicon"))" accept="image/x-icon,image/png,image/jpeg" style="display:none;" />
+                                <MudIconButton HtmlTag="label" for="favicon-file-input" Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" Style="margin-top: 6px;" />
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudTextField @bind-Value="Model.LoginBackgroundUrl" Label="Login background URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                <InputFile id="background-file-input" OnChange="@((InputFileChangeEventArgs e) => UploadBrandingFileAsync(e, "background"))" accept="image/*" style="display:none;" />
+                                <MudIconButton HtmlTag="label" for="background-file-input" Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" Style="margin-top: 6px;" />
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField Value="@VikashTheme.ShellPrimary"
+                                          Label="Primary color (app theme)"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          ReadOnly="true"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Palette"
+                                          HelperText="Fixed app palette — indigo accent" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField Value="@VikashTheme.ShellSecondary"
+                                          Label="Secondary color (app theme)"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          ReadOnly="true"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Palette"
+                                          HelperText="Fixed app palette — slate sidebar & login" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Contact" Icon="@Icons.Material.Filled.ContactPhone">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.Phone" Label="Phone" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.Email" Label="Email" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.Email)" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.WebsiteUrl" Label="Website URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.WhatsAppNumber" Label="WhatsApp number" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Model.AddressLine1" Label="Address line 1" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Model.AddressLine2" Label="Address line 2" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="Model.City" Label="City" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="Model.State" Label="State" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="Model.PinCode" Label="PIN code" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.Country" Label="Country" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.Country)" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Tax & Bank" Icon="@Icons.Material.Filled.AccountBalance">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.Gstin" Label="GSTIN" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.Gstin)" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.Pan" Label="PAN" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.Pan)" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.BankName" Label="Bank name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.BankAccountName" Label="Account holder name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.BankAccountNumber" Label="Account number" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.IfscCode" Label="IFSC code" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Website & SEO" Icon="@Icons.Material.Filled.Language">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.EmailFromName" Label="Email from name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.EmailFromAddress" Label="Email from address" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.EmailFromAddress)" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Model.MetaTitle" Label="Meta title" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Model.MetaDescription" Label="Meta description" Lines="2" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Model.MetaKeywords" Label="Meta keywords" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Model.FooterText" Label="Footer text" Lines="2" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="Model.CopyrightText" Label="Copyright text" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.SocialFacebookUrl" Label="Facebook URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.SocialInstagramUrl" Label="Instagram URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.SocialLinkedInUrl" Label="LinkedIn URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.SocialYoutubeUrl" Label="YouTube URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Automation" Icon="@Icons.Material.Filled.NotificationsActive">
+                    <MudStack Spacing="2" Class="org-toggle-list">
+                        <div class="org-toggle-row">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body2" Class="org-toggle-label">Customer portal</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Allow customers to sign in and view ledger</MudText>
+                            </MudStack>
+                            <MudSwitch @bind-Value="Model.EnableCustomerPortal" Color="Color.Primary" />
+                        </div>
+                        <div class="org-toggle-row">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body2" Class="org-toggle-label">Low stock alerts</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Notify when inventory falls below threshold</MudText>
+                            </MudStack>
+                            <MudSwitch @bind-Value="Model.EnableLowStockAlerts" Color="Color.Primary" />
+                        </div>
+                        <div class="org-toggle-row">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body2" Class="org-toggle-label">Payment due reminders</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Send reminders for overdue customer balances</MudText>
+                            </MudStack>
+                            <MudSwitch @bind-Value="Model.EnablePaymentReminders" Color="Color.Primary" />
+                        </div>
+                        <div class="org-toggle-row">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body2" Class="org-toggle-label">Daily report email</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Email daily revenue summary to admins</MudText>
+                            </MudStack>
+                            <MudSwitch @bind-Value="Model.EnableDailyReportEmail" Color="Color.Primary" />
+                        </div>
+                        <div class="org-toggle-row">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body2" Class="org-toggle-label">Trade confirmations</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Real-time audit log for trade operations</MudText>
+                            </MudStack>
+                            <MudSwitch @bind-Value="Model.EnableTradeConfirmations" Color="Color.Primary" />
+                        </div>
+                        <div class="org-toggle-row">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body2" Class="org-toggle-label">Organization active</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Disable to put the portal in maintenance mode</MudText>
+                            </MudStack>
+                            <MudSwitch @bind-Value="Model.IsActive" Color="Color.Primary" />
+                        </div>
+                    </MudStack>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Regional" Icon="@Icons.Material.Filled.Public">
+                    <MudGrid Spacing="3">
+                        <MudItem xs="12" md="6">
+                            <MudSelect T="string" @bind-Value="Model.DefaultCurrency" Label="Primary currency" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.DefaultCurrency)">
+                                <MudSelectItem T="string" Value="@("INR")">INR — Indian Rupee (₹)</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("USD")">USD — US Dollar ($)</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("EUR")">EUR — Euro (€)</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudSelect T="string" @bind-Value="Model.DefaultWeightUnit" Label="Weight unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.DefaultWeightUnit)">
+                                <MudSelectItem T="string" Value="@("KG")">Kilograms (KG)</MudSelectItem>
+                                <MudSelectItem T="string" Value="@("MT")">Metric Tonnes (MT)</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.TimeZone" Label="Time zone" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="Model.DateFormat" Label="Date format" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="e.g. dd-MM-yyyy" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+            </MudTabs>
+        </EditForm>
+    }
+</MudStack>
+
+@code {
+    private OrganizationFormModel Model { get; set; } = new();
+    private bool _loading = true;
+    private bool _saving;
+    private string? _loadError;
+    private DateTime? _lastUpdated;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _loadError = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("VikashERP.Api");
+            var dto = await client.GetFromJsonAsync<OrganizationResponse>("api/organization");
+
+            if (dto is null)
+            {
+                _loadError = "Organization settings not found.";
+                return;
+            }
+
+            Model = MapFromResponse(dto);
+            _lastUpdated = dto.UpdatedAt;
+        }
+        catch (Exception ex)
+        {
+            _loadError = $"Could not load settings: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_saving)
+            return;
+
+        _saving = true;
+
+        try
+        {
+            Model.PrimaryColor = VikashTheme.ShellPrimary;
+            Model.SecondaryColor = VikashTheme.ShellSecondary;
+
+            var client = HttpClientFactory.CreateClient("VikashERP.Api");
+            var response = await client.PutAsJsonAsync("api/organization", Model);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await TryReadErrorAsync(response);
+                NotificationService.Error(error ?? "Could not save organization settings.");
+                return;
+            }
+
+            var saved = await response.Content.ReadFromJsonAsync<OrganizationResponse>();
+            if (saved is not null)
+            {
+                Model = MapFromResponse(saved);
+                _lastUpdated = saved.UpdatedAt;
+            }
+
+            NotificationService.Success("Organization settings saved.");
+            await OrganizationBranding.RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Save failed: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private static OrganizationFormModel MapFromResponse(OrganizationResponse dto) => new()
+    {
+        LegalName = dto.LegalName,
+        DisplayName = dto.DisplayName,
+        Tagline = dto.Tagline,
+        LogoUrl = dto.LogoUrl,
+        FaviconUrl = dto.FaviconUrl,
+        LoginBackgroundUrl = dto.LoginBackgroundUrl,
+        PrimaryColor = VikashTheme.ShellPrimary,
+        SecondaryColor = VikashTheme.ShellSecondary,
+        AddressLine1 = dto.AddressLine1,
+        AddressLine2 = dto.AddressLine2,
+        City = dto.City,
+        State = dto.State,
+        PinCode = dto.PinCode,
+        Country = dto.Country,
+        Phone = dto.Phone,
+        Email = dto.Email,
+        WebsiteUrl = dto.WebsiteUrl,
+        WhatsAppNumber = dto.WhatsAppNumber,
+        Gstin = dto.Gstin,
+        Pan = dto.Pan,
+        BankName = dto.BankName,
+        BankAccountName = dto.BankAccountName,
+        BankAccountNumber = dto.BankAccountNumber,
+        IfscCode = dto.IfscCode,
+        EmailFromName = dto.EmailFromName,
+        EmailFromAddress = dto.EmailFromAddress,
+        MetaTitle = dto.MetaTitle,
+        MetaDescription = dto.MetaDescription,
+        MetaKeywords = dto.MetaKeywords,
+        FooterText = dto.FooterText,
+        CopyrightText = dto.CopyrightText,
+        SocialFacebookUrl = dto.SocialFacebookUrl,
+        SocialInstagramUrl = dto.SocialInstagramUrl,
+        SocialLinkedInUrl = dto.SocialLinkedInUrl,
+        SocialYoutubeUrl = dto.SocialYoutubeUrl,
+        DefaultCurrency = dto.DefaultCurrency,
+        DefaultWeightUnit = dto.DefaultWeightUnit,
+        TimeZone = dto.TimeZone,
+        DateFormat = dto.DateFormat,
+        EnableCustomerPortal = dto.EnableCustomerPortal,
+        EnableLowStockAlerts = dto.EnableLowStockAlerts,
+        EnablePaymentReminders = dto.EnablePaymentReminders,
+        EnableDailyReportEmail = dto.EnableDailyReportEmail,
+        EnableTradeConfirmations = dto.EnableTradeConfirmations,
+        IsActive = dto.IsActive
+    };
+
+    private static async Task<string?> TryReadErrorAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var payload = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            return payload?.Message;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task UploadBrandingFileAsync(InputFileChangeEventArgs e, string type)
+    {
+        try
+        {
+            var file = e.File;
+            var validationResult = await FileUploadService.ValidateFileAsync(file);
+            if (!validationResult.IsValid)
+            {
+                NotificationService.Error(validationResult.ErrorMessage);
+                return;
+            }
+
+            var relativeUrl = await FileUploadService.HandleFileUploadAsync(file);
+            
+            if (type == "logo")
+            {
+                Model.LogoUrl = relativeUrl;
+            }
+            else if (type == "favicon")
+            {
+                Model.FaviconUrl = relativeUrl;
+            }
+            else if (type == "background")
+            {
+                Model.LoginBackgroundUrl = relativeUrl;
+            }
+
+            NotificationService.Success($"{char.ToUpper(type[0]) + type.Substring(1)} uploaded successfully.");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Upload failed: {ex.Message}");
+        }
+    }
+
+    private sealed class OrganizationResponse : OrganizationFormModel
+    {
+        public int Id { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    private sealed class ApiErrorResponse
+    {
+        public string? Message { get; set; }
+    }
+}

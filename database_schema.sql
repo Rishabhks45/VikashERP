@@ -5,6 +5,57 @@
 -- 1. MASTER MODULE & USER CONFIGURATION
 -- ============================================================================
 
+CREATE TABLE organizations (
+    id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    legal_name VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    tagline VARCHAR(500),
+    logo_url VARCHAR(500),
+    favicon_url VARCHAR(500),
+    login_background_url VARCHAR(500),
+    primary_color VARCHAR(20),
+    secondary_color VARCHAR(20),
+    address_line1 VARCHAR(255),
+    address_line2 VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    pin_code VARCHAR(20),
+    country VARCHAR(100) NOT NULL DEFAULT 'India',
+    phone VARCHAR(30),
+    email VARCHAR(255),
+    website_url VARCHAR(500),
+    whatsapp_number VARCHAR(30),
+    gstin VARCHAR(15),
+    pan VARCHAR(10),
+    bank_name VARCHAR(255),
+    bank_account_name VARCHAR(255),
+    bank_account_number VARCHAR(50),
+    ifsc_code VARCHAR(20),
+    email_from_name VARCHAR(255),
+    email_from_address VARCHAR(255),
+    meta_title VARCHAR(255),
+    meta_description VARCHAR(500),
+    meta_keywords VARCHAR(500),
+    footer_text VARCHAR(1000),
+    copyright_text VARCHAR(500),
+    social_facebook_url VARCHAR(500),
+    social_instagram_url VARCHAR(500),
+    social_linkedin_url VARCHAR(500),
+    social_youtube_url VARCHAR(500),
+    default_currency VARCHAR(10) NOT NULL DEFAULT 'INR',
+    default_weight_unit VARCHAR(10) NOT NULL DEFAULT 'KG',
+    time_zone VARCHAR(100) NOT NULL DEFAULT 'Asia/Kolkata',
+    date_format VARCHAR(30) NOT NULL DEFAULT 'dd-MM-yyyy',
+    enable_customer_portal BOOLEAN NOT NULL DEFAULT FALSE,
+    enable_low_stock_alerts BOOLEAN NOT NULL DEFAULT TRUE,
+    enable_payment_reminders BOOLEAN NOT NULL DEFAULT TRUE,
+    enable_daily_report_email BOOLEAN NOT NULL DEFAULT FALSE,
+    enable_trade_confirmations BOOLEAN NOT NULL DEFAULT TRUE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE godowns (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -26,18 +77,33 @@ CREATE TABLE suppliers (
 CREATE TABLE customers (
     id SERIAL PRIMARY KEY,
     account_number VARCHAR(20) NOT NULL UNIQUE,  -- Auto-generated AC No, e.g. CUS-2026-000001
-    name VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL DEFAULT '',
     company_name VARCHAR(255),
     phone VARCHAR(20) NOT NULL,
     email VARCHAR(255),
     gstin VARCHAR(15),
     address TEXT,
+    default_payment_mode VARCHAR(20) NOT NULL DEFAULT 'A/C', -- 'Cash' or 'A/C' (ledger / credit account)
     credit_limit DECIMAL(12, 2) DEFAULT 0.00,
     current_balance DECIMAL(12, 2) DEFAULT 0.00, -- Negative represents dues (customer owes us), positive represents advance
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE UNIQUE INDEX idx_customers_account_number ON customers (account_number);
+
+-- Links portal login accounts (Users) to ERP customer master records.
+CREATE TABLE user_customer_mappings (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,
+    customer_id INT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL
+);
+
+CREATE UNIQUE INDEX idx_user_customer_mappings_user_id ON user_customer_mappings (user_id);
+CREATE INDEX idx_user_customer_mappings_customer_id ON user_customer_mappings (customer_id);
 
 -- ============================================================================
 -- 2. PRODUCT CONFIGURATION (Multi-level Variant Structure)
@@ -54,8 +120,20 @@ CREATE TABLE products (
     category_id INT REFERENCES categories(id) ON DELETE RESTRICT,
     name VARCHAR(255) NOT NULL,
     hsn_code VARCHAR(10),
+    product_image_url VARCHAR(500),  -- Main product image URL / path
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE product_sub_images (
+    id SERIAL PRIMARY KEY,
+    product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    image_url VARCHAR(500) NOT NULL,
+    description VARCHAR(1000),
+    display_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_product_sub_images_product_id ON product_sub_images (product_id, display_order);
 
 CREATE TABLE product_variants (
     id SERIAL PRIMARY KEY,

@@ -11,6 +11,7 @@ public partial class MainLayout : IDisposable
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
     [Inject] private IDarkModeService DarkModeService { get; set; } = default!;
+    [Inject] private IOrganizationBrandingService OrganizationBranding { get; set; } = default!;
 
     private bool _drawerOpen;
     private string _userName = "User";
@@ -24,8 +25,12 @@ public partial class MainLayout : IDisposable
     {
         AuthStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
         DarkModeService.OnChange += OnDarkModeChanged;
+        OrganizationBranding.OnChange += OnBrandingChanged;
+        await OrganizationBranding.InitializeAsync();
         await LoadUserAsync();
     }
+
+    private void OnBrandingChanged() => InvokeAsync(StateHasChanged);
 
     private void OnDarkModeChanged() => InvokeAsync(StateHasChanged);
 
@@ -56,6 +61,7 @@ public partial class MainLayout : IDisposable
             ?? user.FindFirst("roles")?.Value
             ?? string.Empty;
         _userInitials = GetInitials(_userName);
+        _userProfilePictureUrl = GetClaim(user, "picture", ClaimTypes.Uri);
     }
 
     private static string? GetClaim(ClaimsPrincipal user, params string[] types)
@@ -92,5 +98,6 @@ public partial class MainLayout : IDisposable
     {
         AuthStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
         DarkModeService.OnChange -= OnDarkModeChanged;
+        OrganizationBranding.OnChange -= OnBrandingChanged;
     }
 }

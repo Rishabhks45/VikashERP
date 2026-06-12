@@ -1,0 +1,70 @@
+flowchart TB
+    subgraph AUTH["Auth & Notifications"]
+        Users["Users"]
+        PRT["PasswordResetTokens"]
+        ET["email_templates"]
+        Users --> PRT
+        ET -.->|ForgotPassword / Welcome| Users
+    end
+
+    subgraph MASTERS["Master Data"]
+        godowns["godowns"]
+        suppliers["suppliers"]
+        customers["customers<br/>(account_number)"]
+        categories["categories"]
+        products["products"]
+        product_variants["product_variants<br/>unit_pcs_to_kg"]
+        categories --> products --> product_variants
+    end
+
+    subgraph INVENTORY["Inventory Ledger"]
+        stock_ledger["stock_ledger<br/>PURCHASE / SALE / ADJUST"]
+        product_variants --> stock_ledger
+        godowns --> stock_ledger
+    end
+
+    subgraph SALES["Sales & Billing"]
+        invoices["invoices"]
+        invoice_items["invoice_items"]
+        customers --> invoices
+        invoices --> invoice_items
+        product_variants --> invoice_items
+    end
+
+    subgraph FINANCE["Financial Ledgers"]
+        customer_ledger["customer_ledger<br/>debit / credit"]
+        supplier_ledger["supplier_ledger<br/>debit / credit"]
+        customers --> customer_ledger
+        suppliers --> supplier_ledger
+    end
+
+    subgraph DELIVERY["Dispatch"]
+        deliveries["deliveries<br/>PENDING → DELIVERED"]
+        invoices --> deliveries
+    end
+
+    subgraph HR["Staff & HR"]
+        staff["staff"]
+        attendance["attendance"]
+        staff_salaries["staff_salaries"]
+        staff --> attendance
+        staff --> staff_salaries
+    end
+
+    invoices -->|"INVOICE debit"| customer_ledger
+    invoices -->|"SALE -qty"| stock_ledger
+    invoices --> deliveries
+
+    stock_ledger -.->|"PURCHASE +qty"| supplier_ledger
+
+    classDef auth fill:#ede9fe,stroke:#6f42c1,color:#1e1b4b
+    classDef master fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef ops fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef fin fill:#fef3c7,stroke:#b45309,color:#78350f
+    classDef hr fill:#f1f5f9,stroke:#64748b,color:#0f172a
+
+    class Users,PRT,ET auth
+    class godowns,suppliers,customers,categories,products,product_variants master
+    class stock_ledger,invoices,invoice_items,deliveries ops
+    class customer_ledger,supplier_ledger fin
+    class staff,attendance,staff_salaries hr

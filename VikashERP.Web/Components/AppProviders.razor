@@ -1,20 +1,38 @@
 @inject IDarkModeService DarkModeService
+@inject IOrganizationBrandingService OrganizationBranding
 @implements IDisposable
 
-<MudThemeProvider Theme="@VikashTheme.DefaultTheme"
-                  IsDarkMode="@DarkModeService.IsDarkMode"
-                  IsDarkModeChanged="OnDarkModeChanged" />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
+<PageTitle>@OrganizationBranding.PageTitle</PageTitle>
+<HeadContent>
+    @if (!string.IsNullOrWhiteSpace(OrganizationBranding.FaviconSrc))
+    {
+        <link rel="icon" type="image/png" href="@OrganizationBranding.FaviconSrc" />
+    }
+    @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.MetaDescription))
+    {
+        <meta name="description" content="@OrganizationBranding.Current.MetaDescription" />
+    }
+</HeadContent>
 
-@ChildContent
+<div class="org-branded-root" style="@OrganizationBranding.CssVariables">
+    <MudThemeProvider Theme="@OrganizationBranding.GetTheme()"
+                      IsDarkMode="@DarkModeService.IsDarkMode"
+                      IsDarkModeChanged="OnDarkModeChanged" />
+    <MudPopoverProvider />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
+
+    @ChildContent
+</div>
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    protected override void OnInitialized() =>
+    protected override void OnInitialized()
+    {
         DarkModeService.OnChange += HandleDarkModeChanged;
+        OrganizationBranding.OnChange += HandleBrandingChanged;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -22,13 +40,19 @@
             return;
 
         await DarkModeService.InitializeAsync();
+        await OrganizationBranding.InitializeAsync();
     }
 
     private void HandleDarkModeChanged() => InvokeAsync(StateHasChanged);
 
+    private void HandleBrandingChanged() => InvokeAsync(StateHasChanged);
+
     private Task OnDarkModeChanged(bool isDarkMode) =>
         DarkModeService.SetDarkModeAsync(isDarkMode);
 
-    public void Dispose() =>
+    public void Dispose()
+    {
         DarkModeService.OnChange -= HandleDarkModeChanged;
+        OrganizationBranding.OnChange -= HandleBrandingChanged;
+    }
 }

@@ -15,11 +15,16 @@ public class RefreshTokenCommand : IRequest<UserLoginResponse?>
 public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, UserLoginResponse?>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IUserCustomerMappingRepository _userCustomerMappingRepository;
     private readonly IJwtProvider _jwtProvider;
 
-    public RefreshTokenCommandHandler(IUserRepository userRepository, IJwtProvider jwtProvider)
+    public RefreshTokenCommandHandler(
+        IUserRepository userRepository,
+        IUserCustomerMappingRepository userCustomerMappingRepository,
+        IJwtProvider jwtProvider)
     {
         _userRepository = userRepository;
+        _userCustomerMappingRepository = userCustomerMappingRepository;
         _jwtProvider = jwtProvider;
     }
 
@@ -47,7 +52,9 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, U
 
         var userName = $"{user.FirstName} {user.LastName}".Trim();
         var roleName = user.Role.ToFriendlyName();
-        var token = _jwtProvider.GenerateToken(user.Id, user.Email, userName, roleName);
+        var mapping = await _userCustomerMappingRepository.GetByUserIdAsync(user.Id, cancellationToken);
+        var customerId = mapping?.CustomerId;
+        var token = _jwtProvider.GenerateToken(user.Id, user.Email, userName, roleName, user.ProfilePictureUrl, customerId);
         var refreshToken = _jwtProvider.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;
@@ -60,6 +67,8 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, U
             UserName = userName,
             Email = user.Email,
             Role = roleName,
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            CustomerId = customerId,
             Token = token,
             RefreshToken = refreshToken,
             RefreshTokenExpiry = user.RefreshTokenExpiry.Value,

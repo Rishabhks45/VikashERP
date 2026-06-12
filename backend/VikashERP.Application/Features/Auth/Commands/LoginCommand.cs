@@ -16,17 +16,20 @@ public class LoginCommand : IRequest<UserLoginResponse?>
 public class LoginCommandHandler : IRequestHandler<LoginCommand, UserLoginResponse?>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IUserCustomerMappingRepository _userCustomerMappingRepository;
     private readonly IEncryptionService _encryptionService;
     private readonly IJwtProvider _jwtProvider;
     private readonly EncryptionSettings _encryptionSettings;
 
     public LoginCommandHandler(
         IUserRepository userRepository,
+        IUserCustomerMappingRepository userCustomerMappingRepository,
         IEncryptionService encryptionService,
         IJwtProvider jwtProvider,
         Microsoft.Extensions.Options.IOptions<EncryptionSettings> options)
     {
         _userRepository = userRepository;
+        _userCustomerMappingRepository = userCustomerMappingRepository;
         _encryptionService = encryptionService;
         _jwtProvider = jwtProvider;
         _encryptionSettings = options.Value;
@@ -45,7 +48,9 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, UserLoginRespon
 
         var userName = $"{user.FirstName} {user.LastName}".Trim();
         var roleName = user.Role.ToFriendlyName();
-        var token = _jwtProvider.GenerateToken(user.Id, user.Email, userName, roleName);
+        var mapping = await _userCustomerMappingRepository.GetByUserIdAsync(user.Id, cancellationToken);
+        var customerId = mapping?.CustomerId;
+        var token = _jwtProvider.GenerateToken(user.Id, user.Email, userName, roleName, user.ProfilePictureUrl, customerId);
         var refreshToken = _jwtProvider.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;
@@ -58,6 +63,8 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, UserLoginRespon
             UserName = userName,
             Email = user.Email,
             Role = roleName,
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            CustomerId = customerId,
             Token = token,
             RefreshToken = refreshToken,
             RefreshTokenExpiry = user.RefreshTokenExpiry.Value,

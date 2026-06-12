@@ -15,9 +15,12 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repositories.Repository<>));
         services.AddScoped<IUnitOfWork, Repositories.UnitOfWork>();
         services.AddScoped<IUserRepository, Repositories.UserRepository>();
+        services.AddScoped<IUserCustomerMappingRepository, Repositories.UserCustomerMappingRepository>();
         services.AddScoped<ICustomerRepository, Repositories.CustomerRepository>();
         services.AddScoped<IEmailTemplateRepository, Repositories.EmailTemplateRepository>();
         services.AddScoped<IEmailTemplateService, Email.EmailTemplateService>();
+        services.AddScoped<IOrganizationRepository, Repositories.OrganizationRepository>();
+        services.AddScoped<IOrganizationService, Services.OrganizationService>();
         services.AddScoped<ISharedRepository, Repositories.SharedRepository>();
 
         return services;

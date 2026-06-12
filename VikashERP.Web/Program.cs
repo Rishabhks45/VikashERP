@@ -72,6 +72,8 @@ builder.Services.AddScoped<TokenValidator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDarkModeService, DarkModeService>();
+builder.Services.AddScoped<IOrganizationBrandingService, OrganizationBrandingService>();
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddValidatorsFromAssemblyContaining<LoginFormModelValidator>();
 
 var app = builder.Build();

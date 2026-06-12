@@ -11,12 +11,14 @@ public class ApplicationDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserCustomerMapping> UserCustomerMappings => Set<UserCustomerMapping>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<Godown> Godowns => Set<Godown>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<ProductSubImage> ProductSubImages => Set<ProductSubImage>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<StockLedger> StockLedgers => Set<StockLedger>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
@@ -28,6 +30,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Attendance> Attendances => Set<Attendance>();
     public DbSet<StaffSalary> StaffSalaries => Set<StaffSalary>();
     public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
+    public DbSet<Organization> Organizations => Set<Organization>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,6 +52,7 @@ internal static class ErpSchemaConfiguration
         ConfigureDelivery(modelBuilder);
         ConfigureStaff(modelBuilder);
         ConfigureEmailTemplates(modelBuilder);
+        ConfigureOrganization(modelBuilder);
     }
 
     private static void ConfigureAuth(ModelBuilder modelBuilder)
@@ -59,6 +63,7 @@ internal static class ErpSchemaConfiguration
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.ProfilePictureUrl).HasMaxLength(500);
             entity.Property(e => e.Role)
                   .HasConversion(
                       role => role.ToFriendlyName(),
@@ -74,6 +79,22 @@ internal static class ErpSchemaConfiguration
             entity.HasOne(e => e.User)
                   .WithMany()
                   .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserCustomerMapping>(entity =>
+        {
+            entity.ToTable("UserCustomerMappings");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.HasIndex(e => e.CustomerId);
+            entity.HasOne(e => e.User)
+                  .WithOne(u => u.CustomerMapping)
+                  .HasForeignKey<UserCustomerMapping>(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Customer)
+                  .WithMany(c => c.UserMappings)
+                  .HasForeignKey(e => e.CustomerId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
     }
@@ -107,19 +128,25 @@ internal static class ErpSchemaConfiguration
 
         modelBuilder.Entity<Customer>(entity =>
         {
-            entity.ToTable("customers");
+            entity.ToTable("Customers");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.AccountNumber).HasColumnName("account_number").IsRequired().HasMaxLength(20);
-            entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(255);
-            entity.Property(e => e.CompanyName).HasColumnName("company_name").HasMaxLength(255);
-            entity.Property(e => e.Phone).HasColumnName("phone").IsRequired().HasMaxLength(20);
-            entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(255);
-            entity.Property(e => e.Gstin).HasColumnName("gstin").HasMaxLength(15);
-            entity.Property(e => e.Address).HasColumnName("address");
-            entity.Property(e => e.CreditLimit).HasColumnName("credit_limit").HasPrecision(12, 2);
-            entity.Property(e => e.CurrentBalance).HasColumnName("current_balance").HasPrecision(12, 2);
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.AccountNumber).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.CompanyName).HasMaxLength(255);
+            entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.Gstin).HasMaxLength(15);
+            entity.Property(e => e.Address).HasColumnType("text");
+            entity.Property(e => e.DefaultPaymentMode)
+                  .HasConversion(
+                      mode => mode.ToStorageValue(),
+                      value => CustomerPaymentModeExtensions.FromString(value) ?? CustomerPaymentMode.Account)
+                  .IsRequired()
+                  .HasMaxLength(20);
+            entity.Property(e => e.CreditLimit).HasPrecision(12, 2);
+            entity.Property(e => e.CurrentBalance).HasPrecision(12, 2);
+            entity.Property(e => e.CreatedAt);
             entity.HasIndex(e => e.AccountNumber).IsUnique();
         });
 
@@ -138,17 +165,28 @@ internal static class ErpSchemaConfiguration
     {
         modelBuilder.Entity<Product>(entity =>
         {
-            entity.ToTable("products");
+            entity.ToTable("Products");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CategoryId).HasColumnName("category_id");
-            entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(255);
-            entity.Property(e => e.HsnCode).HasColumnName("hsn_code").HasMaxLength(10);
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.HsnCode).HasMaxLength(10);
+            entity.Property(e => e.ProductImageUrl).HasMaxLength(500);
             entity.HasOne(e => e.Category)
                   .WithMany(c => c.Products)
                   .HasForeignKey(e => e.CategoryId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProductSubImage>(entity =>
+        {
+            entity.ToTable("ProductSubImages");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ImageUrl).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.HasIndex(e => new { e.ProductId, e.DisplayOrder });
+            entity.HasOne(e => e.Product)
+                  .WithMany(p => p.SubImages)
+                  .HasForeignKey(e => e.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ProductVariant>(entity =>
@@ -388,6 +426,54 @@ internal static class ErpSchemaConfiguration
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.HasIndex(e => new { e.TemplateKey, e.NotificationType }).IsUnique();
+        });
+    }
+
+    private static void ConfigureOrganization(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Organization>(entity =>
+        {
+            entity.ToTable("Organizations");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.LegalName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Tagline).HasMaxLength(500);
+            entity.Property(e => e.LogoUrl).HasMaxLength(500);
+            entity.Property(e => e.FaviconUrl).HasMaxLength(500);
+            entity.Property(e => e.LoginBackgroundUrl).HasMaxLength(500);
+            entity.Property(e => e.PrimaryColor).HasMaxLength(20);
+            entity.Property(e => e.SecondaryColor).HasMaxLength(20);
+            entity.Property(e => e.AddressLine1).HasMaxLength(255);
+            entity.Property(e => e.AddressLine2).HasMaxLength(255);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.State).HasMaxLength(100);
+            entity.Property(e => e.PinCode).HasMaxLength(20);
+            entity.Property(e => e.Country).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Phone).HasMaxLength(30);
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.WebsiteUrl).HasMaxLength(500);
+            entity.Property(e => e.WhatsAppNumber).HasMaxLength(30);
+            entity.Property(e => e.Gstin).HasMaxLength(15);
+            entity.Property(e => e.Pan).HasMaxLength(10);
+            entity.Property(e => e.BankName).HasMaxLength(255);
+            entity.Property(e => e.BankAccountName).HasMaxLength(255);
+            entity.Property(e => e.BankAccountNumber).HasMaxLength(50);
+            entity.Property(e => e.IfscCode).HasMaxLength(20);
+            entity.Property(e => e.EmailFromName).HasMaxLength(255);
+            entity.Property(e => e.EmailFromAddress).HasMaxLength(255);
+            entity.Property(e => e.MetaTitle).HasMaxLength(255);
+            entity.Property(e => e.MetaDescription).HasMaxLength(500);
+            entity.Property(e => e.MetaKeywords).HasMaxLength(500);
+            entity.Property(e => e.FooterText).HasMaxLength(1000);
+            entity.Property(e => e.CopyrightText).HasMaxLength(500);
+            entity.Property(e => e.SocialFacebookUrl).HasMaxLength(500);
+            entity.Property(e => e.SocialInstagramUrl).HasMaxLength(500);
+            entity.Property(e => e.SocialLinkedInUrl).HasMaxLength(500);
+            entity.Property(e => e.SocialYoutubeUrl).HasMaxLength(500);
+            entity.Property(e => e.DefaultCurrency).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.DefaultWeightUnit).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.TimeZone).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.DateFormat).IsRequired().HasMaxLength(30);
         });
     }
 }

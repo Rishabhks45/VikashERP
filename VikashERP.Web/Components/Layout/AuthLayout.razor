@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject IOrganizationBrandingService OrganizationBranding
 @implements IDisposable
 
 <div class="auth-page">
@@ -7,22 +8,27 @@
                    Color="Color.Inherit"
                    AriaLabel="Toggle dark mode"
                    OnClick="@ToggleDarkMode" />
-    <!-- Left Panel: Purple Gradient Branding -->
-    <div class="auth-left">
+    <div class="auth-left" style="@OrganizationBranding.AuthPanelStyle">
         <div class="auth-brand">
-            <img src="logo.png" alt="Vikash Ironix" style="width: 44px; height: 44px; border-radius: 10px; object-fit: cover;" />
-            <div>
-                <div class="auth-brand-name">Vikashironix</div>
-                <div class="auth-brand-tag">EXECUTIVE SUITE</div>
-            </div>
+            @if (!string.IsNullOrWhiteSpace(OrganizationBranding.LogoSrc))
+            {
+                <img src="@OrganizationBranding.LogoSrc" alt="@OrganizationBranding.Current.DisplayName" class="auth-brand-logo" />
+            }
+            else if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.DisplayName))
+            {
+                <div class="auth-brand-name">@OrganizationBranding.Current.DisplayName</div>
+            }
         </div>
 
-        <div class="auth-hero-title">
-            Manage your iron<br/>business smarter.
-        </div>
-        <div class="auth-hero-desc">
-            Complete suite for billing, inventory, payroll and customer management — all in one place.
-        </div>
+        @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.Tagline))
+        {
+            <div class="auth-hero-title">@OrganizationBranding.Current.Tagline</div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.MetaDescription))
+        {
+            <div class="auth-hero-desc">@OrganizationBranding.Current.MetaDescription</div>
+        }
 
         <div class="auth-feature-card">
             <div class="auth-feature-icon pink">
@@ -54,18 +60,22 @@
             </div>
         </div>
 
-        <div class="auth-version">v4.0.0 PRO - Enterprise</div>
+        <div class="auth-version">@(OrganizationBranding.Current.CopyrightText ?? "Enterprise ERP")</div>
     </div>
 
-    <!-- Right Panel: Login Form -->
     <div class="auth-right">
         <div class="auth-right-inner app-page">
             @Body
         </div>
         <div class="auth-footer-links">
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Support</a>
+            @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.Email))
+            {
+                <a href="mailto:@OrganizationBranding.Current.Email">Support</a>
+            }
+            @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.WebsiteUrl))
+            {
+                <a href="@OrganizationBranding.Current.WebsiteUrl" target="_blank" rel="noopener">Website</a>
+            }
         </div>
     </div>
 </div>
@@ -73,13 +83,27 @@
 @code {
     [Inject] private IDarkModeService DarkModeService { get; set; } = default!;
 
-    protected override void OnInitialized() =>
+    protected override void OnInitialized()
+    {
         DarkModeService.OnChange += HandleDarkModeChanged;
+        OrganizationBranding.OnChange += HandleBrandingChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await OrganizationBranding.InitializeAsync();
+    }
 
     private void HandleDarkModeChanged() => InvokeAsync(StateHasChanged);
 
+    private void HandleBrandingChanged() => InvokeAsync(StateHasChanged);
+
     private Task ToggleDarkMode() => DarkModeService.ToggleAsync();
 
-    public void Dispose() =>
+    public void Dispose()
+    {
         DarkModeService.OnChange -= HandleDarkModeChanged;
+        OrganizationBranding.OnChange -= HandleBrandingChanged;
+    }
 }

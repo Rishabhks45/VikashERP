@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using VikashERP.Application.Features.Auth.Commands;
 using VikashERP.Application.Features.Email.Validators;
+using VikashERP.Application.Features.Organization.Validators;
 using VikashERP.Application.Interfaces;
 using VikashERP.Infrastructure;
 using VikashERP.Infrastructure.Authentication;
@@ -30,6 +31,7 @@ builder.Services.AddSingleton<IJwtProvider, JwtProvider>();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(LoginCommand).Assembly));
 builder.Services.AddScoped<CreateEmailTemplateRequestValidator>();
 builder.Services.AddScoped<UpdateEmailTemplateRequestValidator>();
+builder.Services.AddScoped<UpdateOrganizationRequestValidator>();
 
 var jwtProvider = new JwtProvider(builder.Configuration);
 

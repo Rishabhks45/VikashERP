@@ -1,0 +1,30 @@
+flowchart TD
+    Start([Start Sale]) --> SelectCust[Select Customer<br/>customers]
+    SelectCust --> Credit{Credit OK?}
+    Credit -->|No| Reject[Block Sale]
+    Credit -->|Yes| AddItems[Add Items<br/>product_variants]
+    AddItems --> CalcWeight[Calc Weight<br/>qty × unit_pcs_to_kg]
+    CalcWeight --> GST[Calc GST<br/>CGST+SGST / IGST]
+    GST --> SaveInv[Insert invoices<br/>+ invoice_items]
+    SaveInv --> CL[Insert customer_ledger<br/>DEBIT]
+    SaveInv --> SL[Insert stock_ledger<br/>SALE -qty]
+    SaveInv --> Del[Insert deliveries<br/>PENDING]
+    CL --> Done([Complete])
+    SL --> Done
+    Del --> Done
+
+    Pay([Payment Received]) --> CL2[Insert customer_ledger<br/>CREDIT]
+    CL2 --> UpdateBal[Update customers.current_balance]
+
+    Purchase([Stock Purchase]) --> SL2[Insert stock_ledger<br/>PURCHASE +qty]
+    Purchase --> SupL[Insert supplier_ledger<br/>CREDIT]
+
+    classDef start fill:#6f42c1,stroke:#4c1d95,color:#fff
+    classDef step fill:#f8fafc,stroke:#64748b,color:#0f172a
+    classDef ledger fill:#fef3c7,stroke:#b45309,color:#78350f
+    classDef doneNode fill:#15803d,stroke:#14532d,color:#fff
+
+    class Start,Pay,Purchase start
+    class SelectCust,AddItems,CalcWeight,GST,SaveInv,Del step
+    class CL,SL,CL2,SL2,SupL,UpdateBal ledger
+    class Done doneNode
