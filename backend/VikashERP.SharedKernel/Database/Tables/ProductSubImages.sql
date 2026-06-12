@@ -1,0 +1,14 @@
+-- Table: ProductSubImages
+-- Description: Additional images for products
+
+CREATE TABLE "ProductSubImages" (
+    "Id" SERIAL PRIMARY KEY,
+    "ProductId" integer NOT NULL,
+    "ImageUrl" character varying(500) NOT NULL,
+    "Description" character varying(1000) NULL,
+    "DisplayOrder" integer NOT NULL DEFAULT 0,
+    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "FK_ProductSubImages_Products" FOREIGN KEY ("ProductId") REFERENCES "Products" ("Id") ON DELETE CASCADE
+);
+
+CREATE INDEX "IX_ProductSubImages_ProductId_DisplayOrder" ON "ProductSubImages" ("ProductId", "DisplayOrder");

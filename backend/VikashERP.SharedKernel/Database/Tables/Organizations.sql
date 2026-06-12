@@ -1,7 +1,10 @@
--- Live DB migration (Test123): organization / website configuration
+-- Table: Organizations
+-- Description: Single-tenant organization/company profile, branding, and configuration
 
-CREATE TABLE IF NOT EXISTS "Organizations" (
-    "Id" integer PRIMARY KEY DEFAULT 1 CHECK ("Id" = 1),
+CREATE TABLE "Organizations" (
+    "Id" SERIAL PRIMARY KEY,
+
+    -- Identity & Branding
     "LegalName" character varying(255) NOT NULL,
     "DisplayName" character varying(255) NOT NULL,
     "Tagline" character varying(500) NULL,
@@ -10,6 +13,8 @@ CREATE TABLE IF NOT EXISTS "Organizations" (
     "LoginBackgroundUrl" character varying(500) NULL,
     "PrimaryColor" character varying(20) NULL,
     "SecondaryColor" character varying(20) NULL,
+
+    -- Contact & Address
     "AddressLine1" character varying(255) NULL,
     "AddressLine2" character varying(255) NULL,
     "City" character varying(100) NULL,
@@ -20,53 +25,47 @@ CREATE TABLE IF NOT EXISTS "Organizations" (
     "Email" character varying(255) NULL,
     "WebsiteUrl" character varying(500) NULL,
     "WhatsAppNumber" character varying(30) NULL,
+
+    -- Tax & Banking
     "Gstin" character varying(15) NULL,
     "Pan" character varying(10) NULL,
     "BankName" character varying(255) NULL,
     "BankAccountName" character varying(255) NULL,
     "BankAccountNumber" character varying(50) NULL,
     "IfscCode" character varying(20) NULL,
+
+    -- Email Identity
     "EmailFromName" character varying(255) NULL,
     "EmailFromAddress" character varying(255) NULL,
+
+    -- SEO & Footer
     "MetaTitle" character varying(255) NULL,
     "MetaDescription" character varying(500) NULL,
     "MetaKeywords" character varying(500) NULL,
     "FooterText" character varying(1000) NULL,
     "CopyrightText" character varying(500) NULL,
+
+    -- Social Links
     "SocialFacebookUrl" character varying(500) NULL,
     "SocialInstagramUrl" character varying(500) NULL,
     "SocialLinkedInUrl" character varying(500) NULL,
     "SocialYoutubeUrl" character varying(500) NULL,
+
+    -- Regional Defaults
     "DefaultCurrency" character varying(10) NOT NULL DEFAULT 'INR',
     "DefaultWeightUnit" character varying(10) NOT NULL DEFAULT 'KG',
     "TimeZone" character varying(100) NOT NULL DEFAULT 'Asia/Kolkata',
     "DateFormat" character varying(30) NOT NULL DEFAULT 'dd-MM-yyyy',
+
+    -- Feature Toggles
     "EnableCustomerPortal" boolean NOT NULL DEFAULT FALSE,
     "EnableLowStockAlerts" boolean NOT NULL DEFAULT TRUE,
     "EnablePaymentReminders" boolean NOT NULL DEFAULT TRUE,
     "EnableDailyReportEmail" boolean NOT NULL DEFAULT FALSE,
     "EnableTradeConfirmations" boolean NOT NULL DEFAULT TRUE,
+
+    -- Meta
     "IsActive" boolean NOT NULL DEFAULT TRUE,
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "UpdatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-INSERT INTO "Organizations" (
-    "Id", "LegalName", "DisplayName", "Tagline", "Phone", "Email",
-    "AddressLine1", "City", "State", "PinCode", "PrimaryColor", "SecondaryColor", "CopyrightText"
-)
-SELECT
-    1,
-    'Vikash Iron Private Limited',
-    'Vikash Ironix',
-    'Iron & Steel ERP',
-    '+91 771 4001234',
-    'support@vikashironix.com',
-    'Plot 14, Industrial Area',
-    'Raipur',
-    'Chhattisgarh',
-    '492001',
-    '#2563eb',
-    '#0f172a',
-    '© 2026 Vikash Ironix. All rights reserved.'
-WHERE NOT EXISTS (SELECT 1 FROM "Organizations" WHERE "Id" = 1);

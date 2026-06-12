@@ -240,8 +240,8 @@
 }
 
 .sidebar-logo-wrap {
-    height: 40px;
-    width: 40px;
+    height: 35px;
+    width: 35px;
     border-radius: 10px;
     background: white;
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -269,7 +269,7 @@
 .sidebar-logo-title {
     font-family: 'Literata', 'Georgia', serif;
     font-weight: 900;
-    font-size: 20px;
+    font-size: 15px;
     color: white;
     letter-spacing: -0.01em;
     white-space: nowrap;
@@ -279,7 +279,7 @@
 }
 
 .sidebar-logo-subtitle {
-    font-size: 0.65rem;
+    font-size: 7px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
