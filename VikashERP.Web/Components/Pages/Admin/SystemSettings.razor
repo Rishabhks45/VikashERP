@@ -6,277 +6,405 @@
 @inject INotificationService NotificationService
 @inject IOrganizationBrandingService OrganizationBranding
 @inject IFileUploadService FileUploadService
+@rendermode InteractiveServer
 
-<PageTitle>System Dynamics</PageTitle>
+<PageTitle>System Settings</PageTitle>
 
-<PageLoader IsVisible="@(_loading || _saving)" Text="@(_saving ? "Saving configuration..." : "Loading organization settings...")" />
-
-<MudStack Class="org-settings-page" Spacing="3">
-    <div class="org-hero">
-        <MudStack Spacing="0" Class="org-hero-copy">
+@if (_loading || _saving)
+{
+    <div class="loader-overlay">
+        <div class="spinner"></div>
+        <p>@(_saving ? "Saving configuration..." : "Loading settings...")</p>
+    </div>
+}
+<div class="settings-layout">
+    <div class="minimal-header">
+        <div class="header-titles">
             <MudText Typo="Typo.h5" HtmlTag="h1">System Dynamics</MudText>
-            <MudText Typo="Typo.body2" Class="dashboard-subtitle org-subtitle">
-                Configure company profile, website branding, notifications, and regional defaults for the entire application.
-            </MudText>
-            @if (_lastUpdated.HasValue)
+            <MudText Typo="Typo.body2" Class="section-desc">Configure company profile, website branding, notifications, and regional defaults.</MudText>
+        </div>
+        <div class="header-actions">
+            @if (_lastUpdated.HasValue && !_isEditing)
             {
-                <MudText Typo="Typo.caption" Class="org-updated">Last saved @_lastUpdated.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</MudText>
+                <span class="last-updated">
+                    <span class="pulse-dot"></span> Last saved: @_lastUpdated.Value.ToLocalTime().ToString("MMM dd, yyyy - hh:mm tt")
+                </span>
             }
-        </MudStack>
-
-        <MudButton Variant="Variant.Filled"
-                   Class="dashboard-action-primary org-save-btn"
-                   StartIcon="@Icons.Material.Filled.Save"
-                   Disabled="@(_loading || _saving || _loadError is not null)"
-                   OnClick="SaveAsync">
-            Save Configuration
-        </MudButton>
+            
+            @if (!_isEditing)
+            {
+                <button class="btn-edit" @onclick="() => _isEditing = true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    Edit Settings
+                </button>
+            }
+            else
+            {
+                <button class="btn-cancel" @onclick="CancelEdit">Cancel</button>
+                <button class="btn-save" disabled="@(_loading || _saving || _loadError is not null)" @onclick="SaveAsync">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="action-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    @(_saving ? "Saving..." : "Save Changes")
+                </button>
+            }
+        </div>
     </div>
 
     @if (_loadError is not null)
     {
-        <MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+        <div class="alert-error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            @_loadError
+        </div>
     }
     else if (!_loading)
     {
-        <EditForm Model="@Model" OnValidSubmit="SaveAsync" novalidate>
-            <FluentValidationValidator />
+        <div class="settings-container">
+            <!-- Horizontal Navigation Tabs -->
+            <nav class="settings-tabs">
+                <button class="nav-item @(_activeTab == "General" ? "active" : "")" @onclick="@(() => SetTab("General"))">General</button>
+                <button class="nav-item @(_activeTab == "Contact" ? "active" : "")" @onclick="@(() => SetTab("Contact"))">Contact & Address</button>
+                <button class="nav-item @(_activeTab == "Tax" ? "active" : "")" @onclick="@(() => SetTab("Tax"))">Tax & Bank Details</button>
+                <button class="nav-item @(_activeTab == "Website" ? "active" : "")" @onclick="@(() => SetTab("Website"))">Website & SEO</button>
+                <button class="nav-item @(_activeTab == "Automation" ? "active" : "")" @onclick="@(() => SetTab("Automation"))">Automation</button>
+                <button class="nav-item @(_activeTab == "Regional" ? "active" : "")" @onclick="@(() => SetTab("Regional"))">Regional</button>
+            </nav>
 
-            <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="org-tab-panel">
-                <MudTabPanel Text="Company" Icon="@Icons.Material.Filled.Business">
-                    <MudGrid Spacing="3">
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.LegalName" Label="Legal name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.LegalName)" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.DisplayName" Label="Display name (website title)" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.DisplayName)" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="Model.Tagline" Label="Tagline" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudStack Row="true" AlignItems="AlignItems.Center">
-                                <MudTextField @bind-Value="Model.LogoUrl" Label="Logo URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
-                                <InputFile id="logo-file-input" OnChange="@((InputFileChangeEventArgs e) => UploadBrandingFileAsync(e, "logo"))" accept="image/*" style="display:none;" />
-                                <MudIconButton HtmlTag="label" for="logo-file-input" Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" Style="margin-top: 6px;" />
-                            </MudStack>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudStack Row="true" AlignItems="AlignItems.Center">
-                                <MudTextField @bind-Value="Model.FaviconUrl" Label="Favicon URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
-                                <InputFile id="favicon-file-input" OnChange="@((InputFileChangeEventArgs e) => UploadBrandingFileAsync(e, "favicon"))" accept="image/x-icon,image/png,image/jpeg" style="display:none;" />
-                                <MudIconButton HtmlTag="label" for="favicon-file-input" Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" Style="margin-top: 6px;" />
-                            </MudStack>
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudStack Row="true" AlignItems="AlignItems.Center">
-                                <MudTextField @bind-Value="Model.LoginBackgroundUrl" Label="Login background URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
-                                <InputFile id="background-file-input" OnChange="@((InputFileChangeEventArgs e) => UploadBrandingFileAsync(e, "background"))" accept="image/*" style="display:none;" />
-                                <MudIconButton HtmlTag="label" for="background-file-input" Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" Style="margin-top: 6px;" />
-                            </MudStack>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField Value="@VikashTheme.ShellPrimary"
-                                          Label="Primary color (app theme)"
-                                          Variant="Variant.Outlined"
-                                          Margin="Margin.Dense"
-                                          ReadOnly="true"
-                                          Adornment="Adornment.Start"
-                                          AdornmentIcon="@Icons.Material.Filled.Palette"
-                                          HelperText="Fixed app palette — indigo accent" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField Value="@VikashTheme.ShellSecondary"
-                                          Label="Secondary color (app theme)"
-                                          Variant="Variant.Outlined"
-                                          Margin="Margin.Dense"
-                                          ReadOnly="true"
-                                          Adornment="Adornment.Start"
-                                          AdornmentIcon="@Icons.Material.Filled.Palette"
-                                          HelperText="Fixed app palette — slate sidebar & login" />
-                        </MudItem>
-                    </MudGrid>
-                </MudTabPanel>
+            <!-- Main Content Area -->
+            <div class="settings-card">
+                <div class="settings-section">
+                    @if (_activeTab == "General")
+                    {
+                        <h2>Company Profile</h2>
+                        <p class="section-desc">The primary identity of your organization used in invoices and reports.</p>
+                        
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label>Legal Name</label>
+                                <input type="text" @bind="Model.LegalName" class="custom-input" placeholder="Registered Company Name" />
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label>Display Name</label>
+                                <input type="text" @bind="Model.DisplayName" class="custom-input" disabled="@(!_isEditing)" placeholder="Website Title" />
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label>Tagline</label>
+                                <input type="text" @bind="Model.Tagline" class="custom-input" disabled="@(!_isEditing)" placeholder="Brief company description" />
+                            </div>
+                        </div>
 
-                <MudTabPanel Text="Contact" Icon="@Icons.Material.Filled.ContactPhone">
-                    <MudGrid Spacing="3">
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.Phone" Label="Phone" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.Email" Label="Email" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.Email)" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.WebsiteUrl" Label="Website URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.WhatsAppNumber" Label="WhatsApp number" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="Model.AddressLine1" Label="Address line 1" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="Model.AddressLine2" Label="Address line 2" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Model.City" Label="City" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Model.State" Label="State" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="4">
-                            <MudTextField @bind-Value="Model.PinCode" Label="PIN code" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.Country" Label="Country" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.Country)" />
-                        </MudItem>
-                    </MudGrid>
-                </MudTabPanel>
+                        <h3 class="mt-8 mb-4">Branding Assets</h3>
+                        <div class="branding-grid">
+                            <div class="branding-card">
+                                <label>Logo URL</label>
+                                <div class="file-input-group">
+                                    <input type="text" @bind="Model.LogoUrl" class="custom-input" disabled="@(!_isEditing)" placeholder="https://" />
+                                    <InputFile id="logo-file" OnChange="@((e) => UploadBrandingFileAsync(e, "logo"))" accept="image/*" style="display: none;" />
+                                    <label for="logo-file" class="btn-upload">Upload</label>
+                                </div>
+                            </div>
+                            <div class="branding-card">
+                                <label>Favicon URL</label>
+                                <div class="file-input-group">
+                                    <input type="text" @bind="Model.FaviconUrl" class="custom-input" disabled="@(!_isEditing)" placeholder="https://" />
+                                    <InputFile id="favicon-file" OnChange="@((e) => UploadBrandingFileAsync(e, "favicon"))" accept="image/*" style="display: none;" />
+                                    <label for="favicon-file" class="btn-upload">Upload</label>
+                                </div>
+                            </div>
+                            <div class="branding-card">
+                                <label>Login Background</label>
+                                <div class="file-input-group">
+                                    <input type="text" @bind="Model.LoginBackgroundUrl" class="custom-input" disabled="@(!_isEditing)" placeholder="https://" />
+                                    <InputFile id="bg-file" OnChange="@((e) => UploadBrandingFileAsync(e, "background"))" accept="image/*" style="display: none;" />
+                                    <label for="bg-file" class="btn-upload" disabled="@(!_isEditing)">Upload</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Primary Color</label>
+                                <input type="color" @bind="Model.PrimaryColor" class="custom-input" disabled="@(!_isEditing)" style="padding: 0.2rem; height: 42px;" />
+                            </div>
+                            <div class="form-group">
+                                <label>Secondary Color</label>
+                                <input type="color" @bind="Model.SecondaryColor" class="custom-input" disabled="@(!_isEditing)" style="padding: 0.2rem; height: 42px;" />
+                            </div>
+                        </div>
+                    }
 
-                <MudTabPanel Text="Tax & Bank" Icon="@Icons.Material.Filled.AccountBalance">
-                    <MudGrid Spacing="3">
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.Gstin" Label="GSTIN" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.Gstin)" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.Pan" Label="PAN" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.Pan)" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.BankName" Label="Bank name" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.BankAccountName" Label="Account holder name" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.BankAccountNumber" Label="Account number" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.IfscCode" Label="IFSC code" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                    </MudGrid>
-                </MudTabPanel>
+                    @if (_activeTab == "Contact")
+                    {
+                        <h2>Contact Information</h2>
+                        <p class="section-desc">Where customers can reach you.</p>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" @bind="Model.Email" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="text" @bind="Model.Phone" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>WhatsApp Number</label>
+                                <input type="text" @bind="Model.WhatsAppNumber" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>Website URL</label>
+                                <input type="text" @bind="Model.WebsiteUrl" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                        </div>
 
-                <MudTabPanel Text="Website & SEO" Icon="@Icons.Material.Filled.Language">
-                    <MudGrid Spacing="3">
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.EmailFromName" Label="Email from name" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.EmailFromAddress" Label="Email from address" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.EmailFromAddress)" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="Model.MetaTitle" Label="Meta title" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="Model.MetaDescription" Label="Meta description" Lines="2" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="Model.MetaKeywords" Label="Meta keywords" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="Model.FooterText" Label="Footer text" Lines="2" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="Model.CopyrightText" Label="Copyright text" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.SocialFacebookUrl" Label="Facebook URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.SocialInstagramUrl" Label="Instagram URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.SocialLinkedInUrl" Label="LinkedIn URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.SocialYoutubeUrl" Label="YouTube URL" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                    </MudGrid>
-                </MudTabPanel>
+                        <h3 class="mt-8 mb-4">Corporate Address</h3>
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label>Address Line 1</label>
+                                <input type="text" @bind="Model.AddressLine1" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label>Address Line 2</label>
+                                <input type="text" @bind="Model.AddressLine2" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" @bind="Model.City" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>State / Province</label>
+                                <input type="text" @bind="Model.State" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>PIN / ZIP Code</label>
+                                <input type="text" @bind="Model.PinCode" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <input type="text" @bind="Model.Country" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                        </div>
+                    }
 
-                <MudTabPanel Text="Automation" Icon="@Icons.Material.Filled.NotificationsActive">
-                    <MudStack Spacing="2" Class="org-toggle-list">
-                        <div class="org-toggle-row">
-                            <MudStack Spacing="0">
-                                <MudText Typo="Typo.body2" Class="org-toggle-label">Customer portal</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Allow customers to sign in and view ledger</MudText>
-                            </MudStack>
-                            <MudSwitch @bind-Value="Model.EnableCustomerPortal" Color="Color.Primary" />
+                    @if (_activeTab == "Tax")
+                    {
+                        <h2>Tax & Bank Details</h2>
+                        <p class="section-desc">Financial identifiers used on invoices.</p>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>GSTIN</label>
+                                <input type="text" @bind="Model.Gstin" class="custom-input uppercase" />
+                            </div>
+                            <div class="form-group">
+                                <label>PAN</label>
+                                <input type="text" @bind="Model.Pan" class="custom-input uppercase" />
+                            </div>
+                            <div class="form-group">
+                                <label>Bank Name</label>
+                                <input type="text" @bind="Model.BankName" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>Account Holder Name</label>
+                                <input type="text" @bind="Model.BankAccountName" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>Account Number</label>
+                                <input type="text" @bind="Model.BankAccountNumber" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>IFSC Code</label>
+                                <input type="text" @bind="Model.IfscCode" class="custom-input uppercase" />
+                            </div>
                         </div>
-                        <div class="org-toggle-row">
-                            <MudStack Spacing="0">
-                                <MudText Typo="Typo.body2" Class="org-toggle-label">Low stock alerts</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Notify when inventory falls below threshold</MudText>
-                            </MudStack>
-                            <MudSwitch @bind-Value="Model.EnableLowStockAlerts" Color="Color.Primary" />
-                        </div>
-                        <div class="org-toggle-row">
-                            <MudStack Spacing="0">
-                                <MudText Typo="Typo.body2" Class="org-toggle-label">Payment due reminders</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Send reminders for overdue customer balances</MudText>
-                            </MudStack>
-                            <MudSwitch @bind-Value="Model.EnablePaymentReminders" Color="Color.Primary" />
-                        </div>
-                        <div class="org-toggle-row">
-                            <MudStack Spacing="0">
-                                <MudText Typo="Typo.body2" Class="org-toggle-label">Daily report email</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Email daily revenue summary to admins</MudText>
-                            </MudStack>
-                            <MudSwitch @bind-Value="Model.EnableDailyReportEmail" Color="Color.Primary" />
-                        </div>
-                        <div class="org-toggle-row">
-                            <MudStack Spacing="0">
-                                <MudText Typo="Typo.body2" Class="org-toggle-label">Trade confirmations</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Real-time audit log for trade operations</MudText>
-                            </MudStack>
-                            <MudSwitch @bind-Value="Model.EnableTradeConfirmations" Color="Color.Primary" />
-                        </div>
-                        <div class="org-toggle-row">
-                            <MudStack Spacing="0">
-                                <MudText Typo="Typo.body2" Class="org-toggle-label">Organization active</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Secondary">Disable to put the portal in maintenance mode</MudText>
-                            </MudStack>
-                            <MudSwitch @bind-Value="Model.IsActive" Color="Color.Primary" />
-                        </div>
-                    </MudStack>
-                </MudTabPanel>
+                    }
 
-                <MudTabPanel Text="Regional" Icon="@Icons.Material.Filled.Public">
-                    <MudGrid Spacing="3">
-                        <MudItem xs="12" md="6">
-                            <MudSelect T="string" @bind-Value="Model.DefaultCurrency" Label="Primary currency" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.DefaultCurrency)">
-                                <MudSelectItem T="string" Value="@("INR")">INR — Indian Rupee (₹)</MudSelectItem>
-                                <MudSelectItem T="string" Value="@("USD")">USD — US Dollar ($)</MudSelectItem>
-                                <MudSelectItem T="string" Value="@("EUR")">EUR — Euro (€)</MudSelectItem>
-                            </MudSelect>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudSelect T="string" @bind-Value="Model.DefaultWeightUnit" Label="Weight unit" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => Model.DefaultWeightUnit)">
-                                <MudSelectItem T="string" Value="@("KG")">Kilograms (KG)</MudSelectItem>
-                                <MudSelectItem T="string" Value="@("MT")">Metric Tonnes (MT)</MudSelectItem>
-                            </MudSelect>
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.TimeZone" Label="Time zone" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                        </MudItem>
-                        <MudItem xs="12" md="6">
-                            <MudTextField @bind-Value="Model.DateFormat" Label="Date format" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="e.g. dd-MM-yyyy" />
-                        </MudItem>
-                    </MudGrid>
-                </MudTabPanel>
-            </MudTabs>
-        </EditForm>
+                    @if (_activeTab == "Website")
+                    {
+                        <h2>Website & SEO</h2>
+                        <p class="section-desc">Control how your portal appears on search engines and social media.</p>
+                        
+                        <div class="form-grid">
+                            <div class="form-group col-span-2">
+                                <label>Meta Title</label>
+                                <input type="text" @bind="Model.MetaTitle" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label>Meta Description</label>
+                                <textarea @bind="Model.MetaDescription" class="custom-input" disabled="@(!_isEditing)" rows="3"></textarea>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label>Footer Text</label>
+                                <input type="text" @bind="Model.FooterText" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>Facebook URL</label>
+                                <input type="text" @bind="Model.SocialFacebookUrl" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>Instagram URL</label>
+                                <input type="text" @bind="Model.SocialInstagramUrl" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>LinkedIn URL</label>
+                                <input type="text" @bind="Model.SocialLinkedInUrl" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                            <div class="form-group">
+                                <label>YouTube URL</label>
+                                <input type="text" @bind="Model.SocialYoutubeUrl" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+
+                            <div class="col-span-2 mt-4">
+                                <h3>Footer Configurations</h3>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label>Footer Text</label>
+                                <textarea @bind="Model.FooterText" class="custom-input" rows="2" disabled="@(!_isEditing)"></textarea>
+                            </div>
+                            <div class="form-group col-span-2">
+                                <label>Copyright Text</label>
+                                <input type="text" @bind="Model.CopyrightText" class="custom-input" disabled="@(!_isEditing)" />
+                            </div>
+                        </div>
+                    }
+
+                    @if (_activeTab == "Automation")
+                    {
+                        <h2>Automation Preferences</h2>
+                        <p class="section-desc">Toggle system-wide behaviors.</p>
+                        
+                        <div class="form-grid">
+                            <div class="col-span-2">
+                                <h3>Email Sender Identity</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Sender Name</label>
+                                <input type="text" @bind="Model.EmailFromName" class="custom-input" disabled="@(!_isEditing)" placeholder="Vikash Iron & Steel" />
+                            </div>
+                            <div class="form-group">
+                                <label>Sender Address</label>
+                                <input type="email" @bind="Model.EmailFromAddress" class="custom-input" disabled="@(!_isEditing)" placeholder="no-reply@vikashiron.com" />
+                            </div>
+
+                            <div class="col-span-2 mt-4">
+                                <h3>System Toggles</h3>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="toggle-row @(_isEditing ? "" : "disabled")">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">Customer Portal</span>
+                                        <span class="toggle-desc">Allow customers to sign in and view ledger.</span>
+                                    </div>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" disabled="@(!_isEditing)" @bind="Model.EnableCustomerPortal" />
+                                        <span class="slider"></span>
+                                    </div>
+                                </label>
+                                
+                                <label class="toggle-row @(_isEditing ? "" : "disabled")">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">Low Stock Alerts</span>
+                                        <span class="toggle-desc">Notify when inventory falls below threshold.</span>
+                                    </div>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" disabled="@(!_isEditing)" @bind="Model.EnableLowStockAlerts" />
+                                        <span class="slider"></span>
+                                    </div>
+                                </label>
+
+                                <label class="toggle-row @(_isEditing ? "" : "disabled")">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">Payment Reminders</span>
+                                        <span class="toggle-desc">Send reminders for overdue balances.</span>
+                                    </div>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" disabled="@(!_isEditing)" @bind="Model.EnablePaymentReminders" />
+                                        <span class="slider"></span>
+                                    </div>
+                                </label>
+                                <label class="toggle-row @(_isEditing ? "" : "disabled")">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">Daily Report Email</span>
+                                        <span class="toggle-desc">Send automated daily summary reports to admins.</span>
+                                    </div>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" disabled="@(!_isEditing)" @bind="Model.EnableDailyReportEmail" />
+                                        <span class="slider"></span>
+                                    </div>
+                                </label>
+                                <label class="toggle-row @(_isEditing ? "" : "disabled")">
+                                    <div class="toggle-info">
+                                        <span class="toggle-title">Trade Confirmations</span>
+                                        <span class="toggle-desc">Automatically email trade confirmations to customers.</span>
+                                    </div>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" disabled="@(!_isEditing)" @bind="Model.EnableTradeConfirmations" />
+                                        <span class="slider"></span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    }
+
+                    @if (_activeTab == "Regional")
+                    {
+                        <h2>Regional Settings</h2>
+                        <p class="section-desc">Localization defaults.</p>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Primary Currency</label>
+                                <select @bind="Model.DefaultCurrency" class="custom-select" disabled="@(!_isEditing)">
+                                    <option value="INR">INR - Indian Rupee (₹)</option>
+                                    <option value="USD">USD - US Dollar ($)</option>
+                                    <option value="EUR">EUR - Euro (€)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Weight Unit</label>
+                                <select @bind="Model.DefaultWeightUnit" class="custom-select" disabled="@(!_isEditing)">
+                                    <option value="KG">Kilograms (KG)</option>
+                                    <option value="MT">Metric Tonnes (MT)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Time Zone</label>
+                                <input type="text" @bind="Model.TimeZone" class="custom-input" />
+                            </div>
+                            <div class="form-group">
+                                <label>Date Format</label>
+                                <input type="text" @bind="Model.DateFormat" class="custom-input" placeholder="dd-MM-yyyy" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
     }
-</MudStack>
+</div>
 
 @code {
     private OrganizationFormModel Model { get; set; } = new();
+    private OrganizationResponse? _originalDto;
     private bool _loading = true;
-    private bool _saving;
+    private bool _saving = false;
+    private bool _isEditing = false;
     private string? _loadError;
     private DateTime? _lastUpdated;
+    
+    private string _activeTab = "General";
+
+    private void SetTab(string tab)
+    {
+        _activeTab = tab;
+    }
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private void CancelEdit()
+    {
+        _isEditing = false;
+        if (_originalDto is not null)
+        {
+            Model = MapFromResponse(_originalDto);
+        }
+    }
 
     private async Task LoadAsync()
     {
@@ -294,6 +422,7 @@
                 return;
             }
 
+            _originalDto = dto;
             Model = MapFromResponse(dto);
             _lastUpdated = dto.UpdatedAt;
         }
@@ -309,16 +438,11 @@
 
     private async Task SaveAsync()
     {
-        if (_saving)
-            return;
-
+        if (_saving) return;
         _saving = true;
 
         try
         {
-            Model.PrimaryColor = VikashTheme.ShellPrimary;
-            Model.SecondaryColor = VikashTheme.ShellSecondary;
-
             var client = HttpClientFactory.CreateClient("VikashERP.Api");
             var response = await client.PutAsJsonAsync("api/organization", Model);
 
@@ -330,13 +454,19 @@
             }
 
             var saved = await response.Content.ReadFromJsonAsync<OrganizationResponse>();
-            if (saved is not null)
+            if (response.IsSuccessStatusCode)
             {
-                Model = MapFromResponse(saved);
-                _lastUpdated = saved.UpdatedAt;
+                if (saved is not null)
+                {
+                    _originalDto = saved;
+                    Model = MapFromResponse(saved);
+                    _lastUpdated = saved.UpdatedAt;
+                }
+                
+                _isEditing = false;
             }
 
-            NotificationService.Success("Organization settings saved.");
+            NotificationService.Success("Settings updated successfully.");
             await OrganizationBranding.RefreshAsync();
         }
         catch (Exception ex)
@@ -357,8 +487,8 @@
         LogoUrl = dto.LogoUrl,
         FaviconUrl = dto.FaviconUrl,
         LoginBackgroundUrl = dto.LoginBackgroundUrl,
-        PrimaryColor = VikashTheme.ShellPrimary,
-        SecondaryColor = VikashTheme.ShellSecondary,
+        PrimaryColor = dto.PrimaryColor,
+        SecondaryColor = dto.SecondaryColor,
         AddressLine1 = dto.AddressLine1,
         AddressLine2 = dto.AddressLine2,
         City = dto.City,
@@ -405,10 +535,7 @@
             var payload = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
             return payload?.Message;
         }
-        catch
-        {
-            return null;
-        }
+        catch { return null; }
     }
 
     private async Task UploadBrandingFileAsync(InputFileChangeEventArgs e, string type)
@@ -425,20 +552,11 @@
 
             var relativeUrl = await FileUploadService.HandleFileUploadAsync(file);
             
-            if (type == "logo")
-            {
-                Model.LogoUrl = relativeUrl;
-            }
-            else if (type == "favicon")
-            {
-                Model.FaviconUrl = relativeUrl;
-            }
-            else if (type == "background")
-            {
-                Model.LoginBackgroundUrl = relativeUrl;
-            }
+            if (type == "logo") Model.LogoUrl = relativeUrl;
+            else if (type == "favicon") Model.FaviconUrl = relativeUrl;
+            else if (type == "background") Model.LoginBackgroundUrl = relativeUrl;
 
-            NotificationService.Success($"{char.ToUpper(type[0]) + type.Substring(1)} uploaded successfully.");
+            NotificationService.Success($"{type} uploaded.");
         }
         catch (Exception ex)
         {
@@ -452,8 +570,5 @@
         public DateTime UpdatedAt { get; set; }
     }
 
-    private sealed class ApiErrorResponse
-    {
-        public string? Message { get; set; }
-    }
+    private sealed class ApiErrorResponse { public string? Message { get; set; } }
 }

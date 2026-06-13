@@ -69,7 +69,7 @@ internal static class ErpSchemaConfiguration
             entity.ToTable("Users");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
-            entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.Email).IsUnique().HasFilter("\"IsDeleted\" = false");
             entity.Property(e => e.ProfilePictureUrl).HasMaxLength(500);
             entity.Property(e => e.Role)
                   .HasConversion(
@@ -98,7 +98,7 @@ internal static class ErpSchemaConfiguration
             entity.ToTable("UserCustomerMappings");
             entity.HasKey(e => e.Id);
             ConfigureGuidPrimaryKey(entity, e => e.Id);
-            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.HasIndex(e => e.UserId).IsUnique().HasFilter("\"IsDeleted\" = false");
             entity.HasIndex(e => e.CustomerId);
             entity.HasOne(e => e.User)
                   .WithOne(u => u.CustomerMapping)
@@ -120,7 +120,7 @@ internal static class ErpSchemaConfiguration
             ConfigureGuidPrimaryKey(entity, e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Location).HasMaxLength(255);
-            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasIndex(e => e.Name).IsUnique().HasFilter("\"IsDeleted\" = false");
         });
 
         modelBuilder.Entity<Supplier>(entity =>
@@ -156,7 +156,7 @@ internal static class ErpSchemaConfiguration
                   .HasMaxLength(20);
             entity.Property(e => e.CreditLimit).HasPrecision(12, 2);
             entity.Property(e => e.CurrentBalance).HasPrecision(12, 2);
-            entity.HasIndex(e => e.AccountNumber).IsUnique();
+            entity.HasIndex(e => e.AccountNumber).IsUnique().HasFilter("\"IsDeleted\" = false");
         });
 
         modelBuilder.Entity<Category>(entity =>
@@ -165,7 +165,7 @@ internal static class ErpSchemaConfiguration
             entity.HasKey(e => e.Id);
             ConfigureGuidPrimaryKey(entity, e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasIndex(e => e.Name).IsUnique().HasFilter("\"IsDeleted\" = false");
         });
     }
 
@@ -207,7 +207,7 @@ internal static class ErpSchemaConfiguration
             entity.Property(e => e.Size).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Thickness).IsRequired().HasMaxLength(50);
             entity.Property(e => e.UnitPcsToKg).HasPrecision(12, 4);
-            entity.HasIndex(e => new { e.ProductId, e.Size, e.Thickness }).IsUnique();
+            entity.HasIndex(e => new { e.ProductId, e.Size, e.Thickness }).IsUnique().HasFilter("\"IsDeleted\" = false");
             entity.HasOne(e => e.Product)
                   .WithMany(p => p.Variants)
                   .HasForeignKey(e => e.ProductId)
@@ -252,7 +252,7 @@ internal static class ErpSchemaConfiguration
             entity.Property(e => e.PaidAmount).HasPrecision(12, 2);
             entity.Property(e => e.DueAmount).HasPrecision(12, 2);
             entity.Property(e => e.PaymentMode).IsRequired().HasMaxLength(50);
-            entity.HasIndex(e => e.InvoiceNumber).IsUnique();
+            entity.HasIndex(e => e.InvoiceNumber).IsUnique().HasFilter("\"IsDeleted\" = false");
             entity.HasOne(e => e.Customer)
                   .WithMany(c => c.Invoices)
                   .HasForeignKey(e => e.CustomerId)
@@ -328,7 +328,7 @@ internal static class ErpSchemaConfiguration
             entity.Property(e => e.DeliveryChallanNumber).HasMaxLength(100);
             entity.Property(e => e.LoadingCharge).HasPrecision(10, 2);
             entity.Property(e => e.FreightCharge).HasPrecision(10, 2);
-            entity.HasIndex(e => e.DeliveryChallanNumber).IsUnique();
+            entity.HasIndex(e => e.DeliveryChallanNumber).IsUnique().HasFilter("\"IsDeleted\" = false");
             entity.HasOne(e => e.Invoice)
                   .WithMany(i => i.Deliveries)
                   .HasForeignKey(e => e.InvoiceId)
@@ -348,7 +348,7 @@ internal static class ErpSchemaConfiguration
             entity.Property(e => e.Role).IsRequired().HasMaxLength(50);
             entity.Property(e => e.SalaryPerMonth).HasPrecision(10, 2);
             entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
-            entity.HasIndex(e => e.Phone).IsUnique();
+            entity.HasIndex(e => e.Phone).IsUnique().HasFilter("\"IsDeleted\" = false");
         });
 
         modelBuilder.Entity<Attendance>(entity =>
@@ -357,7 +357,7 @@ internal static class ErpSchemaConfiguration
             entity.HasKey(e => e.Id);
             ConfigureGuidPrimaryKey(entity, e => e.Id);
             entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
-            entity.HasIndex(e => new { e.StaffId, e.WorkDate }).IsUnique();
+            entity.HasIndex(e => new { e.StaffId, e.WorkDate }).IsUnique().HasFilter("\"IsDeleted\" = false");
             entity.HasOne(e => e.Staff)
                   .WithMany(s => s.AttendanceRecords)
                   .HasForeignKey(e => e.StaffId)
@@ -400,7 +400,7 @@ internal static class ErpSchemaConfiguration
             entity.Property(e => e.IsActive).HasColumnName("is_active");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
-            entity.HasIndex(e => new { e.TemplateKey, e.NotificationType }).IsUnique();
+            entity.HasIndex(e => new { e.TemplateKey, e.NotificationType }).IsUnique().HasFilter("\"IsDeleted\" = false");
         });
     }
 

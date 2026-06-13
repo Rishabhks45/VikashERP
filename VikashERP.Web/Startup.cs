@@ -86,6 +86,8 @@ public static class DependencyInjection
         builder.Services.AddScoped<IFileUploadService, FileUploadService>();
         builder.Services.AddScoped<IUserProfileService, UserProfileService>();
         builder.Services.AddScoped<ICustomerShopService, CustomerShopService>();
+        builder.Services.AddScoped<ICategoryService, CategoryService>();
+        builder.Services.AddScoped<IProductWebService, ProductWebService>();
         builder.Services.AddValidatorsFromAssemblyContaining<LoginFormModelValidator>();
     }
 

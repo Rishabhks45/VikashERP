@@ -1,0 +1,388 @@
+@page "/categories"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using MudBlazor
+@using VikashERP.Web.Models
+@using VikashERP.Web.Services.Interfaces
+@inject ICategoryService CategoryService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Material Categories</PageTitle>
+
+<div class="page-container">
+    <!-- Header Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <MudText Typo="Typo.h5" HtmlTag="h1" Class="hero-title">Product Categories</MudText>
+            <MudText Typo="Typo.body2" Class="hero-subtitle">Manage product classifications, track inventory groups, and monitor active catalogs.</MudText>
+        </div>
+        <button class="btn-primary" @onclick="OpenAddPopup">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
+            New Category
+        </button>
+    </div>
+
+    <!-- KPI Metrics -->
+    <div class="kpi-grid">
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon-wrap kpi-blue">
+                <MudIcon Icon="@Icons.Material.Filled.Category" />
+            </div>
+            <div class="kpi-info">
+                <span class="kpi-label">Total Categories</span>
+                <span class="kpi-value">@CategoryList.Count</span>
+            </div>
+        </div>
+
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon-wrap kpi-green">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" />
+            </div>
+            <div class="kpi-info">
+                <span class="kpi-label">Active Categories</span>
+                <span class="kpi-value">@CategoryList.Count(c => c.IsActive)</span>
+            </div>
+        </div>
+
+        <div class="kpi-card glass-panel">
+            <div class="kpi-icon-wrap kpi-purple">
+                <MudIcon Icon="@Icons.Material.Filled.Inventory" />
+            </div>
+            <div class="kpi-info">
+                <span class="kpi-label">Mapped Products</span>
+                <span class="kpi-value">@CategoryList.Sum(c => c.TotalProducts)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-container glass-panel">
+        <div class="table-header">
+            <MudTextField @bind-Value="_searchQuery"
+                           Placeholder="Search categories..."
+                           Adornment="Adornment.Start"
+                           AdornmentIcon="@Icons.Material.Filled.Search"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Class="search-input"
+                           Immediate="true" />
+        </div>
+
+        <MudDataGrid Items="@FilteredCategories" Hover="true" Elevation="0" Class="custom-grid" Dense="true">
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="Category Name">
+                    <CellTemplate>
+                        <div class="cell-name">@context.Item.Name</div>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.TotalProducts" Title="Products" />
+                <TemplateColumn Title="Status">
+                    <CellTemplate>
+                        <span class="status-badge @(context.Item.IsActive ? "active" : "inactive")">
+                            @(context.Item.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="MMM dd, yyyy" />
+                <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" Class="action-btn" OnClick="@(() => OpenEditPopup(context.Item))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Size="Size.Small" Color="Color.Error" Class="action-btn" OnClick="@(() => DeleteCategoryAsync(context.Item.Id))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </div>
+</div>
+
+<!-- Custom Centered Popup Modal -->
+@if (_isPopupOpen)
+{
+    <div class="modal-backdrop" @onclick="ClosePopup">
+        <div class="modal-dialog glass-panel" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon">
+                        <MudIcon Icon="@(_isNew ? Icons.Material.Filled.Category : Icons.Material.Filled.Edit)" />
+                    </div>
+                    <div>
+                        <h2 class="modal-title">@(_isNew ? "New Category" : "Edit Category")</h2>
+                        <p class="modal-subtitle">@(_isNew ? "Add a new product grouping" : "Update category details")</p>
+                    </div>
+                </div>
+                <button class="modal-close" @onclick="ClosePopup">
+                    <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <EditForm Model="@_editModel">
+                    <div class="form-group">
+                        <label class="form-label">Category Name</label>
+                        <MudTextField @bind-Value="_editModel.Name" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="E.g. TMT Bars, Cement" />
+                    </div>
+                    
+                    <div class="form-group switch-group">
+                        <div class="switch-info">
+                            <label class="form-label mb-0">Active Status</label>
+                            <span class="form-helper">Toggle visibility across the system</span>
+                        </div>
+                        <MudSwitch T="bool" @bind-Value="_editModel.IsActive" Color="Color.Primary" />
+                    </div>
+                </EditForm>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" @onclick="ClosePopup">Cancel</button>
+                <button class="btn-primary" @onclick="SaveCategoryAsync" disabled="@_isSaving">
+                    @if (_isSaving)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        @(_isNew ? "Create Category" : "Save Changes")
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .page-container { padding: 0.25rem; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+    
+    /* Typography & Colors - Using MudBlazor Theme Variables for Dark Mode Support */
+    :root {
+        --primary: var(--mud-palette-primary);
+        --primary-hover: var(--mud-palette-primary-darken);
+        --surface: var(--mud-palette-surface);
+        --text-main: var(--mud-palette-text-primary);
+        --text-muted: var(--mud-palette-text-secondary);
+        --border: var(--mud-palette-lines-default);
+        --glass-bg: color-mix(in srgb, var(--mud-palette-surface) 80%, transparent);
+    }
+
+    /* Glassmorphism utility */
+    .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        border-radius: 16px;
+    }
+
+    /* Hero Section */
+    .hero-section { display: flex; justify-content: space-between; align-items: flex-end; }
+    .hero-title { font-weight: 700; color: var(--text-main); margin: 0 0 0.25rem 0; letter-spacing: -0.01em; }
+    .hero-subtitle { color: var(--text-muted); margin: 0; font-size: 1rem; max-width: 600px; }
+
+    /* Buttons */
+    .btn-primary { 
+        background: var(--primary); color: white; border: none; padding: 0.6rem 1.5rem; 
+        border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; 
+        display: flex; align-items: center; transition: all 0.2s; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-secondary {
+        background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+        padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: var(--mud-palette-action-default); color: var(--text-main); }
+
+    /* KPIs */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    .kpi-card { padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1.25rem; transition: transform 0.2s; }
+    .kpi-card:hover { transform: translateY(-2px); }
+    .kpi-icon-wrap { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+    .kpi-blue { background: color-mix(in srgb, var(--mud-palette-info) 15%, transparent); color: var(--mud-palette-info); }
+    .kpi-green { background: color-mix(in srgb, var(--mud-palette-success) 15%, transparent); color: var(--mud-palette-success); }
+    .kpi-purple { background: color-mix(in srgb, var(--mud-palette-secondary) 15%, transparent); color: var(--mud-palette-secondary); }
+    .kpi-info { display: flex; flex-direction: column; gap: 0.25rem; }
+    .kpi-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .kpi-value { font-size: 1.75rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+
+    /* Table */
+    .table-container { padding: 1rem 1.25rem; }
+    .table-header { margin-bottom: 1rem; display: flex; justify-content: flex-end; }
+    .search-input { max-width: 350px; background: var(--mud-palette-background); border-radius: 8px; }
+    .custom-grid { background: transparent !important; }
+    .cell-name { font-weight: 700; color: var(--text-main); font-size: 0.95rem; }
+    
+    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-flex; }
+    .status-badge.active { background: color-mix(in srgb, var(--mud-palette-success) 15%, transparent); color: var(--mud-palette-success); }
+    .status-badge.inactive { background: color-mix(in srgb, var(--mud-palette-text-secondary) 15%, transparent); color: var(--mud-palette-text-secondary); }
+    
+    .action-btn { transition: transform 0.2s; }
+    .action-btn:hover { transform: scale(1.1); background: transparent !important; }
+
+    /* Modal Popup */
+    .modal-backdrop { 
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); 
+        backdrop-filter: blur(4px); z-index: 1400; 
+        display: flex; align-items: center; justify-content: center; 
+        animation: fadeIn 0.2s ease-out;
+    }
+    .modal-dialog {
+        width: 100%; max-width: 480px; background: var(--surface);
+        border-radius: 24px; overflow: hidden; display: flex; flex-direction: column;
+        animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    
+    .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
+    .modal-title-group { display: flex; gap: 1rem; align-items: center; }
+    .modal-icon { width: 48px; height: 48px; border-radius: 14px; background: color-mix(in srgb, var(--mud-palette-primary) 15%, transparent); color: var(--mud-palette-primary); display: flex; align-items: center; justify-content: center; }
+    .modal-title { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+    .modal-subtitle { margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted); }
+    .modal-close { border: none; background: var(--mud-palette-action-default); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+    .modal-close:hover { background: var(--mud-palette-action-hover); color: var(--text-main); }
+
+    .modal-body { padding: 1.5rem; flex: 1; }
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem; }
+    .switch-group { display: flex; justify-content: space-between; align-items: center; background: var(--mud-palette-background); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); }
+    .switch-info { display: flex; flex-direction: column; }
+    .form-helper { font-size: 0.75rem; color: var(--text-muted); }
+    .mb-0 { margin-bottom: 0 !important; }
+
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--mud-palette-background) 50%, transparent); display: flex; justify-content: flex-end; gap: 1rem; }
+
+    /* Animations */
+    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @@keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+</style>
+
+@code {
+    private string _searchQuery = string.Empty;
+    private bool _isPopupOpen = false;
+    private bool _isNew = true;
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private Guid? _editingId = null;
+    
+    private CategoryFormModel _editModel = new();
+    private List<CategoryListDto> CategoryList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategoriesAsync();
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            CategoryList = await CategoryService.GetCategoriesAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading categories: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private IEnumerable<CategoryListDto> FilteredCategories => 
+        string.IsNullOrWhiteSpace(_searchQuery) 
+            ? CategoryList 
+            : CategoryList.Where(c => c.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase));
+
+    private void OpenAddPopup()
+    {
+        _editModel = new CategoryFormModel { IsNewCategory = true, IsActive = true };
+        _isNew = true;
+        _editingId = null;
+        _isPopupOpen = true;
+    }
+
+    private void OpenEditPopup(CategoryListDto category)
+    {
+        _editModel = new CategoryFormModel
+        {
+            Name = category.Name,
+            IsActive = category.IsActive,
+            IsNewCategory = false
+        };
+        _isNew = false;
+        _editingId = category.Id;
+        _isPopupOpen = true;
+    }
+
+    private async Task SaveCategoryAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_editModel.Name))
+        {
+            Snackbar.Add("Category name is required.", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            CategoryListDto? result;
+            if (_isNew)
+            {
+                result = await CategoryService.CreateCategoryAsync(_editModel);
+                if (result != null) Snackbar.Add("Category created.", Severity.Success);
+            }
+            else if (_editingId.HasValue)
+            {
+                result = await CategoryService.UpdateCategoryAsync(_editingId.Value, _editModel);
+                if (result != null) Snackbar.Add("Category updated.", Severity.Success);
+            }
+            else
+            {
+                result = null;
+            }
+
+            if (result != null)
+            {
+                _isPopupOpen = false;
+                await LoadCategoriesAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to save category. It may already exist.", Severity.Error);
+            }
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void ClosePopup()
+    {
+        _isPopupOpen = false;
+    }
+
+    private async Task DeleteCategoryAsync(Guid id)
+    {
+        // Typically we would use a confirmation dialog here.
+        // For now, we proceed to delete.
+        try
+        {
+            var success = await CategoryService.DeleteCategoryAsync(id);
+            if (success)
+            {
+                Snackbar.Add("Category deleted.", Severity.Success);
+                await LoadCategoriesAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete category.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error deleting: {ex.Message}", Severity.Error);
+        }
+    }
+}

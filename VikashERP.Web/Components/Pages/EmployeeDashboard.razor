@@ -1,5 +1,5 @@
 @page "/employee-dashboard"
-
+@using VikashERP.Web.Models
 <PageTitle>Employee Dashboard</PageTitle>
 
 <MudStack Class="dashboard-page" Spacing="3">
@@ -158,11 +158,7 @@
 </MudStack>
 
 @code {
-    private sealed record Metric(string Label, string Value, string Trend, string Icon, string IconClass, string TrendClass);
-    private sealed record WorkProgressPoint(string Day, int Planned, int Completed);
-    private sealed record AssignmentItem(string Title, string Detail, string Status, string StatusClass);
-    private sealed record ShiftItem(string Label, string Time, int Progress, string Status);
-    private sealed record RequestItem(string Title, string Category, string Date, string Status, string StatusClass);
+
 
     private static readonly Metric[] Metrics =
     [

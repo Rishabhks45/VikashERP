@@ -1,0 +1,153 @@
+@page "/customer-dashboard"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using VikashERP.Web.Models
+@rendermode InteractiveServer
+
+<PageTitle>Customer Portal - The Iron Ledger</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Justify="Justify.SpaceBetween" Style="padding: 0 0 12px 0; border-bottom: 1px solid var(--mud-palette-divider);">
+    <div>
+        <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 800; letter-spacing: -0.5px; margin: 0;">My Account Overview</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Style="margin-top: 2px;">Welcome back, @_userName</MudText>
+    </div>
+</MudStack>
+
+<MudGrid Spacing="3" Class="mb-4">
+    <!-- Credit Limit KPI -->
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(33, 150, 243, 0.02) 100%); position: relative; overflow: hidden;" Class="pa-4">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--mud-palette-info), transparent);"></div>
+            <MudStack Spacing="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudText Style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); letter-spacing: 0.05em; text-transform: uppercase;">Total Credit Limit</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Info" Size="Size.Small" />
+                </MudStack>
+                <MudText Typo="Typo.h5" Color="Color.Info" Style="font-family: 'Courier New', monospace; font-weight: 900; letter-spacing: -0.5px;">₹5,00,000</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">Standard Tier</MudText>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Outstanding Balance KPI -->
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px; background: linear-gradient(135deg, rgba(244, 67, 54, 0.08) 0%, rgba(244, 67, 54, 0.02) 100%); position: relative; overflow: hidden;" Class="pa-4">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--mud-palette-error), transparent);"></div>
+            <MudStack Spacing="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudText Style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); letter-spacing: 0.05em; text-transform: uppercase;">Outstanding Dues</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Size="Size.Small" />
+                </MudStack>
+                <MudText Typo="Typo.h5" Color="Color.Error" Style="font-family: 'Courier New', monospace; font-weight: 900; letter-spacing: -0.5px;">₹1,24,500</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Error" Style="font-weight: 700;">Please clear dues to avoid late fees.</MudText>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Available Credit KPI -->
+    <MudItem xs="12" sm="12" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.02) 100%); position: relative; overflow: hidden;" Class="pa-4">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--mud-palette-success), transparent);"></div>
+            <MudStack Spacing="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudText Style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); letter-spacing: 0.05em; text-transform: uppercase;">Available Credit</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                </MudStack>
+                <MudText Typo="Typo.h5" Color="Color.Success" Style="font-family: 'Courier New', monospace; font-weight: 900; letter-spacing: -0.5px;">₹3,75,500</MudText>
+                <MudProgressLinear Color="Color.Success" Value="75" Class="mt-2" />
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Spacing="3">
+    <!-- Active Orders -->
+    <MudItem xs="12" md="8">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px;" Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;" Class="mb-3">Recent Orders</MudText>
+            
+            <div style="overflow-x: auto;">
+                <MudTable Items="@RecentOrders" Hover="true" Elevation="0" Dense="true" Style="background: transparent;" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Order No</MudTh>
+                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Date</MudTh>
+                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Material</MudTh>
+                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Amount</MudTh>
+                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd Style="font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.8rem; color: var(--mud-palette-primary);">@context.OrderNo</MudTd>
+                        <MudTd Style="font-size: 0.85rem;">@context.Date.ToShortDateString()</MudTd>
+                        <MudTd Style="font-size: 0.85rem; color: var(--mud-palette-text-secondary);">@context.Material</MudTd>
+                        <MudTd Style="font-family: 'Courier New', monospace; font-weight: 800; font-size: 0.85rem;">@context.Amount.ToString("C0", new System.Globalization.CultureInfo("hi-IN"))</MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Color="@context.StatusColor" Variant="Variant.Text" Style="font-weight: 700; font-size: 0.7rem; text-transform: uppercase;">
+                                @context.Status
+                            </MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Quick Actions -->
+    <MudItem xs="12" md="4">
+        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px;" Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;" Class="mb-3">Quick Actions</MudText>
+            
+            <MudStack Spacing="3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Payment" Style="border-radius: 8px; font-weight: 700; padding: 10px; justify-content: flex-start; text-transform: none;">
+                    Make a Payment
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.Description" Style="border-radius: 8px; font-weight: 700; padding: 10px; justify-content: flex-start; text-transform: none;">
+                    View Detailed Ledger
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.LocalShipping" Style="border-radius: 8px; font-weight: 700; padding: 10px; justify-content: flex-start; text-transform: none;">
+                    Request New Quote
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.SupportAgent" Style="border-radius: 8px; font-weight: 700; padding: 10px; justify-content: flex-start; text-transform: none;">
+                    Contact Account Manager
+                </MudButton>
+            </MudStack>
+            
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--mud-palette-divider);">
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600; text-transform: uppercase;">Your Account Manager</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-2">
+                    <MudAvatar Color="Color.Primary" Size="Size.Medium" Style="font-weight: 800;">VS</MudAvatar>
+                    <div>
+                        <MudText Typo="Typo.body2" Style="font-weight: 700;">Vikash Sharma</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">+91 98765 43210</MudText>
+                    </div>
+                </MudStack>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState> authStateTask { get; set; } = default!;
+
+    private string _userName = "Customer";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authStateTask;
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            _userName = authState.User.FindFirst(ClaimTypes.Name)?.Value 
+                ?? authState.User.FindFirst("name")?.Value 
+                ?? "Customer";
+        }
+    }
+
+
+
+    private List<OrderRecord> RecentOrders = new()
+    {
+        new("ORD-2026-892", DateTime.Now.AddDays(-2), "12mm TMT Bars (Fe500D) x 40 MT", 240000, "Processing", Color.Warning),
+        new("ORD-2026-881", DateTime.Now.AddDays(-5), "8mm HR Sheets (SS304) x 15 MT", 125000, "In Transit", Color.Info),
+        new("ORD-2026-845", DateTime.Now.AddDays(-14), "Galvanized Wire (20 Gauge) x 5 MT", 35000, "Delivered", Color.Success),
+        new("ORD-2026-802", DateTime.Now.AddDays(-25), "Scrap Iron HMS-1 x 50 MT", 150000, "Delivered", Color.Success)
+    };
+}

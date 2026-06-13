@@ -1,5 +1,5 @@
 @page "/"
-
+@using VikashERP.Web.Models
 <PageTitle>Executive Dashboard</PageTitle>
 
 <MudStack Class="dashboard-page" Spacing="3">
@@ -158,11 +158,7 @@
 </MudStack>
 
 @code {
-    private sealed record Metric(string Label, string Value, string Trend, string Icon, string IconClass, string TrendClass);
-    private sealed record RevenuePoint(string Day, int Sales, int Collected);
-    private sealed record DispatchItem(string Vehicle, string Customer, string Status, string StatusClass);
-    private sealed record StockItem(string Material, string Location, int Percent, string Quantity);
-    private sealed record InvoiceItem(string Number, string Customer, string Amount, string Status, string StatusClass);
+
 
     private static readonly Metric[] Metrics =
     [

@@ -4,7 +4,7 @@
 @using System.Security.Claims
 @using VikashERP.Web.Models
 @using VikashERP.Web.Models.Forms
-@using VikashERP.Web.Models
+
 @using VikashERP.Web.Services.Interfaces
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IFileUploadService FileUploadService
@@ -418,16 +418,7 @@
     private string? _shopLoadError;
     private CustomerShopFormModel _shopModel = new();
 
-    public class UserProfileModel
-    {
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string PhoneNumber { get; set; } = string.Empty;
-        public string Location { get; set; } = "India";
-        public string Bio { get; set; } = string.Empty;
-        public string? ProfilePictureUrl { get; set; }
-    }
+
 
     protected override async Task OnInitializedAsync()
     {

@@ -1,0 +1,365 @@
+@page "/products/add"
+@page "/products/edit/{Id:guid}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using MudBlazor
+@using VikashERP.Web.Models
+@using VikashERP.Web.Models.Forms
+@using VikashERP.Web.Services.Interfaces
+@using Blazored.FluentValidation
+@inject IProductWebService ProductService
+@inject ICategoryService CategoryService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>@(IsNew ? "New Product" : "Edit Product")</PageTitle>
+
+<div class="page-container">
+    <div class="hero-section">
+        <div class="hero-content">
+            <MudText Typo="Typo.h5" HtmlTag="h1" Class="hero-title">@(IsNew ? "New Product" : "Edit Product")</MudText>
+            <MudText Typo="Typo.body2" Class="hero-subtitle">Define the product details and configure all its physical variants.</MudText>
+        </div>
+        <button class="btn-secondary" @onclick="NavigateBack">
+            <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Class="mr-2" />
+            Back to Catalog
+        </button>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="loading-overlay">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            <MudText Class="mt-2 text-muted">Loading product details...</MudText>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="@_productModel" OnValidSubmit="SaveProductAsync">
+            <FluentValidationValidator />
+            
+            <div class="form-grid">
+                <!-- Left Column: Product Details -->
+                <div class="glass-panel p-4 flex-col gap-4">
+                    <h3 class="section-title">Product Details</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <MudSelect T="Guid" @bind-Value="_productModel.CategoryId" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" Required="true">
+                            <MudSelectItem T="Guid" Value="Guid.Empty">Select a category...</MudSelectItem>
+                            @foreach (var cat in _categories)
+                            {
+                                <MudSelectItem T="Guid" Value="@cat.Id">@cat.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <ValidationMessage For="@(() => _productModel.CategoryId)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Product Name</label>
+                        <MudTextField @bind-Value="_productModel.Name" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="E.g. TMT Bars 550D" Required="true" />
+                        <ValidationMessage For="@(() => _productModel.Name)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">HSN Code</label>
+                        <MudTextField @bind-Value="_productModel.HsnCode" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Optional" />
+                    </div>
+
+                    <div class="form-group switch-group mt-2">
+                        <div class="switch-info">
+                            <label class="form-label mb-0">Active Status</label>
+                            <span class="form-helper">Toggle visibility across the system</span>
+                        </div>
+                        <MudSwitch T="bool" @bind-Value="_productModel.IsActive" Color="Color.Primary" />
+                    </div>
+                </div>
+
+                <!-- Right Column: Variants -->
+                <div class="glass-panel p-4 flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="section-title mb-0">Product Variants</h3>
+                        <button type="button" class="btn-primary btn-sm" @onclick="AddVariant">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-1" /> Add Variant
+                        </button>
+                    </div>
+
+                    @if (_productModel.Variants.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <MudIcon Icon="@Icons.Material.Filled.LayersClear" Size="Size.Large" Color="Color.Default" />
+                            <p>No variants added yet. Click "Add Variant" to configure sizes and weights.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="variants-table">
+                            <div class="vt-header">
+                                <div class="vt-cell">Size</div>
+                                <div class="vt-cell">Thickness</div>
+                                <div class="vt-cell">Unit (Pcs to Kg)</div>
+                                <div class="vt-cell">Alert Qty (Pcs)</div>
+                                <div class="vt-cell" style="width: 50px;"></div>
+                            </div>
+                            @foreach (var variant in _productModel.Variants)
+                            {
+                                <div class="vt-row">
+                                    <div class="vt-cell">
+                                        <MudTextField @bind-Value="variant.Size" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="e.g. 12mm" Required="true" />
+                                    </div>
+                                    <div class="vt-cell">
+                                        <MudTextField @bind-Value="variant.Thickness" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="e.g. 2.5mm" Required="true" />
+                                    </div>
+                                    <div class="vt-cell">
+                                        <MudNumericField @bind-Value="variant.UnitPcsToKg" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0.0001m" Required="true" />
+                                    </div>
+                                    <div class="vt-cell">
+                                        <MudNumericField @bind-Value="variant.AlertQtyPcs" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Required="true" />
+                                    </div>
+                                    <div class="vt-cell text-center">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveVariant(variant))" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <ValidationMessage For="@(() => _productModel.Variants)" />
+                    }
+                </div>
+            </div>
+
+            <div class="form-actions mt-4">
+                <button type="submit" class="btn-primary" disabled="@_isSaving">
+                    @if (_isSaving)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Save" Size="Size.Small" Class="mr-2" />
+                        <span>Save Product</span>
+                    }
+                </button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+<style>
+    .page-container { padding: 0.25rem; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+    
+    :root {
+        --primary: var(--mud-palette-primary);
+        --primary-hover: var(--mud-palette-primary-darken);
+        --surface: var(--mud-palette-surface);
+        --text-main: var(--mud-palette-text-primary);
+        --text-muted: var(--mud-palette-text-secondary);
+        --border: var(--mud-palette-lines-default);
+        --glass-bg: color-mix(in srgb, var(--mud-palette-surface) 80%, transparent);
+    }
+
+    .glass-panel { background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border-radius: 16px; }
+    .p-4 { padding: 1.5rem; }
+    .flex-col { display: flex; flex-direction: column; }
+    .gap-4 { gap: 1rem; }
+    .mt-4 { margin-top: 1.5rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mb-0 { margin-bottom: 0 !important; }
+    .flex { display: flex; }
+    .justify-between { justify-content: space-between; }
+    .items-center { align-items: center; }
+    .text-center { text-align: center; }
+
+    .hero-section { display: flex; justify-content: space-between; align-items: flex-end; }
+    .hero-title { font-weight: 700; color: var(--text-main); margin: 0 0 0.25rem 0; letter-spacing: -0.01em; }
+    .hero-subtitle { color: var(--text-muted); margin: 0; font-size: 1rem; max-width: 600px; }
+
+    .btn-primary { background: var(--primary); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; transition: all 0.2s; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+    .btn-primary.btn-sm { padding: 0.4rem 1rem; font-size: 0.85rem; }
+    
+    .btn-secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; transition: all 0.2s; }
+    .btn-secondary:hover { background: var(--mud-palette-action-default); color: var(--text-main); }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; align-items: start; }
+    @@media (max-width: 992px) { .form-grid { grid-template-columns: 1fr; } }
+    
+    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-top: 0; margin-bottom: 1rem; }
+    
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem; }
+    .switch-group { display: flex; justify-content: space-between; align-items: center; background: var(--mud-palette-background); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); }
+    .switch-info { display: flex; flex-direction: column; }
+    .form-helper { font-size: 0.75rem; color: var(--text-muted); }
+    
+    .variants-table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--mud-palette-background); }
+    .vt-header { display: flex; background: color-mix(in srgb, var(--mud-palette-primary) 5%, transparent); padding: 0.75rem; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    .vt-row { display: flex; padding: 0.75rem; border-bottom: 1px solid var(--border); align-items: center; gap: 0.5rem; }
+    .vt-row:last-child { border-bottom: none; }
+    .vt-cell { flex: 1; min-width: 0; }
+    
+    .empty-state { text-align: center; padding: 3rem 1rem; border: 2px dashed var(--border); border-radius: 12px; color: var(--text-muted); }
+    .form-actions { display: flex; justify-content: flex-end; }
+    .loading-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; }
+</style>
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private bool IsNew => !Id.HasValue;
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+
+    private ProductFormModel _productModel = new();
+    private List<CategoryListDto> _categories = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _categories = await CategoryService.GetCategoriesAsync() ?? new List<CategoryListDto>();
+            
+            if (!IsNew)
+            {
+                var product = await ProductService.GetProductByIdAsync(Id!.Value);
+                if (product != null)
+                {
+                    _productModel = new ProductFormModel
+                    {
+                        CategoryId = product.CategoryId,
+                        Name = product.Name,
+                        HsnCode = product.HsnCode,
+                        IsActive = product.IsActive,
+                        Variants = product.Variants.Select(v => new ProductVariantFormModel
+                        {
+                            Id = v.Id,
+                            Size = v.Size,
+                            Thickness = v.Thickness,
+                            UnitPcsToKg = v.UnitPcsToKg,
+                            AlertQtyPcs = v.AlertQtyPcs,
+                            IsActive = v.IsActive
+                        }).ToList()
+                    };
+                }
+                else
+                {
+                    Snackbar.Add("Product not found.", Severity.Error);
+                    NavigateBack();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void AddVariant()
+    {
+        _productModel.Variants.Add(new ProductVariantFormModel());
+    }
+
+    private void RemoveVariant(ProductVariantFormModel variant)
+    {
+        _productModel.Variants.Remove(variant);
+    }
+
+    private async Task SaveProductAsync()
+    {
+        if (_productModel.CategoryId == Guid.Empty)
+        {
+            Snackbar.Add("Please select a category.", Severity.Warning);
+            return;
+        }
+
+        if (_productModel.Variants.Count == 0)
+        {
+            Snackbar.Add("At least one variant is required.", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            if (IsNew)
+            {
+                var createReq = new CreateProductDto
+                {
+                    CategoryId = _productModel.CategoryId,
+                    Name = _productModel.Name,
+                    HsnCode = _productModel.HsnCode,
+                    IsActive = _productModel.IsActive,
+                    Variants = _productModel.Variants.Select(v => new CreateProductVariantDto
+                    {
+                        Size = v.Size,
+                        Thickness = v.Thickness,
+                        UnitPcsToKg = v.UnitPcsToKg,
+                        AlertQtyPcs = v.AlertQtyPcs,
+                        IsActive = v.IsActive
+                    }).ToList()
+                };
+
+                var result = await ProductService.CreateProductAsync(createReq);
+                if (result != null)
+                {
+                    Snackbar.Add("Product created successfully.", Severity.Success);
+                    NavigateBack();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to create product. Name might already exist.", Severity.Error);
+                }
+            }
+            else
+            {
+                var updateReq = new UpdateProductDto
+                {
+                    CategoryId = _productModel.CategoryId,
+                    Name = _productModel.Name,
+                    HsnCode = _productModel.HsnCode,
+                    IsActive = _productModel.IsActive,
+                    Variants = _productModel.Variants.Select(v => new UpdateProductVariantDto
+                    {
+                        Id = v.Id,
+                        Size = v.Size,
+                        Thickness = v.Thickness,
+                        UnitPcsToKg = v.UnitPcsToKg,
+                        AlertQtyPcs = v.AlertQtyPcs,
+                        IsActive = v.IsActive
+                    }).ToList()
+                };
+
+                var result = await ProductService.UpdateProductAsync(Id!.Value, updateReq);
+                if (result != null)
+                {
+                    Snackbar.Add("Product updated successfully.", Severity.Success);
+                    NavigateBack();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to update product. Name might already exist.", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo("/products");
+    }
+}
