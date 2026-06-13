@@ -8,7 +8,7 @@
     {
         <link rel="icon" type="image/png" href="@OrganizationBranding.FaviconSrc" />
     }
-    @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.MetaDescription))
+    @if (OrganizationBranding.Current is not null && !string.IsNullOrWhiteSpace(OrganizationBranding.Current.MetaDescription))
     {
         <meta name="description" content="@OrganizationBranding.Current.MetaDescription" />
     }
@@ -28,8 +28,10 @@
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    private bool _disposed;
+
     private string RootCssClass =>
-        DarkModeService.IsDarkMode
+        DarkModeService?.IsDarkMode == true
             ? "org-branded-root app-dark-mode"
             : "org-branded-root app-light-mode";
 
@@ -48,15 +50,32 @@
         await OrganizationBranding.InitializeAsync();
     }
 
-    private void HandleDarkModeChanged() => InvokeAsync(StateHasChanged);
+    private void HandleDarkModeChanged()
+    {
+        if (_disposed) return;
+        _ = InvokeAsync(() =>
+        {
+            try { StateHasChanged(); }
+            catch { /* suppress render errors during dark mode change */ }
+        });
+    }
 
-    private void HandleBrandingChanged() => InvokeAsync(StateHasChanged);
+    private void HandleBrandingChanged()
+    {
+        if (_disposed) return;
+        _ = InvokeAsync(() =>
+        {
+            try { StateHasChanged(); }
+            catch { /* suppress render errors during branding change */ }
+        });
+    }
 
     private Task OnDarkModeChanged(bool isDarkMode) =>
         DarkModeService.SetDarkModeAsync(isDarkMode);
 
     public void Dispose()
     {
+        _disposed = true;
         DarkModeService.OnChange -= HandleDarkModeChanged;
         OrganizationBranding.OnChange -= HandleBrandingChanged;
     }

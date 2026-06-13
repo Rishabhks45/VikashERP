@@ -10,6 +10,7 @@ using VikashERP.SharedKernel.Common.Interfaces;
 using VikashERP.SharedKernel.Enums;
 using VikashERP.SharedKernel.Settings;
 using VikashERP.SharedKernel.Extensions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace VikashERP.API.Controllers;
 
@@ -47,14 +48,21 @@ public class CustomersController : ControllerBase
     }
 
     [HttpGet]
+    
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        var customers = await _context.Customers
-            .OrderByDescending(c => c.CreatedAt)
-            .Select(c => MapToListDto(c))
-            .ToListAsync(cancellationToken);
-
-        return Ok(customers);
+        try
+        {
+            var customers = await _context.Customers.OrderByDescending(c => c.CreatedAt).ToListAsync(cancellationToken); 
+            var dtos = customers.Select(c => MapToListDto(c)).ToList();
+            return Ok(dtos);
+        }
+        catch (Exception ex)
+        {
+            System.IO.File.WriteAllText("api_error_log.txt", ex.ToString());
+            return StatusCode(500, ex.Message);
+        }
     }
 
     [HttpGet("me")]
@@ -94,15 +102,12 @@ public class CustomersController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var customer = await _context.Customers
-            .Where(c => c.Id == id)
-            .Select(c => MapToListDto(c))
-            .FirstOrDefaultAsync(cancellationToken);
+        var customer = await _context.Customers.Where(c => c.Id == id).FirstOrDefaultAsync(cancellationToken);
 
         if (customer is null)
             return NotFound();
 
-        return Ok(customer);
+        return Ok(MapToListDto(customer));
     }
 
     [HttpPost]
@@ -353,3 +358,5 @@ public class CustomersController : ControllerBase
         return await _sharedRepository.SendWelcomeEmailAsync(email, userName, plainPassword, cancellationToken);
     }
 }
+
+

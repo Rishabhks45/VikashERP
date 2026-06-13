@@ -1,0 +1,319 @@
+@page "/purchases/new"
+@using VikashERP.Web.Models
+@using VikashERP.Web.Services.Interfaces
+@inject IPurchaseWebService PurchaseService
+@inject ISupplierWebService SupplierService
+@inject IProductWebService ProductService
+@inject NavigationManager NavigationManager
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<PageTitle>New Purchase Entry</PageTitle>
+
+<div style="padding-bottom: 1rem;">
+    <!-- Compact Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                New Purchase Entry
+            </h3>
+            <p style="margin: 0; color: var(--mud-palette-text-secondary); font-size: 0.78rem;">Record an incoming purchase invoice</p>
+        </div>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Size="Size.Small">Back</MudButton>
+    </div>
+
+    @if (isLoadingData)
+    {
+        <div style="display:flex; align-items:center; gap:0.75rem; padding:2rem;">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" />
+            <span style="color:var(--mud-palette-text-secondary); font-size:0.875rem;">Loading...</span>
+        </div>
+    }
+    else
+    {
+        <MudGrid Spacing="2">
+            <!-- LEFT: Invoice Details -->
+            <MudItem xs="12" md="4">
+                <MudPaper Elevation="1" Style="border-radius:10px; overflow:hidden;">
+                    <!-- Card Header -->
+                    <div style="padding: 0.5rem 0.875rem; border-bottom: 1px solid var(--mud-palette-lines-default); display:flex; align-items:center; gap:0.4rem; background:var(--mud-palette-background-grey);">
+                        <MudIcon Icon="@Icons.Material.Outlined.Receipt" Size="Size.Small" Color="Color.Primary" />
+                        <span style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--mud-palette-text-secondary);">Invoice Details</span>
+                    </div>
+                    <!-- Form Fields - very tight -->
+                    <div style="padding: 0.625rem; display:flex; flex-direction:column; gap:0.4rem;">
+                        <MudSelect T="Guid" Label="Supplier *" @bind-Value="purchaseDto.SupplierId"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" AnchorOrigin="Origin.BottomLeft">
+                            @foreach (var s in suppliers)
+                            {
+                                <MudSelectItem T="Guid" Value="@s.Id">@s.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+
+                        <MudTextField @bind-Value="purchaseDto.InvoiceNumber" Label="Invoice Number *"
+                                      Placeholder="INV-1234" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" />
+
+                        <MudDatePicker @bind-Date="invoiceDate" Label="Invoice Date *"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" DateFormat="dd/MM/yyyy" />
+
+                        <MudTextField @bind-Value="purchaseDto.VehicleNumber" Label="Vehicle No."
+                                      Placeholder="UP 14 AB 1234" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" />
+
+                        <MudTextField @bind-Value="purchaseDto.Remarks" Label="Remarks"
+                                      Placeholder="Optional notes" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Lines="2" />
+
+                        <div style="display:flex; gap:0.4rem;">
+                            <MudNumericField @bind-Value="purchaseDto.FreightCharge" Label="Freight ₹"
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Min="0" Style="flex:1" />
+                            <MudNumericField @bind-Value="purchaseDto.LoadingCharge" Label="Loading ₹"
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Min="0" Style="flex:1" />
+                        </div>
+
+                        <!-- Net Amount Summary -->
+                        <div style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08)); border:1px solid rgba(99,102,241,0.18); border-radius:8px; padding:0.6rem 0.75rem; margin-top:0.25rem;">
+                            <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+                                <tr>
+                                    <td style="color:var(--mud-palette-text-secondary); padding:0.15rem 0;">Items</td>
+                                    <td style="text-align:right; font-weight:500; padding:0.15rem 0;">₹@ItemsTotal.ToString("N2")</td>
+                                </tr>
+                                <tr>
+                                    <td style="color:var(--mud-palette-text-secondary); padding:0.15rem 0;">Charges</td>
+                                    <td style="text-align:right; font-weight:500; padding:0.15rem 0;">₹@((purchaseDto.FreightCharge + purchaseDto.LoadingCharge).ToString("N2"))</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2"><hr style="border:none; border-top:1px solid rgba(99,102,241,0.2); margin:0.3rem 0;" /></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:700; color:#6366f1; font-size:0.85rem;">Net Total</td>
+                                    <td style="text-align:right; font-weight:800; color:#6366f1; font-size:1rem;">₹@TotalAmount.ToString("N2")</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Footer Buttons -->
+                    <div style="padding:0.5rem 0.625rem; border-top:1px solid var(--mud-palette-lines-default); display:flex; justify-content:flex-end; gap:0.5rem; background:var(--mud-palette-background-grey);">
+                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="GoBack">Cancel</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Save"
+                                   OnClick="SaveEntry" Disabled="@(!IsValid())">Save Entry</MudButton>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- RIGHT: Items -->
+            <MudItem xs="12" md="8">
+                <MudPaper Elevation="1" Style="border-radius:10px; overflow:hidden;">
+                    <!-- Card Header -->
+                    <div style="padding: 0.5rem 0.875rem; border-bottom: 1px solid var(--mud-palette-lines-default); display:flex; align-items:center; gap:0.4rem; background:var(--mud-palette-background-grey);">
+                        <MudIcon Icon="@Icons.Material.Outlined.Inventory2" Size="Size.Small" Color="Color.Primary" />
+                        <span style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--mud-palette-text-secondary);">Items</span>
+                        @if (purchaseDto.Items.Any())
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Style="margin-left:auto; height:20px; font-size:0.7rem;">@purchaseDto.Items.Count items</MudChip>
+                        }
+                    </div>
+
+                    <!-- Add Item Row - compact like excel toolbar -->
+                    <div style="padding:0.5rem 0.625rem; background:var(--mud-palette-background); border-bottom:1px solid var(--mud-palette-lines-default);">
+                        <MudGrid Spacing="1" AlignItems="AlignItems.End">
+                            <MudItem xs="6" sm="3">
+                                <MudSelect T="Guid" Label="Product" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                                           ValueChanged="OnProductSelected" AnchorOrigin="Origin.BottomLeft">
+                                    @foreach (var prod in products)
+                                    {
+                                        <MudSelectItem T="Guid" Value="@prod.Id">@prod.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <MudSelect T="Guid" Label="Size" @bind-Value="newItem.ProductVariantId"
+                                           Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+                                           AnchorOrigin="Origin.BottomLeft"
+                                           Disabled="@(selectedProductVariants == null || !selectedProductVariants.Any())">
+                                    @if (selectedProductVariants != null)
+                                    {
+                                        @foreach (var v in selectedProductVariants)
+                                        {
+                                            <MudSelectItem T="Guid" Value="@v.Id">@v.Size (@v.Thickness)</MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudNumericField @bind-Value="newItem.QuantityPcs" Label="Pcs"
+                                                Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Min="0" />
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudNumericField @bind-Value="newItem.WeightKg" Label="Kg"
+                                                Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Min="0" />
+                            </MudItem>
+                            <MudItem xs="3" sm="1">
+                                <MudNumericField @bind-Value="newItem.Rate" Label="Rate"
+                                                Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Min="0" />
+                            </MudItem>
+                            <MudItem xs="1" sm="1">
+                                <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Small"
+                                               Style="padding:6px;"
+                                               OnClick="AddItem"
+                                               Disabled="@(newItem.ProductVariantId == Guid.Empty || newItem.QuantityPcs <= 0 || newItem.WeightKg <= 0 || newItem.Rate <= 0)" />
+                            </MudItem>
+                        </MudGrid>
+                    </div>
+
+                    <!-- Excel-style compact items table -->
+                    @if (!purchaseDto.Items.Any())
+                    {
+                        <div style="padding:2rem; text-align:center; color:var(--mud-palette-text-secondary);">
+                            <MudIcon Icon="@Icons.Material.Outlined.TableRows" Style="font-size:2rem; opacity:0.3; display:block; margin-bottom:0.5rem;" />
+                            <span style="font-size:0.8rem;">No items added yet</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+                            <thead>
+                                <tr style="background:var(--mud-palette-background-grey);">
+                                    <th style="padding:0.4rem 0.75rem; text-align:left; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--mud-palette-text-secondary); border-bottom:2px solid var(--mud-palette-lines-default);">#</th>
+                                    <th style="padding:0.4rem 0.75rem; text-align:left; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--mud-palette-text-secondary); border-bottom:2px solid var(--mud-palette-lines-default);">Variant</th>
+                                    <th style="padding:0.4rem 0.5rem; text-align:right; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--mud-palette-text-secondary); border-bottom:2px solid var(--mud-palette-lines-default);">Pcs</th>
+                                    <th style="padding:0.4rem 0.5rem; text-align:right; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--mud-palette-text-secondary); border-bottom:2px solid var(--mud-palette-lines-default);">Kg</th>
+                                    <th style="padding:0.4rem 0.5rem; text-align:right; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--mud-palette-text-secondary); border-bottom:2px solid var(--mud-palette-lines-default);">Rate</th>
+                                    <th style="padding:0.4rem 0.5rem; text-align:right; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--mud-palette-text-secondary); border-bottom:2px solid var(--mud-palette-lines-default);">Amount</th>
+                                    <th style="padding:0.4rem 0.5rem; border-bottom:2px solid var(--mud-palette-lines-default); width:36px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{ int rowNum = 1; }
+                                @foreach (var item in purchaseDto.Items)
+                                {
+                                    var vName = GetVariantName(item.ProductVariantId);
+                                    var isEven = rowNum % 2 == 0;
+                                    <tr style="@(isEven ? "background:var(--mud-palette-background-grey);" : "") border-bottom:1px solid var(--mud-palette-lines-default);">
+                                        <td style="padding:0.3rem 0.75rem; color:var(--mud-palette-text-secondary); font-size:0.75rem;">@rowNum</td>
+                                        <td style="padding:0.3rem 0.75rem; font-weight:500; color:var(--mud-palette-text-primary);">@vName</td>
+                                        <td style="padding:0.3rem 0.5rem; text-align:right; color:var(--mud-palette-text-secondary);">@item.QuantityPcs</td>
+                                        <td style="padding:0.3rem 0.5rem; text-align:right; color:var(--mud-palette-text-secondary);">@item.WeightKg</td>
+                                        <td style="padding:0.3rem 0.5rem; text-align:right; color:var(--mud-palette-text-secondary);">@item.Rate</td>
+                                        <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:var(--mud-palette-text-primary);">₹@((item.WeightKg * item.Rate).ToString("N2"))</td>
+                                        <td style="padding:0.2rem 0.4rem; text-align:center;">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Color="Color.Error"
+                                                           Style="padding:3px;" OnClick="@(() => RemoveItem(item))" />
+                                        </td>
+                                    </tr>
+                                    rowNum++;
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.06)); border-top:2px solid rgba(99,102,241,0.2);">
+                                    <td colspan="5" style="padding:0.4rem 0.75rem; font-weight:700; font-size:0.8rem; color:var(--mud-palette-text-secondary);">Total (@purchaseDto.Items.Count items)</td>
+                                    <td style="padding:0.4rem 0.5rem; text-align:right; font-weight:800; color:#6366f1; font-size:0.9rem;">₹@ItemsTotal.ToString("N2")</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</div>
+
+@code {
+    private CreatePurchaseEntryDto purchaseDto = new() { InvoiceDate = DateTime.Today };
+    private CreatePurchaseEntryItemDto newItem = new();
+
+    private bool isLoadingData = true;
+    private List<SupplierListDto> suppliers = new();
+    private List<ProductListDto> products = new();
+    private List<ProductVariantDto>? selectedProductVariants;
+    private Dictionary<Guid, string> variantNames = new();
+
+    private DateTime? invoiceDate
+    {
+        get => purchaseDto.InvoiceDate;
+        set => purchaseDto.InvoiceDate = value ?? DateTime.Today;
+    }
+
+    private decimal ItemsTotal => purchaseDto.Items.Sum(x => x.WeightKg * x.Rate);
+    private decimal TotalAmount => ItemsTotal + purchaseDto.FreightCharge + purchaseDto.LoadingCharge;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMasterDataAsync();
+        isLoadingData = false;
+    }
+
+    private async Task LoadMasterDataAsync()
+    {
+        try
+        {
+            suppliers = await SupplierService.GetSuppliersAsync();
+            products = await ProductService.GetProductsAsync();
+        }
+        catch (Exception _) { NotificationService.Error("Error loading master data."); }
+    }
+
+    private async Task OnProductSelected(Guid productId)
+    {
+        selectedProductVariants = null;
+        newItem.ProductVariantId = Guid.Empty;
+        if (productId != Guid.Empty)
+        {
+            var productDetails = await ProductService.GetProductByIdAsync(productId);
+            if (productDetails != null)
+                selectedProductVariants = productDetails.Variants;
+        }
+    }
+
+    private void AddItem()
+    {
+        if (newItem.ProductVariantId == Guid.Empty || newItem.QuantityPcs <= 0 || newItem.WeightKg <= 0 || newItem.Rate <= 0)
+            return;
+
+        purchaseDto.Items.Add(new CreatePurchaseEntryItemDto
+        {
+            ProductVariantId = newItem.ProductVariantId,
+            QuantityPcs = newItem.QuantityPcs,
+            WeightKg = newItem.WeightKg,
+            Rate = newItem.Rate
+        });
+
+        if (selectedProductVariants != null)
+        {
+            var variant = selectedProductVariants.FirstOrDefault(v => v.Id == newItem.ProductVariantId);
+            if (variant != null)
+            {
+                var product = products.FirstOrDefault(p => p.Id == variant.ProductId);
+                variantNames[variant.Id] = $"{product?.Name} — {variant.Size}";
+            }
+        }
+
+        newItem = new CreatePurchaseEntryItemDto();
+    }
+
+    private void RemoveItem(CreatePurchaseEntryItemDto item) => purchaseDto.Items.Remove(item);
+
+    private string GetVariantName(Guid variantId) =>
+        variantNames.TryGetValue(variantId, out var name) ? name : "Unknown";
+
+    private bool IsValid() =>
+        purchaseDto.SupplierId != Guid.Empty &&
+        !string.IsNullOrWhiteSpace(purchaseDto.InvoiceNumber) &&
+        purchaseDto.Items.Any();
+
+    private async Task SaveEntry()
+    {
+        try
+        {
+            await PurchaseService.CreatePurchaseEntryAsync(purchaseDto);
+            NotificationService.Success("Purchase Entry created successfully!");
+            NavigationManager.NavigateTo("/purchases");
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Failed to save: {ex.Message}");
+        }
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/purchases");
+}

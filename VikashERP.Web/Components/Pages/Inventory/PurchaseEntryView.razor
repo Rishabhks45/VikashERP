@@ -1,0 +1,201 @@
+@page "/purchases/view/{Id:guid}"
+@using VikashERP.Web.Models;
+@using VikashERP.Web.Services.Interfaces
+@inject IPurchaseWebService PurchaseService
+@inject NavigationManager NavigationManager
+@inject INotificationService NotificationService
+@rendermode InteractiveServer
+
+<PageTitle>View Purchase Entry</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1 text-gradient">Purchase Invoice @purchaseDto?.InvoiceNumber</h2>
+        <p class="text-muted mb-0">View details of the purchase entry</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (purchaseDto != null && purchaseDto.Status.ToString() == "Draft")
+        {
+            <button class="btn btn-success" @onclick="ApprovePurchase">
+                <i class="bi bi-check-lg me-2"></i>Approve Entry
+            </button>
+        }
+        <button class="btn btn-outline-secondary" @onclick="GoBack">
+            <i class="bi bi-arrow-left me-2"></i>Back
+        </button>
+    </div>
+</div>
+
+@if (purchaseDto == null)
+{
+    if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3 text-muted">Loading...</p>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger text-center">
+            Entry not found.
+        </div>
+    }
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card glass-card h-100">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="mb-0">Invoice Summary</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Status</dt>
+                        <dd class="col-sm-7 mb-2 fw-semibold text-end">
+                            @if (purchaseDto.Status.ToString() == "Approved")
+                            {
+                                <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Approved</span>
+                            }
+                            else
+                            {
+                                <span class="text-warning"><i class="bi bi-pencil-square me-1"></i> Draft</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Entry Number</dt>
+                        <dd class="col-sm-7 mb-2 text-end fw-medium">@purchaseDto.EntryNumber</dd>
+
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Supplier</dt>
+                        <dd class="col-sm-7 mb-2 text-end fw-medium">@purchaseDto.SupplierName</dd>
+
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Invoice No</dt>
+                        <dd class="col-sm-7 mb-2 text-end fw-medium">@purchaseDto.InvoiceNumber</dd>
+
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Invoice Date</dt>
+                        <dd class="col-sm-7 mb-2 text-end fw-medium">@purchaseDto.InvoiceDate.ToString("dd MMM yyyy")</dd>
+                        
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Vehicle No</dt>
+                        <dd class="col-sm-7 mb-2 text-end fw-medium">@(string.IsNullOrEmpty(purchaseDto.VehicleNumber) ? "-" : purchaseDto.VehicleNumber)</dd>
+
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Remarks</dt>
+                        <dd class="col-sm-7 mb-2 text-end fw-medium">@(string.IsNullOrEmpty(purchaseDto.Remarks) ? "-" : purchaseDto.Remarks)</dd>
+                    </dl>
+                    
+                    <hr class="my-3 border-secondary border-opacity-25" />
+                    
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Items Total</dt>
+                        <dd class="col-sm-7 mb-2 text-end fw-medium">₹@purchaseDto.TotalAmount.ToString("N2")</dd>
+
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Freight</dt>
+                        <dd class="col-sm-7 mb-2 text-end fw-medium">₹@purchaseDto.FreightCharge.ToString("N2")</dd>
+
+                        <dt class="col-sm-5 text-muted fw-normal mb-2">Loading</dt>
+                        <dd class="col-sm-7 mb-2 text-end fw-medium">₹@purchaseDto.LoadingCharge.ToString("N2")</dd>
+
+                        <dt class="col-sm-5 text-dark fw-bold mb-0 mt-2 fs-5">Net Amount</dt>
+                        <dd class="col-sm-7 mb-0 text-end fw-bold text-primary mt-2 fs-5">₹@purchaseDto.NetAmount.ToString("N2")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card glass-card h-100">
+                <div class="card-header bg-transparent border-bottom">
+                    <h5 class="mb-0">Purchased Items</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 custom-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Product Variant</th>
+                                    <th class="text-end">Qty (Pcs)</th>
+                                    <th class="text-end">Weight (Kg)</th>
+                                    <th class="text-end">Rate (₹/Kg)</th>
+                                    <th class="text-end pe-4">Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in purchaseDto.Items)
+                                {
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="fw-medium">@item.ProductName</div>
+                                            <div class="small text-muted">@item.VariantSize</div>
+                                        </td>
+                                        <td class="text-end">@item.QuantityPcs</td>
+                                        <td class="text-end">@item.WeightKg</td>
+                                        <td class="text-end">₹@item.Rate.ToString("N2")</td>
+                                        <td class="text-end pe-4 fw-semibold">₹@item.TotalPrice.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private PurchaseEntryDto? purchaseDto;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPurchaseAsync();
+    }
+
+    private async Task LoadPurchaseAsync()
+    {
+        try
+        {
+            isLoading = true;
+            purchaseDto = await PurchaseService.GetPurchaseEntryByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Error loading purchase details: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task ApprovePurchase()
+    {
+        try
+        {
+            var success = await PurchaseService.ApprovePurchaseEntryAsync(Id);
+            if (success)
+            {
+                NotificationService.Success("Purchase entry approved and posted to ledgers successfully.");
+                await LoadPurchaseAsync();
+            }
+            else
+            {
+                NotificationService.Error("Failed to approve purchase entry.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Error: {ex.Message}");
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/purchases");
+    }
+}
+
+

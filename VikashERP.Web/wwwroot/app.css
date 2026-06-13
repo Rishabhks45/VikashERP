@@ -928,3 +928,134 @@ h1:focus {
 .org-branded-root {
     min-height: 100%;
 }
+
+/* ==========================================
+   Purchase Module & Shared Utility Classes
+   ========================================== */
+
+/* Glass Card */
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Light mode glass card */
+.app-light-mode .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* Text gradient */
+.text-gradient {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+}
+
+/* Action button */
+.btn-action {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    color: #fff;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.6rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.35);
+}
+
+.btn-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
+    color: #fff;
+}
+
+/* Custom table */
+.custom-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.custom-table thead th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 0.85rem 1rem;
+    white-space: nowrap;
+}
+
+.app-light-mode .custom-table thead th {
+    color: #64748b;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.custom-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.custom-table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.05) !important;
+}
+
+.custom-table tbody td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    vertical-align: middle;
+}
+
+.app-light-mode .custom-table tbody td {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Avatar small */
+.avatar-sm {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Badge subtle overrides for dark mode */
+.bg-success-subtle {
+    background-color: rgba(34, 197, 94, 0.12) !important;
+}
+.bg-warning-subtle {
+    background-color: rgba(234, 179, 8, 0.12) !important;
+}
+.bg-secondary-subtle {
+    background-color: rgba(148, 163, 184, 0.12) !important;
+}
+.bg-primary-subtle {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+/* Card header/footer subtle borders */
+.card-header.bg-transparent,
+.card-footer.bg-transparent {
+    border-color: rgba(255, 255, 255, 0.08);
+    padding: 1rem 1.25rem;
+}
+
+.app-light-mode .card-header.bg-transparent,
+.app-light-mode .card-footer.bg-transparent {
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Light subtle bg for item entry row */
+.bg-light-subtle {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+.app-light-mode .bg-light-subtle {
+    background: rgba(0, 0, 0, 0.025) !important;
+}

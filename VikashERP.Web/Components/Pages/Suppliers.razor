@@ -1,0 +1,401 @@
+@page "/suppliers"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using MudBlazor
+@using VikashERP.Web.Models
+@using VikashERP.Web.Models.Forms
+@using VikashERP.Web.Services.Interfaces
+@using Blazored.FluentValidation
+@inject ISupplierWebService SupplierService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@rendermode InteractiveServer
+
+<PageTitle>Suppliers</PageTitle>
+
+<div class="page-container">
+    <div class="hero-section">
+        <div class="hero-content">
+            <MudText Typo="Typo.h5" HtmlTag="h1" Class="hero-title">Supplier Management</MudText>
+            <MudText Typo="Typo.body2" Class="hero-subtitle">Manage your suppliers, contact details, and ledger balances.</MudText>
+        </div>
+        <button class="btn-primary" @onclick="OpenAddSupplierDialog">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
+            Add Supplier
+        </button>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="kpi-card" Elevation="0">
+                <div class="kpi-icon-wrapper" style="background: rgba(var(--mud-palette-primary-rgb), 0.1); color: var(--mud-palette-primary);">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" />
+                </div>
+                <div class="kpi-content">
+                    <MudText Typo="Typo.body2" Class="kpi-label">Total Suppliers</MudText>
+                    <MudText Typo="Typo.h5" Class="kpi-value">@_suppliers.Count</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="kpi-card" Elevation="0">
+                <div class="kpi-icon-wrapper" style="background: rgba(var(--mud-palette-success-rgb), 0.1); color: var(--mud-palette-success);">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                </div>
+                <div class="kpi-content">
+                    <MudText Typo="Typo.body2" Class="kpi-label">Total Outstanding Balance</MudText>
+                    <MudText Typo="Typo.h5" Class="kpi-value">₹@_suppliers.Sum(s => s.CurrentBalance).ToString("N2")</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="table-container" Elevation="0">
+        <div class="table-header">
+            <MudTextField @bind-Value="_searchString" 
+                          Placeholder="Search suppliers..." 
+                          Adornment="Adornment.Start" 
+                          AdornmentIcon="@Icons.Material.Filled.Search" 
+                          IconSize="Size.Medium" 
+                          Class="search-input"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Clearable="true" />
+            <div class="table-actions">
+                <MudTooltip Text="Refresh">
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="LoadDataAsync" Disabled="@_isLoading" />
+                </MudTooltip>
+            </div>
+        </div>
+
+        <MudDataGrid T="SupplierListDto" Items="@_suppliers" 
+                     Loading="@_isLoading" 
+                     Filterable="true" 
+                     SortMode="SortMode.Multiple" 
+                     Groupable="false" 
+                     Dense="true"
+                     Hover="true"
+                     Striped="false"
+                     QuickFilter="@QuickFilter">
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="Supplier Name" />
+                <PropertyColumn Property="x => x.CompanyName" Title="Company Name" />
+                <PropertyColumn Property="x => x.Phone" Title="Phone" />
+                <TemplateColumn Title="Balance">
+                    <CellTemplate>
+                        @{
+                            var bal = context.Item.CurrentBalance;
+                            var text = bal == 0 ? "₹0.00" : (bal > 0 ? $"₹{bal:N2} (Cr)" : $"₹{Math.Abs(bal):N2} (Dr)");
+                            var colorClass = bal == 0 ? "" : (bal > 0 ? "text-success" : "text-error");
+                        }
+                        <span class="@colorClass fw-bold">@text</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditSupplierDialog(context.Item))" />
+                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteSupplierAsync(context.Item))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="SupplierListDto" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudPaper>
+</div>
+
+<MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@(_supplierModel.IsNewSupplier ? Icons.Material.Filled.Add : Icons.Material.Filled.Edit)" Class="mr-3 mb-n1" />
+            @(_supplierModel.IsNewSupplier ? "Add New Supplier" : "Edit Supplier")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@_supplierModel" OnValidSubmit="SaveSupplierAsync">
+            <FluentValidationValidator />
+            
+            <MudTextField @bind-Value="_supplierModel.Name" Label="Supplier Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" For="@(() => _supplierModel.Name)" />
+            <MudTextField @bind-Value="_supplierModel.CompanyName" Label="Company Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" For="@(() => _supplierModel.CompanyName)" />
+            
+            <div class="d-flex gap-4 mb-4">
+                <MudTextField @bind-Value="_supplierModel.Phone" Label="Phone" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _supplierModel.Phone)" />
+                <MudTextField @bind-Value="_supplierModel.Gstin" Label="GSTIN" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _supplierModel.Gstin)" />
+            </div>
+
+            <MudTextField @bind-Value="_supplierModel.Address" Label="Address" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Class="mb-4" For="@(() => _supplierModel.Address)" />
+            
+            @if (_supplierModel.IsNewSupplier)
+            {
+                <MudNumericField @bind-Value="_supplierModel.OpeningBalance" Label="Opening Balance" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" HelperText="Use negative for debit, positive for credit" />
+            }
+
+            <div class="d-flex justify-end mt-4">
+                <MudButton OnClick="CloseDialog" Class="mr-2">Cancel</MudButton>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_isSaving">
+                    @if (_isSaving)
+                    {
+                        <MudProgressCircular Class="ms-n1 mr-2" Size="Size.Small" Indeterminate="true" />
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span>Save</span>
+                    }
+                </MudButton>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .page-container {
+        padding: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .hero-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        background: linear-gradient(135deg, var(--mud-palette-surface) 0%, rgba(var(--mud-palette-primary-rgb), 0.05) 100%);
+        padding: 24px 32px;
+        border-radius: 16px;
+        border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.1);
+    }
+
+    .hero-title {
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        margin-bottom: 8px;
+    }
+
+    .hero-subtitle {
+        color: var(--mud-palette-text-secondary);
+    }
+
+    .kpi-card {
+        padding: 20px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid var(--mud-palette-lines-default);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .kpi-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .kpi-icon-wrapper .mud-icon-root {
+        font-size: 24px;
+    }
+
+    .kpi-label {
+        font-weight: 500;
+        color: var(--mud-palette-text-secondary);
+        margin-bottom: 4px;
+    }
+
+    .kpi-value {
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .table-container {
+        border-radius: 16px;
+        border: 1px solid var(--mud-palette-lines-default);
+        overflow: hidden;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+        background: var(--mud-palette-surface);
+    }
+
+    .search-input {
+        max-width: 300px;
+    }
+
+    .btn-primary {
+        background: var(--mud-palette-primary);
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background: var(--mud-palette-primary-darken);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(var(--mud-palette-primary-rgb), 0.3);
+    }
+</style>
+
+@code {
+    private List<SupplierListDto> _suppliers = new();
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private string _searchString = "";
+    
+    private bool _dialogVisible = false;
+    private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+    private SupplierFormModel _supplierModel = new();
+    private Guid? _editingSupplierId = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _suppliers = await SupplierService.GetSuppliersAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading suppliers: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private bool QuickFilter(SupplierListDto supplier)
+    {
+        if (string.IsNullOrWhiteSpace(_searchString)) return true;
+        if (supplier.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (supplier.CompanyName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (supplier.Phone.Contains(_searchString, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    private void OpenAddSupplierDialog()
+    {
+        _supplierModel = new SupplierFormModel { IsNewSupplier = true };
+        _editingSupplierId = null;
+        _dialogVisible = true;
+    }
+
+    private async Task OpenEditSupplierDialog(SupplierListDto supplier)
+    {
+        var fullSupplier = await SupplierService.GetSupplierByIdAsync(supplier.Id);
+        if (fullSupplier != null)
+        {
+            _supplierModel = new SupplierFormModel
+            {
+                Name = fullSupplier.Name,
+                CompanyName = fullSupplier.CompanyName,
+                Phone = fullSupplier.Phone,
+                Gstin = fullSupplier.Gstin,
+                Address = fullSupplier.Address,
+                OpeningBalance = 0, // Cannot edit opening balance later in simple form
+                IsNewSupplier = false
+            };
+            _editingSupplierId = fullSupplier.Id;
+            _dialogVisible = true;
+        }
+        else
+        {
+            Snackbar.Add("Failed to load supplier details.", Severity.Error);
+        }
+    }
+
+    private void CloseDialog()
+    {
+        _dialogVisible = false;
+    }
+
+    private async Task SaveSupplierAsync()
+    {
+        _isSaving = true;
+        try
+        {
+            if (_supplierModel.IsNewSupplier)
+            {
+                var result = await SupplierService.CreateSupplierAsync(_supplierModel);
+                if (result != null)
+                {
+                    Snackbar.Add("Supplier created successfully", Severity.Success);
+                    _dialogVisible = false;
+                    await LoadDataAsync();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to create supplier. Duplicate name or GSTIN?", Severity.Error);
+                }
+            }
+            else if (_editingSupplierId.HasValue)
+            {
+                var result = await SupplierService.UpdateSupplierAsync(_editingSupplierId.Value, _supplierModel);
+                if (result != null)
+                {
+                    Snackbar.Add("Supplier updated successfully", Severity.Success);
+                    _dialogVisible = false;
+                    await LoadDataAsync();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to update supplier. Duplicate details?", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving supplier: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task DeleteSupplierAsync(SupplierListDto supplier)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Delete Supplier", 
+            $"Are you sure you want to delete the supplier '{supplier.Name}'?", 
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            var success = await SupplierService.DeleteSupplierAsync(supplier.Id);
+            if (success)
+            {
+                Snackbar.Add("Supplier deleted successfully", Severity.Success);
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete supplier.", Severity.Error);
+            }
+        }
+    }
+}

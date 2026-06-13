@@ -1,0 +1,294 @@
+@page "/brokers"
+@using System.ComponentModel.DataAnnotations
+@using VikashERP.Web.Models.Brokers
+@using VikashERP.Web.Services.Interfaces
+@inject IBrokerWebService BrokerService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Broker Master</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-8">
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h4" Class="fw-bold mb-1">Brokers</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Surface" Style="opacity: 0.7;">
+                Manage broker accounts and commission balances
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenAddDialog"
+                   Size="Size.Large"
+                   Class="rounded-pill px-6 shadow-sm">
+            Add Broker
+        </MudButton>
+    </div>
+
+    <!-- KPI Cards -->
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="kpi-card" Elevation="0">
+                <div class="kpi-icon-wrapper" style="background: rgba(var(--mud-palette-primary-rgb), 0.1); color: var(--mud-palette-primary);">
+                    <MudIcon Icon="@Icons.Material.Filled.People" />
+                </div>
+                <div>
+                    <MudText Typo="Typo.h5" Class="fw-bold">@_brokers.Count</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Surface" Style="opacity: 0.7;">Total Brokers</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="kpi-card" Elevation="0">
+                <div class="kpi-icon-wrapper" style="background: rgba(var(--mud-palette-success-rgb), 0.1); color: var(--mud-palette-success);">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                </div>
+                <div>
+                    <MudText Typo="Typo.h5" Class="fw-bold">₹@_brokers.Sum(b => b.CurrentBalance).ToString("N2")</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Surface" Style="opacity: 0.7;">Total Balance Payable</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="pa-0 overflow-hidden shadow-sm" Elevation="0" Style="border: 1px solid var(--mud-palette-lines-default); border-radius: 16px;">
+        <MudDataGrid Items="@_brokers" Filterable="true" SortMode="@SortMode.Multiple" Groupable="false" Hideable="true" Hover="true" Loading="@_isLoading">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Broker List</MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="_searchString" Placeholder="Search brokers..." Adornment="Adornment.Start" Immediate="true"
+                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" />
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="Broker Name" />
+                <PropertyColumn Property="x => x.Phone" Title="Phone Number" />
+                <TemplateColumn Title="Current Balance">
+                    <CellTemplate>
+                        @{
+                            var bal = context.Item.CurrentBalance;
+                            var color = bal > 0 ? Color.Success : (bal < 0 ? Color.Error : Color.Default);
+                            var suffix = bal > 0 ? "Cr" : (bal < 0 ? "Dr" : "");
+                            var val = Math.Abs(bal);
+                        }
+                        <MudChip T="string" Color="@color" Size="Size.Small" Variant="Variant.Text">
+                            ₹@val.ToString("N2") @suffix
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small" OnClick="@(() => OpenEditDialog(context.Item))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteBrokerAsync(context.Item))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="BrokerListDto" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudPaper>
+</MudContainer>
+
+<MudDialog @bind-Visible="_isDialogVisible" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@(_editingId == null ? Icons.Material.Filled.Add : Icons.Material.Filled.Edit)" Class="mr-2 mb-n1" />
+            @(_editingId == null ? "Add New Broker" : "Edit Broker")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm Model="@_formModel" @ref="_form" ValidationDelay="0">
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_formModel.Name" For="@(() => _formModel.Name)"
+                                  Label="Broker Name" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_formModel.Phone" For="@(() => _formModel.Phone)"
+                                  Label="Phone Number" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                
+                @if (_editingId == null)
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudNumericField @bind-Value="_formModel.OpeningBalance" For="@(() => _formModel.OpeningBalance)"
+                                         Label="Opening Balance (₹)" Variant="Variant.Outlined" HelperText="Positive for Credit, Negative for Debit" />
+                    </MudItem>
+                }
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_formModel.Address" For="@(() => _formModel.Address)"
+                                  Label="Address" Variant="Variant.Outlined" Lines="2" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseDialog" Color="Color.Default">Cancel</MudButton>
+        <MudButton OnClick="SaveAsync" Color="Color.Primary" Variant="Variant.Filled" Disabled="@_isSaving">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Saving</MudText>
+            }
+            else
+            {
+                <MudText>Save</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .kpi-card {
+        padding: 20px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid var(--mud-palette-lines-default);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .kpi-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .kpi-icon-wrapper .mud-icon-root {
+        font-size: 24px;
+    }
+</style>
+
+@code {
+    private List<BrokerListDto> _brokers = new();
+    private string _searchString = "";
+    private bool _isLoading = true;
+
+    private bool _isDialogVisible;
+    private bool _isSaving;
+    private Guid? _editingId;
+    private BrokerFormModel _formModel = new();
+    private MudForm _form = null!;
+
+    private DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _brokers = await BrokerService.GetBrokersAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load brokers: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenAddDialog()
+    {
+        _editingId = null;
+        _formModel = new BrokerFormModel();
+        _isDialogVisible = true;
+    }
+
+    private async Task OpenEditDialog(BrokerListDto item)
+    {
+        _editingId = item.Id;
+        var details = await BrokerService.GetBrokerByIdAsync(item.Id);
+        if (details != null)
+        {
+            _formModel = new BrokerFormModel
+            {
+                Id = details.Id,
+                Name = details.Name,
+                Phone = details.Phone,
+                Address = details.Address
+            };
+            _isDialogVisible = true;
+        }
+        else
+        {
+            Snackbar.Add("Failed to load broker details.", Severity.Error);
+        }
+    }
+
+    private void CloseDialog()
+    {
+        _isDialogVisible = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid) return;
+
+        _isSaving = true;
+        try
+        {
+            if (_editingId == null)
+            {
+                await BrokerService.CreateBrokerAsync(_formModel);
+                Snackbar.Add("Broker added successfully", Severity.Success);
+            }
+            else
+            {
+                await BrokerService.UpdateBrokerAsync(_editingId.Value, _formModel);
+                Snackbar.Add("Broker updated successfully", Severity.Success);
+            }
+
+            _isDialogVisible = false;
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving broker: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task DeleteBrokerAsync(BrokerListDto broker)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Delete Broker", 
+            $"Are you sure you want to delete the broker '{broker.Name}'?", 
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            var success = await BrokerService.DeleteBrokerAsync(broker.Id);
+            if (success)
+            {
+                Snackbar.Add("Broker deleted successfully", Severity.Success);
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete broker.", Severity.Error);
+            }
+        }
+    }
+}
