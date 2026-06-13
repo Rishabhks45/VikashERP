@@ -10,7 +10,12 @@ CREATE TABLE "ProductSubImages" (
     "Description" character varying(1000) NULL,
     "DisplayOrder" integer NOT NULL DEFAULT 0,
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "FK_ProductSubImages_Products" FOREIGN KEY ("ProductId") REFERENCES "Products" ("Id") ON DELETE CASCADE
+    CONSTRAINT "FK_ProductSubImages_Products" FOREIGN KEY ("ProductId") REFERENCES "Products" ("Id") ON DELETE CASCADE,
+    "CreatedBy" UUID NULL,
+    "UpdatedAt" timestamp with time zone NULL,
+    "UpdatedBy" UUID NULL,
+    "IsActive" boolean NOT NULL DEFAULT TRUE,
+    "IsDeleted" boolean NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX "IX_ProductSubImages_ProductId_DisplayOrder" ON "ProductSubImages" ("ProductId", "DisplayOrder");

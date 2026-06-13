@@ -1,8 +1,8 @@
 namespace VikashERP.Domain.Entities;
 
-public class StaffSalary
+public class StaffSalary : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+
     public Guid StaffId { get; set; }
     public DateOnly PaymentDate { get; set; }
     public decimal AmountPaid { get; set; }

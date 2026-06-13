@@ -16,5 +16,10 @@ CREATE TABLE stock_ledger (
     remarks text NULL,
     created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_stock_ledger_product_variants" FOREIGN KEY (variant_id) REFERENCES product_variants (id) ON DELETE RESTRICT,
-    CONSTRAINT "FK_stock_ledger_godowns" FOREIGN KEY (godown_id) REFERENCES godowns (id) ON DELETE RESTRICT
+    CONSTRAINT "FK_stock_ledger_godowns" FOREIGN KEY (godown_id) REFERENCES godowns (id) ON DELETE RESTRICT,
+    created_by UUID NULL,
+    updated_at timestamp with time zone NULL,
+    updated_by UUID NULL,
+    is_active boolean NOT NULL DEFAULT TRUE,
+    is_deleted boolean NOT NULL DEFAULT FALSE
 );

@@ -48,7 +48,7 @@ public class OrganizationDto
     public bool EnableDailyReportEmail { get; set; }
     public bool EnableTradeConfirmations { get; set; }
     public bool IsActive { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
 
 public class OrganizationPublicDto

@@ -69,5 +69,8 @@ CREATE TABLE "Organizations" (
     -- Meta
     "IsActive" boolean NOT NULL DEFAULT TRUE,
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "UpdatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "UpdatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "CreatedBy" UUID NULL,
+    "UpdatedBy" UUID NULL,
+    "IsDeleted" boolean NOT NULL DEFAULT FALSE
 );

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
+using VikashERP.Web.Models;
 using VikashERP.Web.Services.Interfaces;
 
 namespace VikashERP.Web.Components.Layout;
@@ -21,6 +22,7 @@ public partial class MainLayout : IDisposable
     private string _userEmail = string.Empty;
     private string _userRole = string.Empty;
     private string _userInitials = "U";
+    private Guid? _userId;
     private string? _userProfilePictureUrl;
     private string _displayRole => string.IsNullOrWhiteSpace(_userRole) ? "Staff" : _userRole;
 
@@ -67,6 +69,10 @@ public partial class MainLayout : IDisposable
             ?? string.Empty;
         _userInitials = GetInitials(_userName);
         _userProfilePictureUrl = GetClaim(user, "picture", ClaimTypes.Uri);
+        
+        var userIdStr = GetClaim(user, ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub, "sub");
+        if (Guid.TryParse(userIdStr, out var uid))
+            _userId = uid;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -86,40 +92,39 @@ public partial class MainLayout : IDisposable
                 var authState = await AuthStateProvider.GetAuthenticationStateAsync();
                 var user = authState.User;
                 _userEmail = GetClaim(user, ClaimTypes.Email, JwtRegisteredClaimNames.Email, "email") ?? string.Empty;
+                
+                var userIdStr = GetClaim(user, ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub, "sub");
+                if (Guid.TryParse(userIdStr, out var uid))
+                    _userId = uid;
             }
 
-            if (!string.IsNullOrEmpty(_userEmail))
+            if (_userId.HasValue)
             {
-                var key = $"user_profile_{_userEmail}";
-                var storedJson = await JSRuntime.InvokeAsync<string>("localStorage.getItem", key);
-                if (!string.IsNullOrEmpty(storedJson))
+                var profile = await UserProfileService.GetProfileAsync(_userId.Value);
+                if (profile != null)
                 {
-                    var deserialized = System.Text.Json.JsonSerializer.Deserialize<UserProfileDto>(storedJson);
-                    if (deserialized != null)
+                    if (!string.IsNullOrEmpty(profile.FirstName) || !string.IsNullOrEmpty(profile.LastName))
                     {
-                        if (!string.IsNullOrEmpty(deserialized.FirstName) || !string.IsNullOrEmpty(deserialized.LastName))
-                        {
-                            _userName = $"{deserialized.FirstName} {deserialized.LastName}".Trim();
-                            _userInitials = GetInitials(_userName);
-                        }
-                        if (!string.IsNullOrEmpty(deserialized.ProfilePictureUrl))
-                        {
-                            _userProfilePictureUrl = deserialized.ProfilePictureUrl;
-                        }
-                        StateHasChanged();
+                        _userName = $"{profile.FirstName} {profile.LastName}".Trim();
+                        _userInitials = GetInitials(_userName);
                     }
+                    if (!string.IsNullOrEmpty(profile.ProfilePictureUrl))
+                    {
+                        _userProfilePictureUrl = profile.ProfilePictureUrl;
+                    }
+                    StateHasChanged();
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading user profile from storage: {ex.Message}");
+            Console.WriteLine($"Error loading user profile from server: {ex.Message}");
         }
     }
 
     private void HandleProfileUpdated(UserProfileDto profile)
     {
-        if (profile != null && profile.Email == _userEmail)
+        if (profile != null)
         {
             _userName = $"{profile.FirstName} {profile.LastName}".Trim();
             if (string.IsNullOrEmpty(_userName))

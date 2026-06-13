@@ -15,7 +15,11 @@ CREATE TABLE deliveries (
     freight_charge numeric(10,2) NOT NULL DEFAULT 0,
     created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "FK_deliveries_invoices" FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE
+    CONSTRAINT "FK_deliveries_invoices" FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE,
+    created_by UUID NULL,
+    updated_by UUID NULL,
+    is_active boolean NOT NULL DEFAULT TRUE,
+    is_deleted boolean NOT NULL DEFAULT FALSE
 );
 
 CREATE UNIQUE INDEX idx_deliveries_challan_number ON deliveries (delivery_challan_number);

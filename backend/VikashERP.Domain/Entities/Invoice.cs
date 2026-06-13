@@ -1,8 +1,8 @@
 namespace VikashERP.Domain.Entities;
 
-public class Invoice
+public class Invoice : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+
     public string InvoiceNumber { get; set; } = string.Empty;
     public Guid CustomerId { get; set; }
     public decimal Subtotal { get; set; }
@@ -14,7 +14,7 @@ public class Invoice
     public decimal DueAmount { get; set; }
     public string PaymentMode { get; set; } = string.Empty;
     public DateOnly InvoiceDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
 
     public Customer Customer { get; set; } = null!;
     public ICollection<InvoiceItem> Items { get; set; } = [];

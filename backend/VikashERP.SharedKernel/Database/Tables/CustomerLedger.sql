@@ -13,5 +13,11 @@ CREATE TABLE customer_ledger (
     credit numeric(12,2) NOT NULL DEFAULT 0,
     running_balance numeric(12,2) NOT NULL DEFAULT 0,
     remarks text NULL,
-    CONSTRAINT "FK_customer_ledger_Customers" FOREIGN KEY (customer_id) REFERENCES "Customers" ("Id") ON DELETE CASCADE
+    CONSTRAINT "FK_customer_ledger_Customers" FOREIGN KEY (customer_id) REFERENCES "Customers" ("Id") ON DELETE CASCADE,
+    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID NULL,
+    updated_at timestamp with time zone NULL,
+    updated_by UUID NULL,
+    is_active boolean NOT NULL DEFAULT TRUE,
+    is_deleted boolean NOT NULL DEFAULT FALSE
 );

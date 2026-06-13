@@ -17,7 +17,12 @@ CREATE TABLE invoices (
     payment_mode character varying(50) NOT NULL,
     invoice_date date NOT NULL DEFAULT CURRENT_DATE,
     created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "FK_invoices_Customers" FOREIGN KEY (customer_id) REFERENCES "Customers" ("Id") ON DELETE RESTRICT
+    CONSTRAINT "FK_invoices_Customers" FOREIGN KEY (customer_id) REFERENCES "Customers" ("Id") ON DELETE RESTRICT,
+    created_by UUID NULL,
+    updated_at timestamp with time zone NULL,
+    updated_by UUID NULL,
+    is_active boolean NOT NULL DEFAULT TRUE,
+    is_deleted boolean NOT NULL DEFAULT FALSE
 );
 
 CREATE UNIQUE INDEX idx_invoices_invoice_number ON invoices (invoice_number);

@@ -10,5 +10,10 @@ CREATE TABLE "PasswordResetTokens" (
     "ExpiresAtUtc" timestamp with time zone NOT NULL,
     "IsUsed" boolean NOT NULL DEFAULT FALSE,
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "FK_PasswordResetTokens_Users" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE
+    CONSTRAINT "FK_PasswordResetTokens_Users" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE,
+    "CreatedBy" UUID NULL,
+    "UpdatedAt" timestamp with time zone NULL,
+    "UpdatedBy" UUID NULL,
+    "IsActive" boolean NOT NULL DEFAULT TRUE,
+    "IsDeleted" boolean NOT NULL DEFAULT FALSE
 );

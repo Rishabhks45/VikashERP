@@ -2,9 +2,9 @@ namespace VikashERP.Domain.Entities;
 
 using VikashERP.SharedKernel.Enums;
 
-public class EmailTemplate
+public class EmailTemplate : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+
     public string TemplateKey { get; set; } = string.Empty;
     public NotificationType NotificationType { get; set; } = NotificationType.Email;
     public string DisplayName { get; set; } = string.Empty;
@@ -16,7 +16,7 @@ public class EmailTemplate
     public string? ButtonLabel { get; set; }
     public string? ButtonLinkToken { get; set; }
     public string AvailableTokens { get; set; } = "[]";
-    public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+
+
 }

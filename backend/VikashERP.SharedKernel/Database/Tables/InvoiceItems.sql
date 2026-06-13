@@ -15,5 +15,11 @@ CREATE TABLE invoice_items (
     igst_rate numeric(5,2) NOT NULL DEFAULT 0,
     total_price numeric(12,2) NOT NULL DEFAULT 0,
     CONSTRAINT "FK_invoice_items_invoices" FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE,
-    CONSTRAINT "FK_invoice_items_product_variants" FOREIGN KEY (variant_id) REFERENCES product_variants (id) ON DELETE RESTRICT
+    CONSTRAINT "FK_invoice_items_product_variants" FOREIGN KEY (variant_id) REFERENCES product_variants (id) ON DELETE RESTRICT,
+    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID NULL,
+    updated_at timestamp with time zone NULL,
+    updated_by UUID NULL,
+    is_active boolean NOT NULL DEFAULT TRUE,
+    is_deleted boolean NOT NULL DEFAULT FALSE
 );

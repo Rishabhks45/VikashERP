@@ -9,6 +9,7 @@ using VikashERP.Infrastructure.Data;
 using VikashERP.SharedKernel.Common.Interfaces;
 using VikashERP.SharedKernel.Enums;
 using VikashERP.SharedKernel.Settings;
+using VikashERP.SharedKernel.Extensions;
 
 namespace VikashERP.API.Controllers;
 
@@ -128,7 +129,8 @@ public class CustomersController : ControllerBase
             DefaultPaymentMode = paymentMode,
             CreditLimit = dto.CreditLimit,
             CurrentBalance = 0,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = User.GetAuthenticatedUserId()
         };
 
         _context.Customers.Add(customer);
@@ -166,6 +168,8 @@ public class CustomersController : ControllerBase
         customer.Address = NullIfWhiteSpace(dto.Address);
         customer.DefaultPaymentMode = paymentMode;
         customer.CreditLimit = dto.CreditLimit;
+        customer.UpdatedAt = DateTime.UtcNow;
+        customer.UpdatedBy = User.GetAuthenticatedUserId();
 
         await _context.SaveChangesAsync(cancellationToken);
         return Ok(MapToListDto(customer));
@@ -201,7 +205,8 @@ public class CustomersController : ControllerBase
         DefaultPaymentMode = customer.DefaultPaymentMode.ToFriendlyName(),
         CreditLimit = customer.CreditLimit,
         CurrentBalance = customer.CurrentBalance,
-        CreatedAt = customer.CreatedAt
+        CreatedAt = customer.CreatedAt,
+        UpdatedAt = customer.UpdatedAt
     };
 
     private static string? NullIfWhiteSpace(string? value) =>
@@ -211,13 +216,6 @@ public class CustomersController : ControllerBase
     {
         var claim = User.FindFirst("customer_id")?.Value;
         return Guid.TryParse(claim, out var id) ? id : null;
-    }
-
-    private Guid? GetAuthenticatedUserId()
-    {
-        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? User.FindFirst("sub")?.Value;
-        return Guid.TryParse(sub, out var id) ? id : null;
     }
 
     private async Task<Customer?> ResolveCustomerAsync(
@@ -230,7 +228,7 @@ public class CustomersController : ControllerBase
             return await _context.Customers.FindAsync([customerId.Value], cancellationToken);
         }
 
-        var userId = GetAuthenticatedUserId();
+        var userId = User.GetAuthenticatedUserId();
         if (userId is null)
             return null;
 
@@ -262,7 +260,8 @@ public class CustomersController : ControllerBase
             Gstin = NullIfWhiteSpace(shopDto?.Gstin),
             Address = NullIfWhiteSpace(shopDto?.Address),
             DefaultPaymentMode = paymentMode,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = userId
         };
 
         _context.Customers.Add(customer);
@@ -274,7 +273,8 @@ public class CustomersController : ControllerBase
             UserId = user.Id,
             CustomerId = customer.Id,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = userId
         });
         await _context.SaveChangesAsync(cancellationToken);
 

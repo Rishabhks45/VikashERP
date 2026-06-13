@@ -18,7 +18,10 @@ CREATE TABLE email_templates (
     available_tokens text NOT NULL DEFAULT '[]',
     is_active boolean NOT NULL DEFAULT TRUE,
     created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID NULL,
+    updated_by UUID NULL,
+    is_deleted boolean NOT NULL DEFAULT FALSE
 );
 
 CREATE UNIQUE INDEX idx_email_templates_key_type ON email_templates (template_key, notification_type);

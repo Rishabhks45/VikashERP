@@ -9,6 +9,7 @@ using VikashERP.SharedKernel.Settings;
 using VikashERP.Application.Features.Users.DTOs;
 using VikashERP.Application.Features.Users.Validators;
 using VikashERP.Application.Interfaces;
+using VikashERP.SharedKernel.Extensions;
 
 namespace VikashERP.API.Controllers;
 
@@ -24,7 +25,7 @@ public class UsersController : ControllerBase
     private readonly UpdateUserAccountDtoValidator _updateUserValidator;
 
     public UsersController(
-        ApplicationDbContext context, 
+        ApplicationDbContext context,
         IEncryptionService encryptionService,
         Microsoft.Extensions.Options.IOptions<EncryptionSettings> options,
         ISharedRepository sharedRepository,
@@ -53,6 +54,7 @@ public class UsersController : ControllerBase
                 Role = u.Role.ToFriendlyName(),
                 ProfilePictureUrl = u.ProfilePictureUrl,
                 CreatedAt = u.CreatedAt,
+                UpdatedAt = u.UpdatedAt,
                 IsActive = u.IsActive,
                 LastLoginAt = u.LastLoginAt
             })
@@ -94,7 +96,9 @@ public class UsersController : ControllerBase
             Email = dto.Email.Trim().ToLowerInvariant(),
             PasswordHash = encryptedPassword,
             Role = role,
+            ProfilePictureUrl = dto.ProfilePictureUrl,
             CreatedAt = DateTime.UtcNow,
+            CreatedBy = User.GetAuthenticatedUserId(),
             IsActive = dto.IsActive
         };
 
@@ -112,6 +116,27 @@ public class UsersController : ControllerBase
         }
 
         return Ok();
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var user = await _context.Users.FindAsync(new object[] { id }, cancellationToken);
+        if (user is null) return NotFound();
+
+        return Ok(new UserAccountDto
+        {
+            Id = user.Id,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Role = user.Role.ToFriendlyName(),
+            ProfilePictureUrl = user.ProfilePictureUrl,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+            IsActive = user.IsActive,
+            LastLoginAt = user.LastLoginAt
+        });
     }
 
     [HttpPut("{id:guid}")]
@@ -137,8 +162,10 @@ public class UsersController : ControllerBase
         user.LastName = dto.LastName.Trim();
         user.Email = dto.Email.Trim().ToLowerInvariant();
         user.Role = role;
+        user.ProfilePictureUrl = dto.ProfilePictureUrl;
         user.IsActive = dto.IsActive;
         user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedBy = User.GetAuthenticatedUserId();
 
         if (!string.IsNullOrWhiteSpace(dto.Password))
         {
@@ -186,7 +213,8 @@ public class UsersController : ControllerBase
             UserId = user.Id,
             CustomerId = customer.Id,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = User.GetAuthenticatedUserId()
         });
         await _context.SaveChangesAsync(cancellationToken);
     }

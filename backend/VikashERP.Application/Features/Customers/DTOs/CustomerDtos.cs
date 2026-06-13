@@ -15,6 +15,7 @@ public class CustomerListDto
     public decimal CreditLimit { get; set; }
     public decimal CurrentBalance { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
 
 public class CreateCustomerDto

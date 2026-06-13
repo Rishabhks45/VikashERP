@@ -16,7 +16,10 @@ CREATE TABLE "Users" (
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "UpdatedAt" timestamp with time zone NULL,
     "IsActive" boolean NOT NULL DEFAULT TRUE,
-    "LastLoginAt" timestamp with time zone NULL
+    "LastLoginAt" timestamp with time zone NULL,
+    "CreatedBy" uuid NULL,
+    "UpdatedBy" uuid NULL,
+    "IsDeleted" boolean NOT NULL DEFAULT FALSE
 );
 
 CREATE UNIQUE INDEX "IX_Users_Email" ON "Users" ("Email");

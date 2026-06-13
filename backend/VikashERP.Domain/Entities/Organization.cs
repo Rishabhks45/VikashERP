@@ -5,9 +5,12 @@ namespace VikashERP.Domain.Entities;
 /// <summary>
 /// Single-tenant organization / website configuration (company profile, branding, regional & notification settings).
 /// </summary>
-public class Organization
+public class Organization : BaseEntity
 {
-    public Guid Id { get; set; } = OrganizationConstants.DefaultId;
+    public Organization()
+    {
+        Id = OrganizationConstants.DefaultId;
+    }
 
     // Identity & branding
     public string LegalName { get; set; } = string.Empty;
@@ -69,7 +72,7 @@ public class Organization
     public bool EnableDailyReportEmail { get; set; }
     public bool EnableTradeConfirmations { get; set; } = true;
 
-    public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+
+
 }

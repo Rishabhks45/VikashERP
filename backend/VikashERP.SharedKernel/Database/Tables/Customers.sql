@@ -16,7 +16,12 @@ CREATE TABLE "Customers" (
     "DefaultPaymentMode" character varying(20) NOT NULL,
     "CreditLimit" numeric(12,2) NOT NULL DEFAULT 0,
     "CurrentBalance" numeric(12,2) NOT NULL DEFAULT 0,
-    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "CreatedBy" UUID NULL,
+    "UpdatedAt" timestamp with time zone NULL,
+    "UpdatedBy" UUID NULL,
+    "IsActive" boolean NOT NULL DEFAULT TRUE,
+    "IsDeleted" boolean NOT NULL DEFAULT FALSE
 );
 
 CREATE UNIQUE INDEX "IX_Customers_AccountNumber" ON "Customers" ("AccountNumber");

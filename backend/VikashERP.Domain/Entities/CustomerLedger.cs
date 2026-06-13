@@ -1,8 +1,8 @@
 namespace VikashERP.Domain.Entities;
 
-public class CustomerLedger
+public class CustomerLedger : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+
     public Guid CustomerId { get; set; }
     public DateTime TransactionDate { get; set; } = DateTime.UtcNow;
     public string TransactionType { get; set; } = string.Empty;

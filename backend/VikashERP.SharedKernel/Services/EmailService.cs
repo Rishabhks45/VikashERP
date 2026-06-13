@@ -35,7 +35,7 @@ public class EmailService : IEmailSender
         catch (Exception ex)
         {
             _logger.LogError($"Email sending failed: {ex.Message}. Email to: {toEmail} | Subject: {subject}");
-            await SaveToDiskAsync(toEmail, subject, body); 
+            await SaveToDiskAsync(toEmail, subject, body);
             return false;
         }
     }
@@ -43,9 +43,9 @@ public class EmailService : IEmailSender
     private MimeMessage CreateMimeMessage(string toEmail, string subject, string body, string? cc, string? bcc)
     {
         var emailMessage = new MimeMessage();
-        
+
         emailMessage.To.Add(MailboxAddress.Parse(toEmail));
-        
+
         if (!string.IsNullOrWhiteSpace(cc))
         {
             foreach (var address in cc.Split(';', ',').Where(a => !string.IsNullOrWhiteSpace(a)))
@@ -117,7 +117,7 @@ public class EmailService : IEmailSender
         {
             var client = new SendGridClient(apiKey);
             var from = new EmailAddress(fromEmail, fromName);
-            
+
             var sendGridMessage = new SendGridMessage
             {
                 From = from,
@@ -161,7 +161,7 @@ public class EmailService : IEmailSender
             {
                 var responseBody = await response.Body.ReadAsStringAsync();
                 _logger.LogError($"SendGrid API Error: {response.StatusCode}. Details: {responseBody}");
-                
+
                 await SaveToDiskAsync(mimeMessage);
                 return false;
             }
@@ -182,7 +182,7 @@ public class EmailService : IEmailSender
         sb.AppendLine($"Subject: {mimeMessage.Subject}");
         sb.AppendLine("--- BODY ---");
         sb.AppendLine(mimeMessage.TextBody ?? mimeMessage.HtmlBody);
-        
+
         return await WriteToFileAsync(sb.ToString());
     }
 
@@ -194,7 +194,7 @@ public class EmailService : IEmailSender
         sb.AppendLine($"Subject: {subject}");
         sb.AppendLine("--- BODY ---");
         sb.AppendLine(body);
-        
+
         return await WriteToFileAsync(sb.ToString());
     }
 

@@ -1,8 +1,8 @@
 namespace VikashERP.Domain.Entities;
 
-public class InvoiceItem
+public class InvoiceItem : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+
     public Guid InvoiceId { get; set; }
     public Guid VariantId { get; set; }
     public int QtyPcs { get; set; }

@@ -2,9 +2,9 @@ using VikashERP.SharedKernel.Enums;
 
 namespace VikashERP.Domain.Entities;
 
-public class Customer
+public class Customer : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+
     public string AccountNumber { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
@@ -16,7 +16,7 @@ public class Customer
     public CustomerPaymentMode DefaultPaymentMode { get; set; } = CustomerPaymentMode.Account;
     public decimal CreditLimit { get; set; }
     public decimal CurrentBalance { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
 
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public string FullName => $"{FirstName} {LastName}".Trim();

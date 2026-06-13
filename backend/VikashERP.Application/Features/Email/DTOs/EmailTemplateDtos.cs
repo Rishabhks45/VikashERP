@@ -10,12 +10,12 @@ public record EmailTemplateListItemDto(
     string Description,
     string Subject,
     bool IsActive,
-    DateTime UpdatedAt);
+    DateTime? UpdatedAt);
 
 public record EmailTemplateDetailDto(
     Guid Id,
     string TemplateKey,
-    NotificationType NotificationType,    string DisplayName,
+    NotificationType NotificationType, string DisplayName,
     string Description,
     string Subject,
     string Headline,
@@ -25,7 +25,7 @@ public record EmailTemplateDetailDto(
     string? ButtonLinkToken,
     IReadOnlyList<string> AvailableTokens,
     bool IsActive,
-    DateTime UpdatedAt);
+    DateTime? UpdatedAt);
 
 public record UpdateEmailTemplateRequest(
     Guid Id,

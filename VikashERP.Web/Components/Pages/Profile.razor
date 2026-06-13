@@ -4,6 +4,7 @@
 @using System.Security.Claims
 @using VikashERP.Web.Models
 @using VikashERP.Web.Models.Forms
+@using VikashERP.Web.Models
 @using VikashERP.Web.Services.Interfaces
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IFileUploadService FileUploadService
@@ -388,6 +389,7 @@
     private string _userEmail = string.Empty;
     private string _userRole = string.Empty;
     private string? _profilePictureUrl;
+    private Guid? _userId;
     private bool _isCustomer = false;
     private string? _customerIdStr;
 
@@ -444,6 +446,15 @@
             ?? string.Empty;
         _profilePictureUrl = user.FindFirst("picture")?.Value
             ?? user.FindFirst(ClaimTypes.Uri)?.Value;
+            
+        var userIdStr = user.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            ?? user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
+            ?? user.FindFirst("sub")?.Value;
+            
+        if (Guid.TryParse(userIdStr, out var uid))
+        {
+            _userId = uid;
+        }
         
         _customerIdStr = user.FindFirst("customer_id")?.Value;
 
@@ -470,36 +481,36 @@
 
     private async Task LoadProfileDataAsync()
     {
+        if (!_userId.HasValue) return;
+        
         try
         {
-            var key = $"user_profile_{_userEmail}";
-            var storedJson = await JSRuntime.InvokeAsync<string>("localStorage.getItem", key);
-            if (!string.IsNullOrEmpty(storedJson))
+            var profile = await UserProfileService.GetProfileAsync(_userId.Value);
+            if (profile != null)
             {
-                var deserialized = System.Text.Json.JsonSerializer.Deserialize<UserProfileModel>(storedJson);
-                if (deserialized != null)
+                _profileModel = new UserProfileModel
                 {
-                    _profileModel = deserialized;
-                    if (!string.IsNullOrEmpty(_profileModel.ProfilePictureUrl))
-                    {
-                        _profilePictureUrl = _profileModel.ProfilePictureUrl;
-                    }
-                    else
-                    {
-                        _profileModel.ProfilePictureUrl = _profilePictureUrl;
-                    }
-                    _userName = $"{_profileModel.FirstName} {_profileModel.LastName}".Trim();
-                    if (string.IsNullOrEmpty(_userName))
-                    {
-                        _userName = _profileModel.Email;
-                    }
-                    return;
+                    FirstName = profile.FirstName,
+                    LastName = profile.LastName,
+                    Email = profile.Email,
+                    PhoneNumber = "",
+                    Location = "India",
+                    Bio = "Executive manager registered under VikashERP portal.",
+                    ProfilePictureUrl = profile.ProfilePictureUrl
+                };
+                
+                _profilePictureUrl = profile.ProfilePictureUrl;
+                _userName = $"{profile.FirstName} {profile.LastName}".Trim();
+                if (string.IsNullOrEmpty(_userName))
+                {
+                    _userName = profile.Email;
                 }
+                return;
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading user profile: {ex.Message}");
+            Console.WriteLine($"Error loading user profile from API: {ex.Message}");
         }
 
         // Initialize default user details
@@ -522,28 +533,37 @@
         StateHasChanged();
         try
         {
-            // Simulate latency
-            await Task.Delay(800);
-
-            var key = $"user_profile_{_userEmail}";
-            var serialized = System.Text.Json.JsonSerializer.Serialize(_profileModel);
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", key, serialized);
-
-            _userName = $"{_profileModel.FirstName} {_profileModel.LastName}".Trim();
-            if (string.IsNullOrEmpty(_userName))
-            {
-                _userName = _profileModel.Email;
-            }
-
-            UserProfileService.NotifyProfileUpdated(new UserProfileDto
+            var dto = new UpdateUserAccountDto
             {
                 FirstName = _profileModel.FirstName,
                 LastName = _profileModel.LastName,
                 Email = _profileModel.Email,
-                ProfilePictureUrl = _profileModel.ProfilePictureUrl
-            });
-
-            NotificationService.Success("Profile updated successfully!");
+                ProfilePictureUrl = _profileModel.ProfilePictureUrl,
+                Role = _userRole
+            };
+            
+            var apiSuccess = await UserProfileService.UpdateProfileAsync(_userId.Value, dto);
+            if (!apiSuccess)
+            {
+                NotificationService.Warning("Profile update failed to sync to server.");
+            }
+            else
+            {
+                NotificationService.Success("Profile updated successfully!");
+                _userName = $"{_profileModel.FirstName} {_profileModel.LastName}".Trim();
+                if (string.IsNullOrEmpty(_userName))
+                {
+                    _userName = _profileModel.Email;
+                }
+                
+                UserProfileService.NotifyProfileUpdated(new UserProfileDto
+                {
+                    FirstName = _profileModel.FirstName,
+                    LastName = _profileModel.LastName,
+                    Email = _profileModel.Email,
+                    ProfilePictureUrl = _profileModel.ProfilePictureUrl
+                });
+            }
         }
         catch (Exception ex)
         {
@@ -558,12 +578,20 @@
 
     private async Task SaveProfileDataSilentAsync()
     {
+        if (!_userId.HasValue) return;
         try
         {
-            var key = $"user_profile_{_userEmail}";
-            var serialized = System.Text.Json.JsonSerializer.Serialize(_profileModel);
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", key, serialized);
-
+            var dto = new UpdateUserAccountDto
+            {
+                FirstName = _profileModel.FirstName,
+                LastName = _profileModel.LastName,
+                Email = _profileModel.Email,
+                ProfilePictureUrl = _profileModel.ProfilePictureUrl,
+                Role = _userRole
+            };
+            
+            await UserProfileService.UpdateProfileAsync(_userId.Value, dto);
+            
             UserProfileService.NotifyProfileUpdated(new UserProfileDto
             {
                 FirstName = _profileModel.FirstName,
