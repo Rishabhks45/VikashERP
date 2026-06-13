@@ -4,7 +4,7 @@ using VikashERP.SharedKernel.Enums;
 
 public class EmailTemplate
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string TemplateKey { get; set; } = string.Empty;
     public NotificationType NotificationType { get; set; } = NotificationType.Email;
     public string DisplayName { get; set; } = string.Empty;

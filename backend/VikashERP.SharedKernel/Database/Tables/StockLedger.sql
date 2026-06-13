@@ -1,12 +1,14 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: stock_ledger
 -- Description: Inventory stock movement ledger
 
 CREATE TABLE stock_ledger (
-    id SERIAL PRIMARY KEY,
-    variant_id integer NOT NULL,
-    godown_id integer NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    variant_id UUID NOT NULL,
+    godown_id UUID NOT NULL,
     transaction_type character varying(50) NOT NULL,
-    reference_id integer NULL,
+    reference_id UUID NULL,
     qty_pcs integer NOT NULL DEFAULT 0,
     weight_kg numeric(12,3) NOT NULL DEFAULT 0,
     running_pcs integer NOT NULL DEFAULT 0,

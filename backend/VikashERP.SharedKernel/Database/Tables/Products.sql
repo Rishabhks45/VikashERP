@@ -1,9 +1,11 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: Products
 -- Description: Product master records
 
 CREATE TABLE "Products" (
-    "Id" SERIAL PRIMARY KEY,
-    "CategoryId" integer NOT NULL,
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "CategoryId" UUID NOT NULL,
     "Name" character varying(255) NOT NULL,
     "HsnCode" character varying(10) NULL,
     "ProductImageUrl" character varying(500) NULL,

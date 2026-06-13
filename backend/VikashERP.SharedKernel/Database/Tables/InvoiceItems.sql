@@ -1,10 +1,12 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: invoice_items
 -- Description: Line items within an invoice
 
 CREATE TABLE invoice_items (
-    id SERIAL PRIMARY KEY,
-    invoice_id integer NOT NULL,
-    variant_id integer NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    invoice_id UUID NOT NULL,
+    variant_id UUID NOT NULL,
     qty_pcs integer NOT NULL DEFAULT 0,
     weight_kg numeric(12,3) NOT NULL DEFAULT 0,
     rate_per_kg numeric(12,2) NOT NULL DEFAULT 0,

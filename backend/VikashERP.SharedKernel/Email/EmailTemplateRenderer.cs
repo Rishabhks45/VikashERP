@@ -8,6 +8,8 @@ public sealed record EmailTemplateContent(string Subject, string HtmlBody);
 public static class EmailTemplateTokens
 {
     public const string UserName = "{{UserName}}";
+    public const string UserEmail = "{{UserEmail}}";
+    public const string Password = "{{Password}}";
     public const string ResetLink = "{{ResetLink}}";
     public const string LoginUrl = "{{LoginUrl}}";
     public const string ExpiryMinutes = "{{ExpiryMinutes}}";

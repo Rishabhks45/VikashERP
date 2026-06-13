@@ -11,11 +11,16 @@ public class JwtTokenHandler : DelegatingHandler
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IHttpClientFactory _clientFactory;
+    private readonly TokenValidator _tokenValidator;
 
-    public JwtTokenHandler(IHttpContextAccessor httpContextAccessor, IHttpClientFactory clientFactory)
+    public JwtTokenHandler(
+        IHttpContextAccessor httpContextAccessor,
+        IHttpClientFactory clientFactory,
+        TokenValidator tokenValidator)
     {
         _httpContextAccessor = httpContextAccessor;
         _clientFactory = clientFactory;
+        _tokenValidator = tokenValidator;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
@@ -69,15 +74,31 @@ public class JwtTokenHandler : DelegatingHandler
         return await result.Content.ReadFromJsonAsync<UserLoginResponse>(cancellationToken: cancellationToken);
     }
 
-    private static async Task SignInWithTokensAsync(
+    private async Task SignInWithTokensAsync(
         HttpContext httpContext,
         UserLoginResponse login,
         CancellationToken cancellationToken)
     {
-        var identity = (ClaimsIdentity)httpContext.User.Identity!;
-        var claims = identity.Claims
+        var principal = _tokenValidator.ValidateToken(login.Token);
+        if (principal is null)
+            return;
+
+        var claims = principal.Claims
             .Where(c => c.Type is not "access_token" and not "refresh_token")
             .ToList();
+
+        foreach (var roleClaim in claims.Where(c => c.Type == "roles").ToList())
+        {
+            if (!claims.Any(c => c.Type == ClaimTypes.Role && c.Value == roleClaim.Value))
+                claims.Add(new Claim(ClaimTypes.Role, roleClaim.Value));
+        }
+
+        if (!claims.Any(c => c.Type == ClaimTypes.Name))
+        {
+            var nameClaim = claims.FirstOrDefault(c => c.Type is "name" or ClaimTypes.Name);
+            if (nameClaim is not null)
+                claims.Add(new Claim(ClaimTypes.Name, nameClaim.Value));
+        }
 
         claims.Add(new Claim("access_token", login.Token));
         claims.Add(new Claim("refresh_token", login.RefreshToken));

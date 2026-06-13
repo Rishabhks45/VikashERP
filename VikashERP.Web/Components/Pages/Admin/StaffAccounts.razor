@@ -198,12 +198,13 @@
                                 <MudSwitch T="bool" @bind-Value="_editModel.IsActive" Label="Is Active Account" Color="Color.Success" />
 
                                 <MudTextField @bind-Value="_editModel.Password" 
-                                               Label="@(_isNewUser ? "Security Key (Password) *" : "Rotate Security Key (Optional)")" 
+                                               Label="@GetPasswordFieldLabel()" 
                                                Variant="Variant.Outlined" 
                                                Margin="Margin.Dense" 
                                                For="@(() => _editModel.Password)" 
                                                InputType="InputType.Password" 
-                                               Placeholder="@(_isNewUser ? "" : "••••••••")" />
+                                               Placeholder="@GetPasswordFieldPlaceholder()"
+                                               HelperText="@GetPasswordFieldHelperText()" />
                             </MudStack>
                         </div>
 
@@ -338,7 +339,8 @@
             
             if (_isNewUser)
             {
-                if (string.IsNullOrWhiteSpace(_editModel.Password))
+                if (string.IsNullOrWhiteSpace(_editModel.Password)
+                    && !string.Equals(_editModel.Role, "Customer", StringComparison.OrdinalIgnoreCase))
                 {
                     NotificationService.Warning("Password is required for new accounts.");
                     _saving = false;
@@ -348,7 +350,10 @@
                 var response = await client.PostAsJsonAsync("api/users", _editModel);
                 if (response.IsSuccessStatusCode)
                 {
-                    NotificationService.Success("Staff account created successfully.");
+                    var message = string.Equals(_editModel.Role, "Customer", StringComparison.OrdinalIgnoreCase)
+                        ? "Customer account created. Welcome email sent with login credentials."
+                        : "Staff account created successfully.";
+                    NotificationService.Success(message);
                     _drawerOpen = false;
                     await LoadUsersAsync();
                 }
@@ -444,6 +449,29 @@
         "Employee" => "role-employee",
         _ => "role-customer"
     };
+
+    private bool IsCustomerRoleSelected =>
+        string.Equals(_editModel.Role, "Customer", StringComparison.OrdinalIgnoreCase);
+
+    private string GetPasswordFieldLabel()
+    {
+        if (!_isNewUser)
+            return "Rotate Security Key (Optional)";
+
+        return IsCustomerRoleSelected
+            ? "Security Key (Optional)"
+            : "Security Key (Password) *";
+    }
+
+    private string GetPasswordFieldPlaceholder() =>
+        _isNewUser && IsCustomerRoleSelected
+            ? "Leave blank to auto-generate"
+            : (_isNewUser ? string.Empty : "••••••••");
+
+    private string? GetPasswordFieldHelperText() =>
+        _isNewUser && IsCustomerRoleSelected
+            ? "A temporary password will be generated and emailed to the customer."
+            : null;
 
     public class UserAccountDto
     {

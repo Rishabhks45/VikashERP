@@ -26,11 +26,11 @@ INSERT INTO email_templates (
     'Sent when a new user account is created.',
     'Welcome to VikashERP',
     'Welcome aboard',
-    '<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#334155;">Welcome, {{UserName}}! Your Vikash Ironix ERP account is ready.</p><p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#334155;">Sign in to manage inventory, invoices, ledgers, and daily operations from one place.</p>',
+    '<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#334155;">Welcome, {{UserName}}! Your Vikash Ironix ERP account is ready.</p><p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#334155;">Use the credentials below to sign in. We recommend changing your password after your first login.</p><p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#334155;"><strong>Email:</strong> {{UserEmail}}<br/><strong>Temporary password:</strong> {{Password}}</p>',
     'Your Vikash Ironix ERP account is ready, {{UserName}}.',
     'Sign In to VikashERP',
     '{{LoginUrl}}',
-    '["{{UserName}}","{{LoginUrl}}","{{ContactPhone}}","{{ContactEmail}}"]',
+    '["{{UserName}}","{{UserEmail}}","{{Password}}","{{LoginUrl}}","{{ContactPhone}}","{{ContactEmail}}"]',
     TRUE
 ),
 (

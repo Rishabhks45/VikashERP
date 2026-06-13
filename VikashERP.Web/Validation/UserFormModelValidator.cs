@@ -25,13 +25,19 @@ public class UserFormModelValidator : AbstractValidator<UserFormModel>
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required for new accounts.")
+            .When(x => x.IsNewUser && !IsCustomerRole(x.Role));
+
+        RuleFor(x => x.Password)
             .MinimumLength(6).WithMessage("Password must be at least 6 characters long.")
             .MaximumLength(100).WithMessage("Password must not exceed 100 characters.")
-            .When(x => x.IsNewUser);
+            .When(x => x.IsNewUser && !string.IsNullOrWhiteSpace(x.Password));
 
         RuleFor(x => x.Password)
             .MinimumLength(6).WithMessage("Password must be at least 6 characters long.")
             .MaximumLength(100).WithMessage("Password must not exceed 100 characters.")
             .When(x => !x.IsNewUser && !string.IsNullOrWhiteSpace(x.Password));
     }
+
+    private static bool IsCustomerRole(string? role) =>
+        string.Equals(role?.Trim(), "Customer", StringComparison.OrdinalIgnoreCase);
 }

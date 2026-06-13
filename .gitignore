@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# VikashERP local workspace notes
+# Local reference copy of the previous implementation. Keep it available on disk,
+# but do not commit it unless intentionally migrating files from it.
+existing project/
+
+# Local temporary build/output folders used during manual verification.
+.tmp-build/
+*.bak

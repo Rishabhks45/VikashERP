@@ -4,7 +4,7 @@ namespace VikashERP.Web.Models.Forms;
 
 public class UpsertEmailTemplateFormModel
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     public NotificationType NotificationType { get; set; } = NotificationType.Email;
 
@@ -32,7 +32,7 @@ public class UpsertEmailTemplateFormModel
 
     public bool IsActive { get; set; } = true;
 
-    public bool IsCreate => Id == 0;
+    public bool IsCreate => Id == Guid.Empty;
 
     public IEnumerable<string> TokenList =>
         AvailableTokens.Count > 0

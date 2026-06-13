@@ -19,7 +19,7 @@ public class GetEmailTemplatesQueryHandler : IRequestHandler<GetEmailTemplatesQu
         _emailTemplateService.GetAllAsync(cancellationToken);
 }
 
-public record GetEmailTemplateByIdQuery(int Id) : IRequest<EmailTemplateDetailDto?>;
+public record GetEmailTemplateByIdQuery(Guid Id) : IRequest<EmailTemplateDetailDto?>;
 
 public class GetEmailTemplateByIdQueryHandler : IRequestHandler<GetEmailTemplateByIdQuery, EmailTemplateDetailDto?>
 {

@@ -25,8 +25,8 @@ public class EmailTemplatesController : ControllerBase
         return Ok(templates);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
     {
         var template = await _mediator.Send(new GetEmailTemplateByIdQuery(id), cancellationToken);
         return template is null ? NotFound() : Ok(template);
@@ -50,8 +50,8 @@ public class EmailTemplatesController : ControllerBase
         }
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateEmailTemplateRequest request, CancellationToken cancellationToken)
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEmailTemplateRequest request, CancellationToken cancellationToken)
     {
         if (id != request.Id)
             return BadRequest(new { Message = "Route id does not match request id." });
@@ -67,8 +67,8 @@ public class EmailTemplatesController : ControllerBase
         }
     }
 
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         var deleted = await _mediator.Send(new DeleteEmailTemplateCommand { Id = id }, cancellationToken);
         return deleted ? Ok(new { Message = "Template deleted." }) : NotFound();

@@ -53,11 +53,20 @@ public class SharedRepository : ISharedRepository
             new Dictionary<string, string> { [EmailTemplateTokens.UserName] = userName },
             cancellationToken);
 
-    public Task<bool> SendWelcomeEmailAsync(string toEmail, string userName, CancellationToken cancellationToken = default) =>
+    public Task<bool> SendWelcomeEmailAsync(
+        string toEmail,
+        string userName,
+        string? temporaryPassword = null,
+        CancellationToken cancellationToken = default) =>
         SendEmailAsync(
             EmailTemplateType.Welcome,
             toEmail,
-            new Dictionary<string, string> { [EmailTemplateTokens.UserName] = userName },
+            new Dictionary<string, string>
+            {
+                [EmailTemplateTokens.UserName] = userName,
+                [EmailTemplateTokens.UserEmail] = toEmail,
+                [EmailTemplateTokens.Password] = temporaryPassword ?? string.Empty
+            },
             cancellationToken);
 
     public Task<bool> SendTemplateEmailAsync(

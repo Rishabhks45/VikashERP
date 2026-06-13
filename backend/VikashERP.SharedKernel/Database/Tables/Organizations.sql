@@ -1,8 +1,10 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: Organizations
 -- Description: Single-tenant organization/company profile, branding, and configuration
 
 CREATE TABLE "Organizations" (
-    "Id" SERIAL PRIMARY KEY,
+    "Id" UUID PRIMARY KEY DEFAULT '00000000-0000-0000-0000-000000000001'::uuid,
 
     -- Identity & Branding
     "LegalName" character varying(255) NOT NULL,

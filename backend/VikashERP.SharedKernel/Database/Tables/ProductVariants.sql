@@ -1,9 +1,11 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: product_variants
 -- Description: Size/thickness variants for products
 
 CREATE TABLE product_variants (
-    id SERIAL PRIMARY KEY,
-    product_id integer NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID NOT NULL,
     size character varying(50) NOT NULL,
     thickness character varying(50) NOT NULL,
     unit_pcs_to_kg numeric(12,4) NOT NULL DEFAULT 1,

@@ -2,7 +2,7 @@ namespace VikashERP.Application.Features.Organization.DTOs;
 
 public class OrganizationDto
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string LegalName { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string? Tagline { get; set; }

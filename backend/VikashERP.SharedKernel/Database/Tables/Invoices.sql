@@ -1,10 +1,12 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: invoices
 -- Description: Sales invoice records
 
 CREATE TABLE invoices (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     invoice_number character varying(100) NOT NULL,
-    customer_id integer NOT NULL,
+    customer_id UUID NOT NULL,
     subtotal numeric(12,2) NOT NULL DEFAULT 0,
     cgst_amount numeric(12,2) NOT NULL DEFAULT 0,
     sgst_amount numeric(12,2) NOT NULL DEFAULT 0,

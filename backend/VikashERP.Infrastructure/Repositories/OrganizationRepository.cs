@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VikashERP.Application.Interfaces;
+using VikashERP.Domain.Constants;
 using VikashERP.Domain.Entities;
 using VikashERP.Infrastructure.Data;
 
@@ -28,7 +29,7 @@ public class OrganizationRepository : IOrganizationRepository
         // Empty shell only — all business details come from DB migrations or /admin/system.
         var organization = new Organization
         {
-            Id = 1,
+            Id = OrganizationConstants.DefaultId,
             LegalName = "Organization",
             DisplayName = "Organization",
             Country = "India",

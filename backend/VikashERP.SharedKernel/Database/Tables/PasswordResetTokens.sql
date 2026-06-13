@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: PasswordResetTokens
 -- Description: Stores password reset tokens for user accounts
 

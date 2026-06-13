@@ -28,9 +28,16 @@ public class CreateUserAccountDtoValidator : AbstractValidator<CreateUserAccount
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required.")
+            .When(x => !IsCustomerRole(x.Role));
+
+        RuleFor(x => x.Password)
             .MinimumLength(6).WithMessage("Password must be at least 6 characters long.")
-            .MaximumLength(100).WithMessage("Password must not exceed 100 characters.");
+            .MaximumLength(100).WithMessage("Password must not exceed 100 characters.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Password));
     }
+
+    private static bool IsCustomerRole(string? role) =>
+        string.Equals(role?.Trim(), "Customer", StringComparison.OrdinalIgnoreCase);
 }
 
 public class UpdateUserAccountDtoValidator : AbstractValidator<UpdateUserAccountDto>

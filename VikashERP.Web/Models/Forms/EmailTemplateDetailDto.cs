@@ -4,7 +4,7 @@ namespace VikashERP.Web.Models.Forms;
 
 public class EmailTemplateDetailDto
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     public string TemplateKey { get; set; } = string.Empty;
 

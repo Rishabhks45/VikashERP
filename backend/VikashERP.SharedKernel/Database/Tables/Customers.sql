@@ -1,8 +1,10 @@
 -- Table: Customers
--- Description: Customer master records
+-- Description: Customer master records (UUID primary key)
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE "Customers" (
-    "Id" SERIAL PRIMARY KEY,
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "AccountNumber" character varying(20) NOT NULL,
     "FirstName" character varying(100) NOT NULL,
     "LastName" character varying(100) NOT NULL,

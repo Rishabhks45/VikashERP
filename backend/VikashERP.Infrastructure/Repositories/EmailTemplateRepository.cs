@@ -22,7 +22,7 @@ public class EmailTemplateRepository : IEmailTemplateRepository
             .OrderBy(t => t.DisplayName)
             .ToListAsync(cancellationToken);
 
-    public async Task<EmailTemplate?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
+    public async Task<EmailTemplate?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         await _context.EmailTemplates.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
 
     public async Task<EmailTemplate?> GetByKeyAsync(
@@ -36,7 +36,7 @@ public class EmailTemplateRepository : IEmailTemplateRepository
     public async Task<bool> ExistsByKeyAsync(
         string templateKey,
         NotificationType notificationType,
-        int? excludeId = null,
+        Guid? excludeId = null,
         CancellationToken cancellationToken = default)
     {
         var query = _context.EmailTemplates.Where(t =>

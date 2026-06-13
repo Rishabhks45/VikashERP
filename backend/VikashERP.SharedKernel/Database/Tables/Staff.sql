@@ -1,8 +1,10 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: staff
 -- Description: Staff/employee master records
 
 CREATE TABLE staff (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     first_name character varying(100) NOT NULL,
     last_name character varying(100) NOT NULL,
     role character varying(50) NOT NULL,

@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Linq.Expressions;
 using VikashERP.Domain.Entities;
 using VikashERP.SharedKernel.Enums;
 
@@ -41,6 +43,11 @@ public class ApplicationDbContext : DbContext
 
 internal static class ErpSchemaConfiguration
 {
+    private static void ConfigureGuidPrimaryKey<TEntity>(
+        EntityTypeBuilder<TEntity> entity,
+        Expression<Func<TEntity, Guid>> keyExpression) where TEntity : class =>
+        entity.Property(keyExpression).ValueGeneratedOnAdd().HasDefaultValueSql("gen_random_uuid()");
+
     public static void ApplyErpSchema(this ModelBuilder modelBuilder)
     {
         ConfigureAuth(modelBuilder);
@@ -79,6 +86,7 @@ internal static class ErpSchemaConfiguration
         {
             entity.ToTable("PasswordResetTokens");
             entity.HasKey(e => e.Id);
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
             entity.HasOne(e => e.User)
                   .WithMany()
                   .HasForeignKey(e => e.UserId)
@@ -89,6 +97,7 @@ internal static class ErpSchemaConfiguration
         {
             entity.ToTable("UserCustomerMappings");
             entity.HasKey(e => e.Id);
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
             entity.HasIndex(e => e.UserId).IsUnique();
             entity.HasIndex(e => e.CustomerId);
             entity.HasOne(e => e.User)
@@ -106,33 +115,31 @@ internal static class ErpSchemaConfiguration
     {
         modelBuilder.Entity<Godown>(entity =>
         {
-            entity.ToTable("godowns");
+            entity.ToTable("Godowns");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Location).HasColumnName("location").HasMaxLength(255);
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Location).HasMaxLength(255);
             entity.HasIndex(e => e.Name).IsUnique();
         });
 
         modelBuilder.Entity<Supplier>(entity =>
         {
-            entity.ToTable("suppliers");
+            entity.ToTable("Suppliers");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(255);
-            entity.Property(e => e.CompanyName).HasColumnName("company_name").HasMaxLength(255);
-            entity.Property(e => e.Phone).HasColumnName("phone").IsRequired().HasMaxLength(20);
-            entity.Property(e => e.Gstin).HasColumnName("gstin").HasMaxLength(15);
-            entity.Property(e => e.Address).HasColumnName("address");
-            entity.Property(e => e.CurrentBalance).HasColumnName("current_balance").HasPrecision(12, 2);
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.CompanyName).HasMaxLength(255);
+            entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Gstin).HasMaxLength(15);
+            entity.Property(e => e.CurrentBalance).HasPrecision(12, 2);
         });
 
         modelBuilder.Entity<Customer>(entity =>
         {
             entity.ToTable("Customers");
             entity.HasKey(e => e.Id);
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
             entity.Property(e => e.AccountNumber).IsRequired().HasMaxLength(20);
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
@@ -149,17 +156,15 @@ internal static class ErpSchemaConfiguration
                   .HasMaxLength(20);
             entity.Property(e => e.CreditLimit).HasPrecision(12, 2);
             entity.Property(e => e.CurrentBalance).HasPrecision(12, 2);
-            entity.Property(e => e.CreatedAt);
             entity.HasIndex(e => e.AccountNumber).IsUnique();
         });
 
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.ToTable("categories");
+            entity.ToTable("Categories");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(100);
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.HasIndex(e => e.Name).IsUnique();
         });
     }
@@ -170,6 +175,7 @@ internal static class ErpSchemaConfiguration
         {
             entity.ToTable("Products");
             entity.HasKey(e => e.Id);
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.Property(e => e.HsnCode).HasMaxLength(10);
             entity.Property(e => e.ProductImageUrl).HasMaxLength(500);
@@ -183,6 +189,7 @@ internal static class ErpSchemaConfiguration
         {
             entity.ToTable("ProductSubImages");
             entity.HasKey(e => e.Id);
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
             entity.Property(e => e.ImageUrl).IsRequired().HasMaxLength(500);
             entity.Property(e => e.Description).HasMaxLength(1000);
             entity.HasIndex(e => new { e.ProductId, e.DisplayOrder });
@@ -194,15 +201,12 @@ internal static class ErpSchemaConfiguration
 
         modelBuilder.Entity<ProductVariant>(entity =>
         {
-            entity.ToTable("product_variants");
+            entity.ToTable("ProductVariants");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.ProductId).HasColumnName("product_id");
-            entity.Property(e => e.Size).HasColumnName("size").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Thickness).HasColumnName("thickness").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.UnitPcsToKg).HasColumnName("unit_pcs_to_kg").HasPrecision(12, 4);
-            entity.Property(e => e.AlertQtyPcs).HasColumnName("alert_qty_pcs");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.Size).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Thickness).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.UnitPcsToKg).HasPrecision(12, 4);
             entity.HasIndex(e => new { e.ProductId, e.Size, e.Thickness }).IsUnique();
             entity.HasOne(e => e.Product)
                   .WithMany(p => p.Variants)
@@ -215,19 +219,12 @@ internal static class ErpSchemaConfiguration
     {
         modelBuilder.Entity<StockLedger>(entity =>
         {
-            entity.ToTable("stock_ledger");
+            entity.ToTable("StockLedgers");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.VariantId).HasColumnName("variant_id");
-            entity.Property(e => e.GodownId).HasColumnName("godown_id");
-            entity.Property(e => e.TransactionType).HasColumnName("transaction_type").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.ReferenceId).HasColumnName("reference_id");
-            entity.Property(e => e.QtyPcs).HasColumnName("qty_pcs");
-            entity.Property(e => e.WeightKg).HasColumnName("weight_kg").HasPrecision(12, 3);
-            entity.Property(e => e.RunningPcs).HasColumnName("running_pcs");
-            entity.Property(e => e.RunningWeightKg).HasColumnName("running_weight_kg").HasPrecision(12, 3);
-            entity.Property(e => e.Remarks).HasColumnName("remarks");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.TransactionType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.WeightKg).HasPrecision(12, 3);
+            entity.Property(e => e.RunningWeightKg).HasPrecision(12, 3);
             entity.HasOne(e => e.Variant)
                   .WithMany(v => v.StockLedgerEntries)
                   .HasForeignKey(e => e.VariantId)
@@ -243,21 +240,18 @@ internal static class ErpSchemaConfiguration
     {
         modelBuilder.Entity<Invoice>(entity =>
         {
-            entity.ToTable("invoices");
+            entity.ToTable("Invoices");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.InvoiceNumber).HasColumnName("invoice_number").IsRequired().HasMaxLength(100);
-            entity.Property(e => e.CustomerId).HasColumnName("customer_id");
-            entity.Property(e => e.Subtotal).HasColumnName("subtotal").HasPrecision(12, 2);
-            entity.Property(e => e.CgstAmount).HasColumnName("cgst_amount").HasPrecision(12, 2);
-            entity.Property(e => e.SgstAmount).HasColumnName("sgst_amount").HasPrecision(12, 2);
-            entity.Property(e => e.IgstAmount).HasColumnName("igst_amount").HasPrecision(12, 2);
-            entity.Property(e => e.TotalAmount).HasColumnName("total_amount").HasPrecision(12, 2);
-            entity.Property(e => e.PaidAmount).HasColumnName("paid_amount").HasPrecision(12, 2);
-            entity.Property(e => e.DueAmount).HasColumnName("due_amount").HasPrecision(12, 2);
-            entity.Property(e => e.PaymentMode).HasColumnName("payment_mode").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.InvoiceDate).HasColumnName("invoice_date");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.InvoiceNumber).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Subtotal).HasPrecision(12, 2);
+            entity.Property(e => e.CgstAmount).HasPrecision(12, 2);
+            entity.Property(e => e.SgstAmount).HasPrecision(12, 2);
+            entity.Property(e => e.IgstAmount).HasPrecision(12, 2);
+            entity.Property(e => e.TotalAmount).HasPrecision(12, 2);
+            entity.Property(e => e.PaidAmount).HasPrecision(12, 2);
+            entity.Property(e => e.DueAmount).HasPrecision(12, 2);
+            entity.Property(e => e.PaymentMode).IsRequired().HasMaxLength(50);
             entity.HasIndex(e => e.InvoiceNumber).IsUnique();
             entity.HasOne(e => e.Customer)
                   .WithMany(c => c.Invoices)
@@ -267,18 +261,15 @@ internal static class ErpSchemaConfiguration
 
         modelBuilder.Entity<InvoiceItem>(entity =>
         {
-            entity.ToTable("invoice_items");
+            entity.ToTable("InvoiceItems");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
-            entity.Property(e => e.VariantId).HasColumnName("variant_id");
-            entity.Property(e => e.QtyPcs).HasColumnName("qty_pcs");
-            entity.Property(e => e.WeightKg).HasColumnName("weight_kg").HasPrecision(12, 3);
-            entity.Property(e => e.RatePerKg).HasColumnName("rate_per_kg").HasPrecision(12, 2);
-            entity.Property(e => e.CgstRate).HasColumnName("cgst_rate").HasPrecision(5, 2);
-            entity.Property(e => e.SgstRate).HasColumnName("sgst_rate").HasPrecision(5, 2);
-            entity.Property(e => e.IgstRate).HasColumnName("igst_rate").HasPrecision(5, 2);
-            entity.Property(e => e.TotalPrice).HasColumnName("total_price").HasPrecision(12, 2);
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.WeightKg).HasPrecision(12, 3);
+            entity.Property(e => e.RatePerKg).HasPrecision(12, 2);
+            entity.Property(e => e.CgstRate).HasPrecision(5, 2);
+            entity.Property(e => e.SgstRate).HasPrecision(5, 2);
+            entity.Property(e => e.IgstRate).HasPrecision(5, 2);
+            entity.Property(e => e.TotalPrice).HasPrecision(12, 2);
             entity.HasOne(e => e.Invoice)
                   .WithMany(i => i.Items)
                   .HasForeignKey(e => e.InvoiceId)
@@ -294,17 +285,13 @@ internal static class ErpSchemaConfiguration
     {
         modelBuilder.Entity<CustomerLedger>(entity =>
         {
-            entity.ToTable("customer_ledger");
+            entity.ToTable("CustomerLedgers");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CustomerId).HasColumnName("customer_id");
-            entity.Property(e => e.TransactionDate).HasColumnName("transaction_date");
-            entity.Property(e => e.TransactionType).HasColumnName("transaction_type").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.ReferenceId).HasColumnName("reference_id");
-            entity.Property(e => e.Debit).HasColumnName("debit").HasPrecision(12, 2);
-            entity.Property(e => e.Credit).HasColumnName("credit").HasPrecision(12, 2);
-            entity.Property(e => e.RunningBalance).HasColumnName("running_balance").HasPrecision(12, 2);
-            entity.Property(e => e.Remarks).HasColumnName("remarks");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.TransactionType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Debit).HasPrecision(12, 2);
+            entity.Property(e => e.Credit).HasPrecision(12, 2);
+            entity.Property(e => e.RunningBalance).HasPrecision(12, 2);
             entity.HasOne(e => e.Customer)
                   .WithMany(c => c.LedgerEntries)
                   .HasForeignKey(e => e.CustomerId)
@@ -313,17 +300,13 @@ internal static class ErpSchemaConfiguration
 
         modelBuilder.Entity<SupplierLedger>(entity =>
         {
-            entity.ToTable("supplier_ledger");
+            entity.ToTable("SupplierLedgers");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.SupplierId).HasColumnName("supplier_id");
-            entity.Property(e => e.TransactionDate).HasColumnName("transaction_date");
-            entity.Property(e => e.TransactionType).HasColumnName("transaction_type").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.ReferenceId).HasColumnName("reference_id");
-            entity.Property(e => e.Debit).HasColumnName("debit").HasPrecision(12, 2);
-            entity.Property(e => e.Credit).HasColumnName("credit").HasPrecision(12, 2);
-            entity.Property(e => e.RunningBalance).HasColumnName("running_balance").HasPrecision(12, 2);
-            entity.Property(e => e.Remarks).HasColumnName("remarks");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.TransactionType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Debit).HasPrecision(12, 2);
+            entity.Property(e => e.Credit).HasPrecision(12, 2);
+            entity.Property(e => e.RunningBalance).HasPrecision(12, 2);
             entity.HasOne(e => e.Supplier)
                   .WithMany(s => s.LedgerEntries)
                   .HasForeignKey(e => e.SupplierId)
@@ -335,19 +318,16 @@ internal static class ErpSchemaConfiguration
     {
         modelBuilder.Entity<Delivery>(entity =>
         {
-            entity.ToTable("deliveries");
+            entity.ToTable("Deliveries");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
-            entity.Property(e => e.VehicleNumber).HasColumnName("vehicle_number").IsRequired().HasMaxLength(20);
-            entity.Property(e => e.DriverName).HasColumnName("driver_name").IsRequired().HasMaxLength(100);
-            entity.Property(e => e.DriverPhone).HasColumnName("driver_phone").HasMaxLength(20);
-            entity.Property(e => e.DeliveryStatus).HasColumnName("delivery_status").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.DeliveryChallanNumber).HasColumnName("delivery_challan_number").HasMaxLength(100);
-            entity.Property(e => e.LoadingCharge).HasColumnName("loading_charge").HasPrecision(10, 2);
-            entity.Property(e => e.FreightCharge).HasColumnName("freight_charge").HasPrecision(10, 2);
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.VehicleNumber).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.DriverName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.DriverPhone).HasMaxLength(20);
+            entity.Property(e => e.DeliveryStatus).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DeliveryChallanNumber).HasMaxLength(100);
+            entity.Property(e => e.LoadingCharge).HasPrecision(10, 2);
+            entity.Property(e => e.FreightCharge).HasPrecision(10, 2);
             entity.HasIndex(e => e.DeliveryChallanNumber).IsUnique();
             entity.HasOne(e => e.Invoice)
                   .WithMany(i => i.Deliveries)
@@ -360,29 +340,23 @@ internal static class ErpSchemaConfiguration
     {
         modelBuilder.Entity<Staff>(entity =>
         {
-            entity.ToTable("staff");
+            entity.ToTable("Staff");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired().HasMaxLength(100);
-            entity.Property(e => e.LastName).HasColumnName("last_name").IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Role).HasColumnName("role").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.SalaryPerMonth).HasColumnName("salary_per_month").HasPrecision(10, 2);
-            entity.Property(e => e.Phone).HasColumnName("phone").IsRequired().HasMaxLength(20);
-            entity.Property(e => e.HireDate).HasColumnName("hire_date");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Role).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.SalaryPerMonth).HasPrecision(10, 2);
+            entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
             entity.HasIndex(e => e.Phone).IsUnique();
         });
 
         modelBuilder.Entity<Attendance>(entity =>
         {
-            entity.ToTable("attendance");
+            entity.ToTable("Attendances");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.StaffId).HasColumnName("staff_id");
-            entity.Property(e => e.WorkDate).HasColumnName("work_date");
-            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
-            entity.Property(e => e.CheckIn).HasColumnName("check_in");
-            entity.Property(e => e.CheckOut).HasColumnName("check_out");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
             entity.HasIndex(e => new { e.StaffId, e.WorkDate }).IsUnique();
             entity.HasOne(e => e.Staff)
                   .WithMany(s => s.AttendanceRecords)
@@ -392,14 +366,11 @@ internal static class ErpSchemaConfiguration
 
         modelBuilder.Entity<StaffSalary>(entity =>
         {
-            entity.ToTable("staff_salaries");
+            entity.ToTable("StaffSalaries");
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.StaffId).HasColumnName("staff_id");
-            entity.Property(e => e.PaymentDate).HasColumnName("payment_date");
-            entity.Property(e => e.AmountPaid).HasColumnName("amount_paid").HasPrecision(10, 2);
-            entity.Property(e => e.PaymentMode).HasColumnName("payment_mode").IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Remarks).HasColumnName("remarks");
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
+            entity.Property(e => e.AmountPaid).HasPrecision(10, 2);
+            entity.Property(e => e.PaymentMode).IsRequired().HasMaxLength(50);
             entity.HasOne(e => e.Staff)
                   .WithMany(s => s.SalaryPayments)
                   .HasForeignKey(e => e.StaffId)
@@ -413,6 +384,7 @@ internal static class ErpSchemaConfiguration
         {
             entity.ToTable("email_templates");
             entity.HasKey(e => e.Id);
+            ConfigureGuidPrimaryKey(entity, e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.TemplateKey).HasColumnName("template_key").IsRequired().HasMaxLength(50);
             entity.Property(e => e.NotificationType).HasColumnName("notification_type").IsRequired();

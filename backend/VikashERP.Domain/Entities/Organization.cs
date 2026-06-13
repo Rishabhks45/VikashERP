@@ -1,3 +1,5 @@
+using VikashERP.Domain.Constants;
+
 namespace VikashERP.Domain.Entities;
 
 /// <summary>
@@ -5,7 +7,7 @@ namespace VikashERP.Domain.Entities;
 /// </summary>
 public class Organization
 {
-    public int Id { get; set; } = 1;
+    public Guid Id { get; set; } = OrganizationConstants.DefaultId;
 
     // Identity & branding
     public string LegalName { get; set; } = string.Empty;

@@ -1,0 +1,461 @@
+@page "/profiles"
+@page "/customers"
+@implements IAsyncDisposable
+@using System.Net.Http.Json
+@using VikashERP.Web.Models.Forms
+@inject IHttpClientFactory HttpClientFactory
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Entity Profiles</PageTitle>
+
+<PageLoader IsVisible="@_loading" Text="Loading customer profiles..." />
+
+<MudStack Class="customers-page" Spacing="4">
+    <div class="org-hero">
+        <MudStack Spacing="0" Class="org-hero-copy">
+            <MudText Typo="Typo.h5" HtmlTag="h1">Entity Profiles</MudText>
+            <MudText Typo="Typo.body2" Class="dashboard-subtitle org-subtitle">
+                Manage customer accounts, contact details, credit limits, and default payment modes for trade operations.
+            </MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Filled"
+                   Class="dashboard-action-primary org-save-btn"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="OpenAddDrawer"
+                   Disabled="@_loading">
+            New Customer
+        </MudButton>
+    </div>
+
+    @if (!_loading)
+    {
+        <MudGrid Spacing="2" Class="dashboard-kpis">
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-blue">
+                        <MudIcon Icon="@Icons.Material.Filled.Groups" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Customers</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@CustomerList.Count</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-up">Active profiles</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-amber">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Outstanding Dues</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@FormatCurrency(TotalDues)</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-down">@DueCustomerCount accounts</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-green">
+                        <MudIcon Icon="@Icons.Material.Filled.Savings" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Advance Balance</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@FormatCurrency(TotalAdvance)</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-up">@AdvanceCustomerCount accounts</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-purple">
+                        <MudIcon Icon="@Icons.Material.Filled.Payments" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">A/C Customers</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@CustomerList.Count(c => c.DefaultPaymentMode == "A/C")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Credit accounts</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <MudPaper Elevation="0" Class="org-tab-panel pa-6">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+                <MudTextField @bind-Value="_searchQuery"
+                              Placeholder="Search by name, account no., phone, company..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="search-bar"
+                              Immediate="true" />
+            </MudStack>
+
+            <MudDataGrid Items="@FilteredCustomers" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Class="invoice-table">
+                <Columns>
+                    <PropertyColumn Property="x => x.AccountNumber" Title="A/C No." />
+                    <TemplateColumn Title="Customer">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700;">
+                                @($"{context.Item.FirstName} {context.Item.LastName}".Trim())
+                            </MudText>
+                            @if (!string.IsNullOrWhiteSpace(context.Item.CompanyName))
+                            {
+                                <MudText Typo="Typo.caption" Style="color: #64748b;">@context.Item.CompanyName</MudText>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Phone" Title="Phone" />
+                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                    <TemplateColumn Title="Payment">
+                        <CellTemplate>
+                            <span class="payment-chip @(context.Item.DefaultPaymentMode == "Cash" ? "payment-cash" : "payment-account")">
+                                @context.Item.DefaultPaymentMode
+                            </span>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Balance">
+                        <CellTemplate>
+                            <span class="@GetBalanceClass(context.Item.CurrentBalance)">
+                                @FormatCurrency(context.Item.CurrentBalance)
+                            </span>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.CreditLimit" Title="Credit Limit" Format="N2" />
+                    <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditDrawer(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => ConfirmDelete(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudStack>
+
+@if (_drawerOpen)
+{
+    <div class="email-slide-overlay @(_drawerClosing ? "fade-out" : "fade-in")" @onclick="CloseDrawer">
+        <div class="email-slide-panel @(_drawerClosing ? "slide-out-right" : "slide-in-right")" @onclick:stopPropagation="true">
+            <div class="email-slide-panel-inner">
+                <div class="et-drawer-header">
+                    <div class="et-drawer-header-main">
+                        <div class="et-drawer-header-icon">
+                            <MudIcon Icon="@(_isNewCustomer ? Icons.Material.Filled.PersonAdd : Icons.Material.Filled.ManageAccounts)" />
+                        </div>
+                        <div class="et-drawer-header-copy">
+                            <h2 class="et-drawer-header-title">@(_isNewCustomer ? "New Customer" : "Edit Customer")</h2>
+                            <p class="et-drawer-header-sub">
+                                @(_isNewCustomer ? "Account number will be generated automatically." : $"Account: {_editingAccountNumber}")
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="et-drawer-close" aria-label="Close panel" @onclick="CloseDrawer">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" />
+                    </button>
+                </div>
+
+                <div class="email-slide-panel-main">
+                    <EditForm Model="@_editModel" OnValidSubmit="SaveCustomerAsync" Class="email-slide-panel-form" novalidate>
+                        <FluentValidationValidator />
+                        <div class="email-slide-panel-body" tabindex="-1">
+                            <MudStack Spacing="4">
+                                @if (!_isNewCustomer)
+                                {
+                                    <MudTextField Value="@_editingAccountNumber" Label="Account Number" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
+                                    <MudTextField Value="@FormatCurrency(_editingBalance)" Label="Current Balance" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true"
+                                                  HelperText="Negative = dues, positive = advance" />
+                                }
+
+                                <MudTextField @bind-Value="_editModel.FirstName" Label="First Name *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.FirstName)" />
+                                <MudTextField @bind-Value="_editModel.LastName" Label="Last Name *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.LastName)" />
+                                <MudTextField @bind-Value="_editModel.CompanyName" Label="Company Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                <MudTextField @bind-Value="_editModel.Phone" Label="Phone *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.Phone)" />
+                                <MudTextField @bind-Value="_editModel.Email" Label="Email" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.Email)" InputType="InputType.Email" HelperText="If provided, a portal login is created and welcome email is sent with a generated password." />
+                                <MudTextField @bind-Value="_editModel.Gstin" Label="GSTIN" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                <MudTextField @bind-Value="_editModel.Address" Label="Address" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" />
+
+                                <MudSelect T="string" @bind-Value="_editModel.DefaultPaymentMode" Label="Default Payment Mode *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.DefaultPaymentMode)" PopoverFixed="true">
+                                    <MudSelectItem Value="@("A/C")">A/C (Credit Account)</MudSelectItem>
+                                    <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
+                                </MudSelect>
+
+                                <MudNumericField @bind-Value="_editModel.CreditLimit" Label="Credit Limit" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Format="N2" />
+                            </MudStack>
+                        </div>
+
+                        <div class="email-slide-panel-footer">
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton Variant="Variant.Text" Disabled="_saving" OnClick="CloseDrawer">Cancel</MudButton>
+                                <MudSpacer />
+                                <MudButton Variant="Variant.Filled"
+                                           Class="dashboard-action-primary save-btn"
+                                           ButtonType="ButtonType.Submit"
+                                           Disabled="_saving">
+                                    @(_saving ? "Saving..." : (_isNewCustomer ? "Create Customer" : "Update Customer"))
+                                </MudButton>
+                            </MudStack>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<ConfirmationModal IsVisible="@_showDeleteModal"
+                   Title="Delete Customer"
+                   Message="@($"Remove customer profile for {_customerToDelete?.FirstName} {_customerToDelete?.LastName}?")"
+                   SubMessage="@(_customerToDelete?.AccountNumber)"
+                   ConfirmButtonText="Delete"
+                   CancelButtonText="Cancel"
+                   IsProcessing="@_deleting"
+                   ProcessingText="Deleting..."
+                   OnConfirm="ExecuteDeleteAsync"
+                   OnCancel="CancelDelete" />
+
+@code {
+    private List<CustomerListDto> CustomerList = [];
+    private string _searchQuery = string.Empty;
+    private bool _loading = true;
+    private bool _saving;
+    private bool _drawerOpen;
+    private bool _drawerClosing;
+    private bool _bodyScrollLocked;
+    private bool _isNewCustomer = true;
+    private CustomerFormModel _editModel = new();
+    private Guid _editingCustomerId;
+    private string _editingAccountNumber = string.Empty;
+    private decimal _editingBalance;
+
+    private bool _showDeleteModal;
+    private bool _deleting;
+    private CustomerListDto? _customerToDelete;
+
+    private decimal TotalDues => CustomerList.Where(c => c.CurrentBalance < 0).Sum(c => Math.Abs(c.CurrentBalance));
+    private int DueCustomerCount => CustomerList.Count(c => c.CurrentBalance < 0);
+    private decimal TotalAdvance => CustomerList.Where(c => c.CurrentBalance > 0).Sum(c => c.CurrentBalance);
+    private int AdvanceCustomerCount => CustomerList.Count(c => c.CurrentBalance > 0);
+
+    private IEnumerable<CustomerListDto> FilteredCustomers =>
+        string.IsNullOrWhiteSpace(_searchQuery)
+            ? CustomerList
+            : CustomerList.Where(c =>
+                c.AccountNumber.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                c.FirstName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                c.LastName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                (c.CompanyName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                c.Phone.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                (c.Email?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    protected override async Task OnInitializedAsync() => await LoadCustomersAsync();
+
+    private async Task LoadCustomersAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            var client = HttpClientFactory.CreateClient("VikashERP.Api");
+            var result = await client.GetFromJsonAsync<List<CustomerListDto>>("api/customers");
+            if (result is not null)
+                CustomerList = result;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Failed to load customers: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OpenAddDrawer()
+    {
+        _editModel = new CustomerFormModel { DefaultPaymentMode = "A/C", IsNewCustomer = true };
+        _isNewCustomer = true;
+        _drawerOpen = true;
+    }
+
+    private void OpenEditDrawer(CustomerListDto customer)
+    {
+        _editModel = new CustomerFormModel
+        {
+            FirstName = customer.FirstName,
+            LastName = customer.LastName,
+            CompanyName = customer.CompanyName,
+            Phone = customer.Phone,
+            Email = customer.Email,
+            Gstin = customer.Gstin,
+            Address = customer.Address,
+            DefaultPaymentMode = customer.DefaultPaymentMode,
+            CreditLimit = customer.CreditLimit,
+            IsNewCustomer = false
+        };
+        _editingCustomerId = customer.Id;
+        _editingAccountNumber = customer.AccountNumber;
+        _editingBalance = customer.CurrentBalance;
+        _isNewCustomer = false;
+        _drawerOpen = true;
+    }
+
+    private async Task CloseDrawer()
+    {
+        if (_drawerClosing)
+            return;
+
+        _drawerClosing = true;
+        StateHasChanged();
+        await Task.Delay(300);
+        _drawerOpen = false;
+        _drawerClosing = false;
+        _editModel = new CustomerFormModel();
+    }
+
+    private async Task SaveCustomerAsync()
+    {
+        _saving = true;
+        StateHasChanged();
+        try
+        {
+            var client = HttpClientFactory.CreateClient("VikashERP.Api");
+            HttpResponseMessage response;
+
+            if (_isNewCustomer)
+                response = await client.PostAsJsonAsync("api/customers", _editModel);
+            else
+                response = await client.PutAsJsonAsync($"api/customers/{_editingCustomerId}", _editModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var message = _isNewCustomer && !string.IsNullOrWhiteSpace(_editModel.Email)
+                    ? "Customer created. Portal login created and welcome email sent with generated password."
+                    : (_isNewCustomer ? "Customer created successfully." : "Customer updated successfully.");
+                NotificationService.Success(message);
+                _drawerOpen = false;
+                await LoadCustomersAsync();
+            }
+            else
+            {
+                var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                NotificationService.Error(err?.Message ?? "Failed to save customer.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"API error: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ConfirmDelete(CustomerListDto customer)
+    {
+        _customerToDelete = customer;
+        _showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        _showDeleteModal = false;
+        _customerToDelete = null;
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        if (_customerToDelete is null)
+            return;
+
+        _deleting = true;
+        StateHasChanged();
+        try
+        {
+            var client = HttpClientFactory.CreateClient("VikashERP.Api");
+            var response = await client.DeleteAsync($"api/customers/{_customerToDelete.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                NotificationService.Success("Customer deleted.");
+                _showDeleteModal = false;
+                _customerToDelete = null;
+                await LoadCustomersAsync();
+            }
+            else
+            {
+                var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                NotificationService.Error(err?.Message ?? "Failed to delete customer.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"API error: {ex.Message}");
+        }
+        finally
+        {
+            _deleting = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string FormatCurrency(decimal amount) => $"₹{amount:N2}";
+
+    private static string GetBalanceClass(decimal balance) => balance switch
+    {
+        < 0 => "balance-dues",
+        > 0 => "balance-advance",
+        _ => "balance-zero"
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var shouldLock = _drawerOpen && !_drawerClosing;
+        if (shouldLock == _bodyScrollLocked)
+            return;
+
+        _bodyScrollLocked = shouldLock;
+        await JSRuntime.InvokeVoidAsync("eval", shouldLock
+            ? "document.documentElement.classList.add('email-panel-open');document.body.classList.add('email-panel-open')"
+            : "document.documentElement.classList.remove('email-panel-open');document.body.classList.remove('email-panel-open')");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_bodyScrollLocked)
+            return;
+
+        await JSRuntime.InvokeVoidAsync("eval", "document.documentElement.classList.remove('email-panel-open');document.body.classList.remove('email-panel-open')");
+    }
+
+    public class CustomerListDto
+    {
+        public Guid Id { get; set; }
+        public string AccountNumber { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string? CompanyName { get; set; }
+        public string Phone { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? Gstin { get; set; }
+        public string? Address { get; set; }
+        public string DefaultPaymentMode { get; set; } = string.Empty;
+        public decimal CreditLimit { get; set; }
+        public decimal CurrentBalance { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class ErrorResponse
+    {
+        public string Message { get; set; } = string.Empty;
+    }
+}

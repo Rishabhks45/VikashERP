@@ -5,9 +5,9 @@ namespace VikashERP.Domain.Entities;
 /// </summary>
 public class UserCustomerMapping
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid UserId { get; set; }
-    public int CustomerId { get; set; }
+    public Guid CustomerId { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }

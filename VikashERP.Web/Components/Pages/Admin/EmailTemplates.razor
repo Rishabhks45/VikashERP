@@ -982,6 +982,8 @@
     private static string GetDefaultTokenValue(string token) => token switch
     {
         "{{UserName}}" => "Rishabh Sharma",
+        "{{UserEmail}}" => "customer@vikashironix.com",
+        "{{Password}}" => "Ab3@xy9Z",
         "{{ResetLink}}" => "https://localhost:7297/reset-password?token=sample",
         "{{LoginUrl}}" => "https://localhost:7297/login",
         "{{ExpiryMinutes}}" => "15",
@@ -1023,7 +1025,7 @@
 
     private sealed class EmailTemplateListItem
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string TemplateKey { get; set; } = string.Empty;
         public NotificationType NotificationType { get; set; } = NotificationType.Email;
         public string DisplayName { get; set; } = string.Empty;
@@ -1051,7 +1053,7 @@
 
     private sealed class UpdateEmailTemplateRequest
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string DisplayName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;

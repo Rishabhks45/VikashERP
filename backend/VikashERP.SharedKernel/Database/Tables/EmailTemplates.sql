@@ -1,8 +1,10 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: email_templates
 -- Description: Email/notification template configuration
 
 CREATE TABLE email_templates (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     template_key character varying(50) NOT NULL,
     notification_type integer NOT NULL DEFAULT 0,
     display_name character varying(100) NOT NULL,

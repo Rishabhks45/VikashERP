@@ -1,9 +1,11 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: ProductSubImages
 -- Description: Additional images for products
 
 CREATE TABLE "ProductSubImages" (
-    "Id" SERIAL PRIMARY KEY,
-    "ProductId" integer NOT NULL,
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "ProductId" UUID NOT NULL,
     "ImageUrl" character varying(500) NOT NULL,
     "Description" character varying(1000) NULL,
     "DisplayOrder" integer NOT NULL DEFAULT 0,

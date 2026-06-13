@@ -2,11 +2,11 @@ namespace VikashERP.Domain.Entities;
 
 public class StockLedger
 {
-    public int Id { get; set; }
-    public int VariantId { get; set; }
-    public int GodownId { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid VariantId { get; set; }
+    public Guid GodownId { get; set; }
     public string TransactionType { get; set; } = string.Empty;
-    public int? ReferenceId { get; set; }
+    public Guid? ReferenceId { get; set; }
     public int QtyPcs { get; set; }
     public decimal WeightKg { get; set; }
     public int RunningPcs { get; set; }

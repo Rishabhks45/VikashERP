@@ -28,8 +28,10 @@ VikashIronx/
 │   └── VikashERP.API/
 ├── VikashERP.Web/              # Blazor admin panel
 ├── mobile-app/                 # MAUI app
-├── database_schema.sql         # Full PostgreSQL schema
-└── architecture_documentation.md
+├── database/
+│   └── database_schema.sql     # Full PostgreSQL schema
+└── docs/
+    └── architecture_documentation.md
 ```
 
 ---
@@ -231,7 +233,7 @@ flowchart TD
 
 ## 7. Database Schema
 
-Full SQL: [`database_schema.sql`](database_schema.sql)
+Full SQL: [`database/database_schema.sql`](../database/database_schema.sql)
 
 | Group | Tables |
 |-------|--------|

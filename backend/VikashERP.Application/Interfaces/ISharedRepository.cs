@@ -11,7 +11,11 @@ public interface ISharedRepository
 
     Task<bool> SendPasswordResetSuccessEmailAsync(string toEmail, string userName, CancellationToken cancellationToken = default);
 
-    Task<bool> SendWelcomeEmailAsync(string toEmail, string userName, CancellationToken cancellationToken = default);
+    Task<bool> SendWelcomeEmailAsync(
+        string toEmail,
+        string userName,
+        string? temporaryPassword = null,
+        CancellationToken cancellationToken = default);
 
     Task<bool> SendTemplateEmailAsync(
         string templateKey,

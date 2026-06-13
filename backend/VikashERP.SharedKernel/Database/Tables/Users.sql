@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: Users
 -- Description: Core user/authentication accounts table
 

@@ -2,9 +2,9 @@ namespace VikashERP.Domain.Entities;
 
 public class Invoice
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string InvoiceNumber { get; set; } = string.Empty;
-    public int CustomerId { get; set; }
+    public Guid CustomerId { get; set; }
     public decimal Subtotal { get; set; }
     public decimal CgstAmount { get; set; }
     public decimal SgstAmount { get; set; }

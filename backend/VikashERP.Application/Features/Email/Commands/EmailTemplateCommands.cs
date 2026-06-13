@@ -59,7 +59,7 @@ public class CreateEmailTemplateCommandHandler : IRequestHandler<CreateEmailTemp
 
 public class DeleteEmailTemplateCommand : IRequest<bool>
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 }
 
 public class DeleteEmailTemplateCommandHandler : IRequestHandler<DeleteEmailTemplateCommand, bool>

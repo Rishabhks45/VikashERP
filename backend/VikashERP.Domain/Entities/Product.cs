@@ -2,8 +2,8 @@ namespace VikashERP.Domain.Entities;
 
 public class Product
 {
-    public int Id { get; set; }
-    public int CategoryId { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid CategoryId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? HsnCode { get; set; }
     public string? ProductImageUrl { get; set; }

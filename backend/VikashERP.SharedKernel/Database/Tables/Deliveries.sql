@@ -1,9 +1,11 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: deliveries
 -- Description: Delivery/dispatch tracking for invoices
 
 CREATE TABLE deliveries (
-    id SERIAL PRIMARY KEY,
-    invoice_id integer NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    invoice_id UUID NOT NULL,
     vehicle_number character varying(20) NOT NULL,
     driver_name character varying(100) NOT NULL,
     driver_phone character varying(20) NULL,

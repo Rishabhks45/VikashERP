@@ -1,10 +1,12 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: UserCustomerMappings
--- Description: Links login accounts (Users) to ERP customer master records (Customers)
+-- Description: Links Users to Customers (UUID primary keys)
 
 CREATE TABLE "UserCustomerMappings" (
-    id SERIAL PRIMARY KEY,
+    "Id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
-    customer_id INT NOT NULL,
+    customer_id UUID NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NULL,

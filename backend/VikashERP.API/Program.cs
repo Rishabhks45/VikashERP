@@ -4,6 +4,7 @@ using VikashERP.Application.Features.Auth.Commands;
 using VikashERP.Application.Features.Email.Validators;
 using VikashERP.Application.Features.Organization.Validators;
 using VikashERP.Application.Features.Users.Validators;
+using VikashERP.Application.Features.Customers.Validators;
 using VikashERP.Application.Interfaces;
 using VikashERP.Infrastructure;
 using VikashERP.Infrastructure.Authentication;
@@ -35,6 +36,9 @@ builder.Services.AddScoped<UpdateEmailTemplateRequestValidator>();
 builder.Services.AddScoped<UpdateOrganizationRequestValidator>();
 builder.Services.AddScoped<CreateUserAccountDtoValidator>();
 builder.Services.AddScoped<UpdateUserAccountDtoValidator>();
+builder.Services.AddScoped<CreateCustomerDtoValidator>();
+builder.Services.AddScoped<UpdateCustomerDtoValidator>();
+builder.Services.AddScoped<UpdateCustomerShopDtoValidator>();
 
 var jwtProvider = new JwtProvider(builder.Configuration);
 

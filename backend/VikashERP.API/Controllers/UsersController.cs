@@ -8,6 +8,7 @@ using VikashERP.SharedKernel.Common.Interfaces;
 using VikashERP.SharedKernel.Settings;
 using VikashERP.Application.Features.Users.DTOs;
 using VikashERP.Application.Features.Users.Validators;
+using VikashERP.Application.Interfaces;
 
 namespace VikashERP.API.Controllers;
 
@@ -18,6 +19,7 @@ public class UsersController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IEncryptionService _encryptionService;
     private readonly Microsoft.Extensions.Options.IOptions<EncryptionSettings> _options;
+    private readonly ISharedRepository _sharedRepository;
     private readonly CreateUserAccountDtoValidator _createUserValidator;
     private readonly UpdateUserAccountDtoValidator _updateUserValidator;
 
@@ -25,12 +27,14 @@ public class UsersController : ControllerBase
         ApplicationDbContext context, 
         IEncryptionService encryptionService,
         Microsoft.Extensions.Options.IOptions<EncryptionSettings> options,
+        ISharedRepository sharedRepository,
         CreateUserAccountDtoValidator createUserValidator,
         UpdateUserAccountDtoValidator updateUserValidator)
     {
         _context = context;
         _encryptionService = encryptionService;
         _options = options;
+        _sharedRepository = sharedRepository;
         _createUserValidator = createUserValidator;
         _updateUserValidator = updateUserValidator;
     }
@@ -71,7 +75,16 @@ public class UsersController : ControllerBase
             return BadRequest(new { Message = "A user with this email address already exists." });
 
         var role = UserRoleExtensions.FromString(dto.Role) ?? UserRole.Employee;
-        var encryptedPassword = await _encryptionService.EncryptAsync(dto.Password, _options.Value.MasterKey);
+        var plainPassword = dto.Password;
+        if (string.IsNullOrWhiteSpace(plainPassword))
+        {
+            if (role != UserRole.Customer)
+                return BadRequest(new { Message = "Password is required." });
+
+            plainPassword = _encryptionService.GenerateTemporaryPassword();
+        }
+
+        var encryptedPassword = await _encryptionService.EncryptAsync(plainPassword, _options.Value.MasterKey);
 
         var user = new User
         {
@@ -87,6 +100,16 @@ public class UsersController : ControllerBase
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (role == UserRole.Customer)
+        {
+            await LinkCustomerPortalAsync(user, cancellationToken);
+            await _sharedRepository.SendWelcomeEmailAsync(
+                user.Email,
+                $"{user.FirstName} {user.LastName}".Trim(),
+                plainPassword,
+                cancellationToken);
+        }
 
         return Ok();
     }
@@ -136,5 +159,35 @@ public class UsersController : ControllerBase
         _context.Users.Remove(user);
         await _context.SaveChangesAsync(cancellationToken);
         return Ok();
+    }
+
+    private async Task LinkCustomerPortalAsync(User user, CancellationToken cancellationToken)
+    {
+        var hasUserMapping = await _context.UserCustomerMappings
+            .AnyAsync(m => m.UserId == user.Id && m.IsActive, cancellationToken);
+        if (hasUserMapping)
+            return;
+
+        var customer = await _context.Customers
+            .FirstOrDefaultAsync(
+                c => c.Email != null && c.Email.ToLower() == user.Email.ToLower(),
+                cancellationToken);
+
+        if (customer is null)
+            return;
+
+        var customerAlreadyLinked = await _context.UserCustomerMappings
+            .AnyAsync(m => m.CustomerId == customer.Id && m.IsActive, cancellationToken);
+        if (customerAlreadyLinked)
+            return;
+
+        _context.UserCustomerMappings.Add(new UserCustomerMapping
+        {
+            UserId = user.Id,
+            CustomerId = customer.Id,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

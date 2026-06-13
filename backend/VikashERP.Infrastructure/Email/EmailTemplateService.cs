@@ -22,7 +22,7 @@ public class EmailTemplateService : IEmailTemplateService
         return templates.Select(MapListItem).ToList();
     }
 
-    public async Task<EmailTemplateDetailDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<EmailTemplateDetailDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var template = await _repository.GetByIdAsync(id, cancellationToken);
         return template is null ? null : MapDetail(template);
@@ -64,6 +64,7 @@ public class EmailTemplateService : IEmailTemplateService
         var now = DateTime.UtcNow;
         var template = new EmailTemplate
         {
+            Id = Guid.NewGuid(),
             TemplateKey = templateKey,
             NotificationType = request.NotificationType,
             DisplayName = request.DisplayName.Trim(),
@@ -86,7 +87,7 @@ public class EmailTemplateService : IEmailTemplateService
         return MapDetail(template);
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var template = await _repository.GetByIdAsync(id, cancellationToken);
         if (template is null)

@@ -3,7 +3,7 @@ using VikashERP.SharedKernel.Enums;
 namespace VikashERP.Application.Features.Email.DTOs;
 
 public record EmailTemplateListItemDto(
-    int Id,
+    Guid Id,
     string TemplateKey,
     NotificationType NotificationType,
     string DisplayName,
@@ -13,7 +13,7 @@ public record EmailTemplateListItemDto(
     DateTime UpdatedAt);
 
 public record EmailTemplateDetailDto(
-    int Id,
+    Guid Id,
     string TemplateKey,
     NotificationType NotificationType,    string DisplayName,
     string Description,
@@ -28,7 +28,7 @@ public record EmailTemplateDetailDto(
     DateTime UpdatedAt);
 
 public record UpdateEmailTemplateRequest(
-    int Id,
+    Guid Id,
     string DisplayName,
     string Description,
     string Subject,

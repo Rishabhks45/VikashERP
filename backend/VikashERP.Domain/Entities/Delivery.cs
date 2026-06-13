@@ -2,8 +2,8 @@ namespace VikashERP.Domain.Entities;
 
 public class Delivery
 {
-    public int Id { get; set; }
-    public int InvoiceId { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid InvoiceId { get; set; }
     public string VehicleNumber { get; set; } = string.Empty;
     public string DriverName { get; set; } = string.Empty;
     public string? DriverPhone { get; set; }

@@ -47,7 +47,7 @@ public class UpdateEmailTemplateRequestValidator : AbstractValidator<UpdateEmail
 {
     public UpdateEmailTemplateRequestValidator()
     {
-        RuleFor(x => x.Id).GreaterThan(0);
+        RuleFor(x => x.Id).NotEmpty();
 
         RuleFor(x => x.DisplayName)
             .NotEmpty()

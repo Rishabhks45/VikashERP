@@ -43,7 +43,7 @@ public class JwtProvider : IJwtProvider
         };
     }
 
-    public string GenerateToken(Guid userId, string email, string userName, string role, string? profilePictureUrl = null, int? customerId = null)
+    public string GenerateToken(Guid userId, string email, string userName, string role, string? profilePictureUrl = null, Guid? customerId = null)
     {
         var claims = new List<Claim>
         {

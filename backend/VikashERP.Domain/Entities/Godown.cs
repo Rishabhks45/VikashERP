@@ -2,7 +2,7 @@ namespace VikashERP.Domain.Entities;
 
 public class Godown
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;
     public string? Location { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

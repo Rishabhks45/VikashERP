@@ -2,12 +2,15 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using System.IdentityModel.Tokens.Jwt
 @using System.Security.Claims
+@using VikashERP.Web.Models
+@using VikashERP.Web.Models.Forms
 @using VikashERP.Web.Services.Interfaces
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IFileUploadService FileUploadService
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
 @inject IUserProfileService UserProfileService
+@inject ICustomerShopService CustomerShopService
 @rendermode InteractiveServer
 
 <PageLoader IsVisible="_loading" Text="Loading profile..." />
@@ -227,6 +230,11 @@
                                 </MudButton>
                             </div>
 
+                            @if (!string.IsNullOrWhiteSpace(_shopLoadError))
+                            {
+                                <MudAlert Severity="Severity.Warning" Class="mb-4">@_shopLoadError</MudAlert>
+                            }
+
                             <MudGrid Spacing="3">
                                 <MudItem xs="12" md="6">
                                     <MudTextField @bind-Value="_shopModel.CompanyName" Label="Company/Shop Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="custom-input" />
@@ -405,6 +413,7 @@
 
     // Shop management
     private bool _savingShop = false;
+    private string? _shopLoadError;
     private CustomerShopFormModel _shopModel = new();
 
     public class UserProfileModel
@@ -416,18 +425,6 @@
         public string Location { get; set; } = "India";
         public string Bio { get; set; } = string.Empty;
         public string? ProfilePictureUrl { get; set; }
-    }
-
-    public class CustomerShopFormModel
-    {
-        public string CompanyName { get; set; } = string.Empty;
-        public string Gstin { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Address { get; set; } = string.Empty;
-        public string DefaultPaymentMode { get; set; } = "A/C";
-        public decimal CreditLimit { get; set; } = 150000;
-        public decimal CurrentBalance { get; set; } = -45230; // negative represents dues
     }
 
     protected override async Task OnInitializedAsync()
@@ -711,35 +708,33 @@
 
     private async Task LoadShopDataAsync()
     {
-        try
+        _shopLoadError = null;
+        var result = await CustomerShopService.LoadMyShopAsync();
+
+        if (result.NotLinked)
         {
-            var key = $"customer_shop_{_customerIdStr ?? _userName}";
-            var storedJson = await JSRuntime.InvokeAsync<string>("localStorage.getItem", key);
-            if (!string.IsNullOrEmpty(storedJson))
-            {
-                var deserialized = System.Text.Json.JsonSerializer.Deserialize<CustomerShopFormModel>(storedJson);
-                if (deserialized != null)
-                {
-                    _shopModel = deserialized;
-                    return;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading shop data: {ex.Message}");
+            _shopLoadError = result.ErrorMessage;
+            _shopModel = new CustomerShopFormModel { Email = _userEmail };
+            return;
         }
 
+        if (!result.Success || result.Profile is null)
+        {
+            _shopLoadError = result.ErrorMessage ?? "Could not load shop profile.";
+            return;
+        }
+
+        var customer = result.Profile;
         _shopModel = new CustomerShopFormModel
         {
-            CompanyName = "Vikash Iron & Steel Outlet",
-            Gstin = "27AAAAA1111A1Z1",
-            Phone = "+91 98765 43210",
-            Email = _userEmail,
-            Address = "Plot 42, Steel Market, Kalamboli, Navi Mumbai, Maharashtra - 410218",
-            DefaultPaymentMode = "A/C",
-            CreditLimit = 150000,
-            CurrentBalance = -45230
+            CompanyName = customer.CompanyName ?? string.Empty,
+            Gstin = customer.Gstin ?? string.Empty,
+            Phone = customer.Phone,
+            Email = customer.Email ?? _userEmail,
+            Address = customer.Address ?? string.Empty,
+            DefaultPaymentMode = customer.DefaultPaymentMode,
+            CreditLimit = customer.CreditLimit,
+            CurrentBalance = customer.CurrentBalance
         };
     }
 
@@ -750,13 +745,29 @@
 
         try
         {
-            await Task.Delay(1000);
+            var payload = new CustomerShopSaveModel
+            {
+                CompanyName = string.IsNullOrWhiteSpace(_shopModel.CompanyName) ? null : _shopModel.CompanyName.Trim(),
+                Phone = _shopModel.Phone.Trim(),
+                Email = string.IsNullOrWhiteSpace(_shopModel.Email) ? null : _shopModel.Email.Trim(),
+                Gstin = string.IsNullOrWhiteSpace(_shopModel.Gstin) ? null : _shopModel.Gstin.Trim(),
+                Address = string.IsNullOrWhiteSpace(_shopModel.Address) ? null : _shopModel.Address.Trim(),
+                DefaultPaymentMode = _shopModel.DefaultPaymentMode
+            };
 
-            var key = $"customer_shop_{_customerIdStr ?? _userName}";
-            var serialized = System.Text.Json.JsonSerializer.Serialize(_shopModel);
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", key, serialized);
+            var result = await CustomerShopService.SaveMyShopAsync(payload);
 
-            NotificationService.Success("Shop profile synchronized successfully!");
+            if (!result.Success || result.Profile is null)
+            {
+                NotificationService.Error(result.ErrorMessage ?? "Failed to save shop profile.");
+                return;
+            }
+
+            _shopModel.CreditLimit = result.Profile.CreditLimit;
+            _shopModel.CurrentBalance = result.Profile.CurrentBalance;
+            _shopModel.DefaultPaymentMode = result.Profile.DefaultPaymentMode;
+
+            NotificationService.Success("Shop profile saved successfully.");
         }
         catch (Exception ex)
         {

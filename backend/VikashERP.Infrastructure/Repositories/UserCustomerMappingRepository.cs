@@ -23,7 +23,7 @@ public class UserCustomerMappingRepository : IUserCustomerMappingRepository
             .FirstOrDefaultAsync(m => m.UserId == userId && m.IsActive, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<UserCustomerMapping>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<UserCustomerMapping>> GetByCustomerIdAsync(Guid customerId, CancellationToken cancellationToken = default)
     {
         return await _context.UserCustomerMappings
             .Include(m => m.User)

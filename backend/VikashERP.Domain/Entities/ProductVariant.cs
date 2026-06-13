@@ -2,8 +2,8 @@ namespace VikashERP.Domain.Entities;
 
 public class ProductVariant
 {
-    public int Id { get; set; }
-    public int ProductId { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ProductId { get; set; }
     public string Size { get; set; } = string.Empty;
     public string Thickness { get; set; } = string.Empty;
     public decimal UnitPcsToKg { get; set; } = 1m;

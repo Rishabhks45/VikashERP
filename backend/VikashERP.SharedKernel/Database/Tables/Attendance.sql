@@ -1,9 +1,11 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Table: attendance
 -- Description: Daily attendance records for staff
 
 CREATE TABLE attendance (
-    id SERIAL PRIMARY KEY,
-    staff_id integer NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    staff_id UUID NOT NULL,
     work_date date NOT NULL DEFAULT CURRENT_DATE,
     status character varying(20) NOT NULL,
     check_in time NULL,
