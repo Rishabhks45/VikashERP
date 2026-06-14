@@ -370,3 +370,5 @@ existing project/
 # Local temporary build/output folders used during manual verification.
 .tmp-build/
 *.bak
+/scratch/CreatePurchaseEntryApp
+/UpdateDbApp
