@@ -23,6 +23,11 @@ public class ProductWebService : IProductWebService
         return await _httpClient.GetFromJsonAsync<List<ProductListDto>>(BaseUrl) ?? new List<ProductListDto>();
     }
 
+    public async Task<List<ProductDto>> GetProductsWithVariantsAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<ProductDto>>($"{BaseUrl}/with-variants") ?? new List<ProductDto>();
+    }
+
     public async Task<ProductDto?> GetProductByIdAsync(Guid id)
     {
         try

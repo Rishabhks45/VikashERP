@@ -30,6 +30,35 @@ public class ProductService : IProductService
         }).ToList();
     }
 
+    public async Task<IReadOnlyList<ProductDto>> GetAllWithVariantsAsync(CancellationToken cancellationToken = default)
+    {
+        var products = await _repository.GetAllAsync(cancellationToken);
+        return products.Select(p => new ProductDto
+        {
+            Id = p.Id,
+            CategoryId = p.CategoryId,
+            CategoryName = p.Category?.Name ?? "Unknown",
+            Name = p.Name,
+            HsnCode = p.HsnCode,
+            IsActive = p.IsActive,
+            CreatedAt = p.CreatedAt,
+            UpdatedAt = p.UpdatedAt,
+            Variants = p.Variants.Where(v => !v.IsDeleted).Select(v => new ProductVariantDto
+            {
+                Id = v.Id,
+                ProductId = v.ProductId,
+                Size = v.Size,
+                Thickness = v.Thickness,
+                UnitPcsToKg = v.UnitPcsToKg,
+                AlertQtyPcs = v.AlertQtyPcs,
+                LastPurchaseRate = v.LastPurchaseRate,
+                LastPurchaseRateOn = v.LastPurchaseRateOn,
+                DefaultMargin = v.DefaultMargin,
+                IsActive = v.IsActive
+            }).ToList()
+        }).ToList();
+    }
+
     public async Task<ProductDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var p = await _repository.GetByIdAsync(id, cancellationToken);
@@ -53,6 +82,9 @@ public class ProductService : IProductService
                 Thickness = v.Thickness,
                 UnitPcsToKg = v.UnitPcsToKg,
                 AlertQtyPcs = v.AlertQtyPcs,
+                LastPurchaseRate = v.LastPurchaseRate,
+                LastPurchaseRateOn = v.LastPurchaseRateOn,
+                DefaultMargin = v.DefaultMargin,
                 IsActive = v.IsActive
             }).ToList()
         };
@@ -84,6 +116,7 @@ public class ProductService : IProductService
             Thickness = v.Thickness.Trim(),
             UnitPcsToKg = v.UnitPcsToKg,
             AlertQtyPcs = v.AlertQtyPcs,
+            DefaultMargin = v.DefaultMargin,
             IsActive = v.IsActive,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
@@ -135,6 +168,7 @@ public class ProductService : IProductService
             existing.Thickness = updateReq.Thickness.Trim();
             existing.UnitPcsToKg = updateReq.UnitPcsToKg;
             existing.AlertQtyPcs = updateReq.AlertQtyPcs;
+            existing.DefaultMargin = updateReq.DefaultMargin;
             existing.IsActive = updateReq.IsActive;
             existing.UpdatedAt = DateTime.UtcNow;
             existing.UpdatedBy = userId;
@@ -150,6 +184,7 @@ public class ProductService : IProductService
             Thickness = v.Thickness.Trim(),
             UnitPcsToKg = v.UnitPcsToKg,
             AlertQtyPcs = v.AlertQtyPcs,
+            DefaultMargin = v.DefaultMargin,
             IsActive = v.IsActive,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId

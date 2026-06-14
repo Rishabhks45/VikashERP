@@ -11,7 +11,12 @@ public class PurchaseEntry : BaseEntity
     public decimal TotalAmount { get; set; }
     public decimal LoadingCharge { get; set; }
     public decimal FreightCharge { get; set; }
-    public decimal NetAmount => TotalAmount + LoadingCharge + FreightCharge;
+    public decimal CgstAmount { get; set; }
+    public decimal SgstAmount { get; set; }
+    public decimal RoundingAmount { get; set; }
+    
+    public decimal NetAmount => TotalAmount + LoadingCharge + FreightCharge + CgstAmount + SgstAmount + RoundingAmount;
+    
     public PurchaseEntryStatus Status { get; set; } = PurchaseEntryStatus.Draft;
     public string? Remarks { get; set; }
     public string? VehicleNumber { get; set; }

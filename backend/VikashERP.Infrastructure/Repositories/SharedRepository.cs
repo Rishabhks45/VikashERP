@@ -39,6 +39,15 @@ public class SharedRepository : ISharedRepository
                      && t.IsActive,
                 cancellationToken);
 
+    public async Task<long> GetNextSequenceValueAsync(string sequenceName, CancellationToken cancellationToken = default)
+    {
+        using var command = _context.Database.GetDbConnection().CreateCommand();
+        command.CommandText = $"SELECT nextval('{sequenceName}')";
+        await _context.Database.OpenConnectionAsync(cancellationToken);
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt64(result);
+    }
+
     public Task<bool> SendPasswordResetEmailAsync(string toEmail, string resetLink, CancellationToken cancellationToken = default) =>
         SendEmailAsync(
             EmailTemplateType.ForgotPassword,

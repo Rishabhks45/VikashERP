@@ -1,0 +1,46 @@
+using System.Net.Http.Json;
+using VikashERP.Web.Models;
+
+namespace VikashERP.Web.Services;
+
+public interface ISalesWebService
+{
+    Task<List<InvoiceListDto>> GetInvoicesAsync();
+    Task<InvoiceDetailDto?> GetInvoiceByIdAsync(Guid id);
+    Task<Guid> CreateInvoiceAsync(CreateInvoiceModel model);
+    Task<bool> ApproveInvoiceAsync(Guid id);
+}
+
+public class SalesWebService : ISalesWebService
+{
+    private readonly HttpClient _httpClient;
+
+    public SalesWebService(IHttpClientFactory httpClientFactory)
+    {
+        _httpClient = httpClientFactory.CreateClient("VikashERP.Api");
+    }
+
+    public async Task<List<InvoiceListDto>> GetInvoicesAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<InvoiceListDto>>("api/sales") ?? new List<InvoiceListDto>();
+    }
+
+    public async Task<InvoiceDetailDto?> GetInvoiceByIdAsync(Guid id)
+    {
+        return await _httpClient.GetFromJsonAsync<InvoiceDetailDto>($"api/sales/{id}");
+    }
+
+    public async Task<Guid> CreateInvoiceAsync(CreateInvoiceModel model)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/sales", model);
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<dynamic>();
+        return Guid.Parse(result!.GetProperty("id").GetString()!);
+    }
+
+    public async Task<bool> ApproveInvoiceAsync(Guid id)
+    {
+        var response = await _httpClient.PostAsync($"api/sales/{id}/approve", null);
+        return response.IsSuccessStatusCode;
+    }
+}

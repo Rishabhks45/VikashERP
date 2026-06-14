@@ -16,6 +16,7 @@ public class Customer : BaseEntity
     public CustomerPaymentMode DefaultPaymentMode { get; set; } = CustomerPaymentMode.Account;
     public decimal CreditLimit { get; set; }
     public decimal CurrentBalance { get; set; }
+    public decimal DefaultFreightRate { get; set; }
 
 
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]

@@ -12,6 +12,7 @@ public class CustomerShopProfileModel
     public string DefaultPaymentMode { get; set; } = "A/C";
     public decimal CreditLimit { get; set; }
     public decimal CurrentBalance { get; set; }
+    public decimal DefaultFreightRate { get; set; }
 }
 
 public class CustomerShopSaveModel

@@ -35,6 +35,9 @@ public class ProductVariantDto
     public string Thickness { get; set; } = string.Empty;
     public decimal UnitPcsToKg { get; set; }
     public int AlertQtyPcs { get; set; }
+    public decimal LastPurchaseRate { get; set; }
+    public VikashERP.SharedKernel.Enums.RateOn LastPurchaseRateOn { get; set; }
+    public decimal DefaultMargin { get; set; }
     public bool IsActive { get; set; }
 }
 
@@ -62,6 +65,7 @@ public class CreateProductVariantDto
     public string Thickness { get; set; } = string.Empty;
     public decimal UnitPcsToKg { get; set; } = 1m;
     public int AlertQtyPcs { get; set; } = 10;
+    public decimal DefaultMargin { get; set; } = 0m;
     public bool IsActive { get; set; } = true;
 }
 
@@ -72,5 +76,6 @@ public class UpdateProductVariantDto
     public string Thickness { get; set; } = string.Empty;
     public decimal UnitPcsToKg { get; set; } = 1m;
     public int AlertQtyPcs { get; set; } = 10;
+    public decimal DefaultMargin { get; set; } = 0m;
     public bool IsActive { get; set; } = true;
 }

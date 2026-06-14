@@ -8,6 +8,10 @@ public class GetProductsQuery : IRequest<IReadOnlyList<ProductListDto>>
 {
 }
 
+public class GetProductsWithVariantsQuery : IRequest<IReadOnlyList<ProductDto>>
+{
+}
+
 public class GetProductByIdQuery : IRequest<ProductDto?>
 {
     public Guid Id { get; set; }
@@ -25,6 +29,21 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, IReadOn
     public async Task<IReadOnlyList<ProductListDto>> Handle(GetProductsQuery request, CancellationToken cancellationToken)
     {
         return await _service.GetAllAsync(cancellationToken);
+    }
+}
+
+public class GetProductsWithVariantsQueryHandler : IRequestHandler<GetProductsWithVariantsQuery, IReadOnlyList<ProductDto>>
+{
+    private readonly IProductService _service;
+
+    public GetProductsWithVariantsQueryHandler(IProductService service)
+    {
+        _service = service;
+    }
+
+    public async Task<IReadOnlyList<ProductDto>> Handle(GetProductsWithVariantsQuery request, CancellationToken cancellationToken)
+    {
+        return await _service.GetAllWithVariantsAsync(cancellationToken);
     }
 }
 

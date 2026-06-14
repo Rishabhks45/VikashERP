@@ -9,6 +9,10 @@ public class ProductVariant : BaseEntity
     public decimal UnitPcsToKg { get; set; } = 1m;
     public int AlertQtyPcs { get; set; } = 10;
 
+    public decimal LastPurchaseRate { get; set; } = 0m;
+    public VikashERP.SharedKernel.Enums.RateOn LastPurchaseRateOn { get; set; } = VikashERP.SharedKernel.Enums.RateOn.Kg;
+    public decimal DefaultMargin { get; set; } = 0m;
+
 
     public Product Product { get; set; } = null!;
     public ICollection<StockLedger> StockLedgerEntries { get; set; } = [];

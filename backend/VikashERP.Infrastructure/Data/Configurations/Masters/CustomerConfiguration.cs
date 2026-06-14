@@ -30,6 +30,7 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
                   .HasMaxLength(20);
             entity.Property(e => e.CreditLimit).HasPrecision(12, 2);
             entity.Property(e => e.CurrentBalance).HasPrecision(12, 2);
+            entity.Property(e => e.DefaultFreightRate).HasPrecision(12, 2);
             entity.HasIndex(e => e.AccountNumber).IsUnique().HasFilter("\"IsDeleted\" = false");
     }
 }

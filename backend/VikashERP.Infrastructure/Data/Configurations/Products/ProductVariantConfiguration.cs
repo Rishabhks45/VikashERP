@@ -17,6 +17,9 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
             entity.Property(e => e.Size).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Thickness).IsRequired().HasMaxLength(50);
             entity.Property(e => e.UnitPcsToKg).HasPrecision(12, 4);
+            entity.Property(e => e.LastPurchaseRate).HasPrecision(18, 2).HasDefaultValue(0m);
+            entity.Property(e => e.LastPurchaseRateOn).HasConversion<int>().HasDefaultValue(RateOn.Kg);
+            entity.Property(e => e.DefaultMargin).HasPrecision(18, 2).HasDefaultValue(0m);
             entity.HasIndex(e => new { e.ProductId, e.Size, e.Thickness }).IsUnique().HasFilter("\"IsDeleted\" = false");
             entity.HasOne(e => e.Product)
                   .WithMany(p => p.Variants)

@@ -27,6 +27,13 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("with-variants")]
+    public async Task<ActionResult<IEnumerable<ProductDto>>> GetWithVariants()
+    {
+        var result = await _mediator.Send(new GetProductsWithVariantsQuery());
+        return Ok(result);
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductDto>> GetById(Guid id)
     {

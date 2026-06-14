@@ -14,6 +14,7 @@ public class CustomerListDto
     public string DefaultPaymentMode { get; set; } = string.Empty;
     public decimal CreditLimit { get; set; }
     public decimal CurrentBalance { get; set; }
+    public decimal DefaultFreightRate { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }
@@ -29,6 +30,7 @@ public class CreateCustomerDto
     public string? Address { get; set; }
     public string DefaultPaymentMode { get; set; } = "A/C";
     public decimal CreditLimit { get; set; }
+    public decimal DefaultFreightRate { get; set; }
 }
 
 public class UpdateCustomerDto
@@ -42,6 +44,7 @@ public class UpdateCustomerDto
     public string? Address { get; set; }
     public string DefaultPaymentMode { get; set; } = "A/C";
     public decimal CreditLimit { get; set; }
+    public decimal DefaultFreightRate { get; set; }
 }
 
 public class UpdateCustomerShopDto

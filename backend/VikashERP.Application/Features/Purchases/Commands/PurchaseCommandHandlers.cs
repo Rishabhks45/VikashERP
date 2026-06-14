@@ -24,6 +24,9 @@ public class CreatePurchaseEntryCommandHandler : IRequestHandler<CreatePurchaseE
             InvoiceDate = request.Dto.InvoiceDate.ToUniversalTime(),
             LoadingCharge = request.Dto.LoadingCharge,
             FreightCharge = request.Dto.FreightCharge,
+            CgstAmount = request.Dto.CgstAmount,
+            SgstAmount = request.Dto.SgstAmount,
+            RoundingAmount = request.Dto.RoundingAmount,
             Remarks = request.Dto.Remarks,
             VehicleNumber = request.Dto.VehicleNumber,
             Status = PurchaseEntryStatus.Draft
@@ -32,7 +35,11 @@ public class CreatePurchaseEntryCommandHandler : IRequestHandler<CreatePurchaseE
         decimal totalAmt = 0;
         foreach (var itemDto in request.Dto.Items)
         {
-            var totalPrice = itemDto.WeightKg * itemDto.Rate; // Assuming rate is per Kg. If per piece, it should be adjusted.
+            var totalPrice = itemDto.TotalPrice > 0 
+                ? itemDto.TotalPrice
+                : (itemDto.RateOn == RateOn.Pcs
+                    ? itemDto.QuantityPcs * itemDto.Rate
+                    : itemDto.WeightKg * itemDto.Rate);
             totalAmt += totalPrice;
 
             entry.Items.Add(new PurchaseEntryItem
@@ -41,6 +48,7 @@ public class CreatePurchaseEntryCommandHandler : IRequestHandler<CreatePurchaseE
                 QuantityPcs = itemDto.QuantityPcs,
                 WeightKg = itemDto.WeightKg,
                 Rate = itemDto.Rate,
+                RateOn = itemDto.RateOn,
                 TotalPrice = totalPrice
             });
         }

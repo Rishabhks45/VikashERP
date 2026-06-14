@@ -8,139 +8,164 @@
 
 <PageTitle>View Purchase Entry</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="mb-1 text-gradient">Purchase Invoice @purchaseDto?.InvoiceNumber</h2>
-        <p class="text-muted mb-0">View details of the purchase entry</p>
-    </div>
-    <div class="d-flex gap-2">
-        @if (purchaseDto != null && purchaseDto.Status.ToString() == "Draft")
-        {
-            <button class="btn btn-success" @onclick="ApprovePurchase">
-                <i class="bi bi-check-lg me-2"></i>Approve Entry
-            </button>
-        }
-        <button class="btn btn-outline-secondary" @onclick="GoBack">
-            <i class="bi bi-arrow-left me-2"></i>Back
-        </button>
-    </div>
-</div>
-
-@if (purchaseDto == null)
-{
-    if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-3 text-muted">Loading...</p>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6 mb-16">
+    <!-- Header Area -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <MudText Typo="Typo.h4" Class="fw-bold" Style="color: var(--mud-palette-primary-darken);">
+                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Large" Class="mr-2" Style="vertical-align: sub;" />
+                Purchase Invoice @purchaseDto?.InvoiceNumber
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">View details of the purchase entry</MudText>
         </div>
+        <div style="display: flex; gap: 0.5rem;">
+            @if (purchaseDto != null && purchaseDto.Status == VikashERP.SharedKernel.Enums.PurchaseEntryStatus.Draft)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ApprovePurchase" StartIcon="@Icons.Material.Filled.CheckCircle" Style="border-radius: 8px; font-weight: 600;">
+                    Approve Entry
+                </MudButton>
+            }
+            <MudButton Variant="Variant.Outlined" Color="Color.Dark" OnClick="GoBack" StartIcon="@Icons.Material.Filled.ArrowBack" Style="border-radius: 8px; font-weight: 600;">
+                Back
+            </MudButton>
+        </div>
+    </div>
+
+    @if (purchaseDto == null)
+    {
+        if (isLoading)
+        {
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5rem 0;">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-4">Loading details...</MudText>
+            </div>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4">Entry not found.</MudAlert>
+        }
     }
     else
     {
-        <div class="alert alert-danger text-center">
-            Entry not found.
-        </div>
-    }
-}
-else
-{
-    <div class="row g-4">
-        <div class="col-lg-4">
-            <div class="card glass-card h-100">
-                <div class="card-header bg-transparent border-bottom">
-                    <h5 class="mb-0">Invoice Summary</h5>
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Status</dt>
-                        <dd class="col-sm-7 mb-2 fw-semibold text-end">
-                            @if (purchaseDto.Status.ToString() == "Approved")
+        <MudGrid Spacing="3">
+            <!-- Left Side: Summary -->
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2" Style="border-radius: 12px; height: 100%;">
+                    <MudCardHeader Style="border-bottom: 1px solid var(--mud-palette-lines-default); padding-bottom: 8px;">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Class="fw-bold">Invoice Summary</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Status</MudText>
+                            @if (purchaseDto.Status == VikashERP.SharedKernel.Enums.PurchaseEntryStatus.Approved)
                             {
-                                <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Approved</span>
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">Approved</MudChip>
                             }
                             else
                             {
-                                <span class="text-warning"><i class="bi bi-pencil-square me-1"></i> Draft</span>
+                                <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">Draft</MudChip>
                             }
-                        </dd>
-
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Entry Number</dt>
-                        <dd class="col-sm-7 mb-2 text-end fw-medium">@purchaseDto.EntryNumber</dd>
-
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Supplier</dt>
-                        <dd class="col-sm-7 mb-2 text-end fw-medium">@purchaseDto.SupplierName</dd>
-
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Invoice No</dt>
-                        <dd class="col-sm-7 mb-2 text-end fw-medium">@purchaseDto.InvoiceNumber</dd>
-
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Invoice Date</dt>
-                        <dd class="col-sm-7 mb-2 text-end fw-medium">@purchaseDto.InvoiceDate.ToString("dd MMM yyyy")</dd>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Entry Number</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">@purchaseDto.EntryNumber</MudText>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Supplier</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">@purchaseDto.SupplierName</MudText>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Invoice No</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">@purchaseDto.InvoiceNumber</MudText>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Invoice Date</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">@purchaseDto.InvoiceDate.ToString("dd MMM yyyy")</MudText>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Vehicle No</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">@(string.IsNullOrEmpty(purchaseDto.VehicleNumber) ? "-" : purchaseDto.VehicleNumber)</MudText>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Remarks</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">@(string.IsNullOrEmpty(purchaseDto.Remarks) ? "-" : purchaseDto.Remarks)</MudText>
+                        </div>
                         
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Vehicle No</dt>
-                        <dd class="col-sm-7 mb-2 text-end fw-medium">@(string.IsNullOrEmpty(purchaseDto.VehicleNumber) ? "-" : purchaseDto.VehicleNumber)</dd>
+                        <MudDivider Class="mb-4" />
+                        
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Items Total</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">₹@purchaseDto.TotalAmount.ToString("N2")</MudText>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Freight</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">₹@purchaseDto.FreightCharge.ToString("N2")</MudText>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Loading</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">₹@purchaseDto.LoadingCharge.ToString("N2")</MudText>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Taxes (CGST+SGST)</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">₹@((purchaseDto.CgstAmount + purchaseDto.SgstAmount).ToString("N2"))</MudText>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Rounding</MudText>
+                            <MudText Typo="Typo.body2" Class="fw-bold">₹@purchaseDto.RoundingAmount.ToString("N2")</MudText>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(99,102,241,0.05); padding: 12px; border-radius: 8px;">
+                            <MudText Typo="Typo.subtitle1" Class="fw-bold" Color="Color.Primary">Net Amount</MudText>
+                            <MudText Typo="Typo.h6" Class="fw-bold" Color="Color.Primary">₹@purchaseDto.NetAmount.ToString("N2")</MudText>
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
 
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Remarks</dt>
-                        <dd class="col-sm-7 mb-2 text-end fw-medium">@(string.IsNullOrEmpty(purchaseDto.Remarks) ? "-" : purchaseDto.Remarks)</dd>
-                    </dl>
-                    
-                    <hr class="my-3 border-secondary border-opacity-25" />
-                    
-                    <dl class="row mb-0">
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Items Total</dt>
-                        <dd class="col-sm-7 mb-2 text-end fw-medium">₹@purchaseDto.TotalAmount.ToString("N2")</dd>
-
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Freight</dt>
-                        <dd class="col-sm-7 mb-2 text-end fw-medium">₹@purchaseDto.FreightCharge.ToString("N2")</dd>
-
-                        <dt class="col-sm-5 text-muted fw-normal mb-2">Loading</dt>
-                        <dd class="col-sm-7 mb-2 text-end fw-medium">₹@purchaseDto.LoadingCharge.ToString("N2")</dd>
-
-                        <dt class="col-sm-5 text-dark fw-bold mb-0 mt-2 fs-5">Net Amount</dt>
-                        <dd class="col-sm-7 mb-0 text-end fw-bold text-primary mt-2 fs-5">₹@purchaseDto.NetAmount.ToString("N2")</dd>
-                    </dl>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-8">
-            <div class="card glass-card h-100">
-                <div class="card-header bg-transparent border-bottom">
-                    <h5 class="mb-0">Purchased Items</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 custom-table">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-4">Product Variant</th>
-                                    <th class="text-end">Qty (Pcs)</th>
-                                    <th class="text-end">Weight (Kg)</th>
-                                    <th class="text-end">Rate (₹/Kg)</th>
-                                    <th class="text-end pe-4">Total Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in purchaseDto.Items)
-                                {
-                                    <tr>
-                                        <td class="ps-4">
-                                            <div class="fw-medium">@item.ProductName</div>
-                                            <div class="small text-muted">@item.VariantSize</div>
-                                        </td>
-                                        <td class="text-end">@item.QuantityPcs</td>
-                                        <td class="text-end">@item.WeightKg</td>
-                                        <td class="text-end">₹@item.Rate.ToString("N2")</td>
-                                        <td class="text-end pe-4 fw-semibold">₹@item.TotalPrice.ToString("N2")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+            <!-- Right Side: Items -->
+            <MudItem xs="12" md="8">
+                <MudCard Elevation="2" Style="border-radius: 12px; height: 100%;">
+                    <MudCardHeader Style="border-bottom: 1px solid var(--mud-palette-lines-default); padding-bottom: 8px;">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Class="fw-bold">Purchased Items</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudTable Items="@purchaseDto.Items" Hover="true" Dense="false" Elevation="0">
+                            <HeaderContent>
+                                <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold text-muted">Product Variant</MudText></MudTh>
+                                <MudTh Style="text-align: right;"><MudText Typo="Typo.subtitle2" Class="fw-bold text-muted">Qty (Pcs)</MudText></MudTh>
+                                <MudTh Style="text-align: right;"><MudText Typo="Typo.subtitle2" Class="fw-bold text-muted">Weight (Kg)</MudText></MudTh>
+                                <MudTh Style="text-align: right;"><MudText Typo="Typo.subtitle2" Class="fw-bold text-muted">Rate</MudText></MudTh>
+                                <MudTh Style="text-align: right;"><MudText Typo="Typo.subtitle2" Class="fw-bold text-muted">Total Amount</MudText></MudTh>
+                            </HeaderContent>
+                            <RowTemplate Context="item">
+                                <MudTd DataLabel="Product Variant">
+                                    <MudText Typo="Typo.body2" Class="fw-bold">@item.ProductName</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@item.VariantSize</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Qty (Pcs)" Style="text-align: right;">
+                                    <MudText Typo="Typo.body2">@item.QuantityPcs</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Weight (Kg)" Style="text-align: right;">
+                                    <MudText Typo="Typo.body2">@item.WeightKg</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Rate" Style="text-align: right;">
+                                    <MudText Typo="Typo.body2">₹@item.Rate.ToString("N2") / @item.RateOn.ToString()</MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Total Amount" Style="text-align: right;">
+                                    <MudText Typo="Typo.body2" Class="fw-bold">₹@item.TotalPrice.ToString("N2")</MudText>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
 
 @code {
     [Parameter]

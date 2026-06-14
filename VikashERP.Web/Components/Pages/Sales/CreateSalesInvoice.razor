@@ -1,0 +1,376 @@
+@page "/sales/create"
+@using VikashERP.Web.Models
+@using VikashERP.Web.Services
+@inject ISalesWebService SalesService
+@inject ICustomerWebService CustomerService
+@inject IProductWebService ProductService
+@inject NavigationManager NavManager
+@inject MudBlazor.ISnackbar Snackbar
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<PageTitle>Create Sales Invoice</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Create Sales Invoice</h2>
+    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => NavManager.NavigateTo("/sales"))">
+        Back to List
+    </MudButton>
+</div>
+
+@if (_isLoadingData)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <EditForm Model="@_model" OnValidSubmit="SaveInvoiceAsync" novalidate>
+        <DataAnnotationsValidator />
+
+        <MudGrid>
+            <!-- Invoice Details -->
+            <MudItem xs="12" md="8">
+                <MudCard Class="mb-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Customer & Details</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Guid" Label="Select Customer" Variant="Variant.Outlined" Value="@_model.CustomerId" ValueChanged="OnCustomerChanged" Required="true">
+                                    <MudSelectItem T="Guid" Value="Guid.Empty">-- Select Customer --</MudSelectItem>
+                                    @foreach (var c in _customers)
+                                    {
+                                        <MudSelectItem T="Guid" Value="@c.Id">@c.FirstName @c.LastName - @c.CompanyName</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                
+                                @if (_selectedCustomer != null)
+                                {
+                                    <MudPaper Class="pa-3 mt-3" Elevation="0" Style="background-color: var(--mud-palette-background-grey);">
+                                        <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-1"><b>@(_selectedCustomer.CompanyName ?? $"{_selectedCustomer.FirstName} {_selectedCustomer.LastName}")</b></MudText>
+                                        <MudText Typo="Typo.body2"><b>Mobile:</b> @_selectedCustomer.Phone</MudText>
+                                        @if (!string.IsNullOrWhiteSpace(_selectedCustomer.Gstin))
+                                        {
+                                            <MudText Typo="Typo.body2"><b>GSTIN:</b> @_selectedCustomer.Gstin</MudText>
+                                        }
+                                        <MudText Typo="Typo.body2"><b>Address:</b> @(_selectedCustomer.Address ?? "N/A")</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Error" Class="mt-1"><b>Previous Balance:</b> @_selectedCustomer.CurrentBalance.ToString("C2")</MudText>
+                                    </MudPaper>
+                                }
+                            </MudItem>
+                            <MudItem xs="12" md="3">
+                                <MudDatePicker Label="Invoice Date" Variant="Variant.Outlined" @bind-Date="_invoiceDate" Required="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="3">
+                                <MudTextField Label="Vehicle No" Variant="Variant.Outlined" @bind-Value="_model.VehicleNumber" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <!-- Line Items -->
+                <MudCard Class="mb-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Line Items</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddItem">Add Item</MudButton>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @foreach (var item in _model.Items)
+                        {
+                            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                                <MudGrid>
+                                    <MudItem xs="12" md="4">
+                                        <MudSelect T="Guid" Label="Product" Variant="Variant.Outlined" Value="@item.SelectedProductId" ValueChanged="@(async (Guid val) => await OnProductChanged(item, val))">
+                                            @foreach (var p in _products)
+                                            {
+                                                <MudSelectItem T="Guid" Value="@p.Id">@p.Name</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudSelect T="Guid" Label="Variant" Variant="Variant.Outlined" Value="@item.VariantId" ValueChanged="@((Guid val) => OnVariantChanged(item, val))" Disabled="@(item.SelectedProductVariants == null || !item.SelectedProductVariants.Any())">
+                                            @if (item.SelectedProductVariants != null)
+                                            {
+                                                foreach (var v in item.SelectedProductVariants)
+                                                {
+                                                    <MudSelectItem T="Guid" Value="@v.Id">@v.Size @v.Thickness</MudSelectItem>
+                                                }
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="6" md="2">
+                                        <MudNumericField Label="Qty (Pcs)" Variant="Variant.Outlined" Value="@item.QtyPcs" Min="0" ValueChanged="@((int val) => OnQtyChanged(item, val))" />
+                                    </MudItem>
+                                    <MudItem xs="6" md="2">
+                                        <MudNumericField Label="Weight (Kg)" Variant="Variant.Outlined" Value="@item.WeightKg" Min="0" Format="N3" ValueChanged="@((decimal val) => OnWeightChanged(item, val))" />
+                                    </MudItem>
+                                    <MudItem xs="6" md="2">
+                                        <MudNumericField Label="Rate" Variant="Variant.Outlined" Value="@item.Rate" Min="0" Format="N2" ValueChanged="@((decimal val) => OnRateChanged(item, val))" />
+                                    </MudItem>
+                                    <MudItem xs="6" md="2" Class="d-flex align-items-center">
+                                        <MudText Typo="Typo.subtitle1">@item.TotalPrice.ToString("C2")</MudText>
+                                        <MudSpacer />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveItem(item))" />
+                                    </MudItem>
+                                </MudGrid>
+                            </MudPaper>
+                        }
+                        @if (!_model.Items.Any())
+                        {
+                            <MudAlert Severity="Severity.Info">No items added to this invoice.</MudAlert>
+                        }
+                    </MudCardContent>
+                </MudCard>
+                
+                <MudCard Class="mb-4">
+                    <MudCardContent>
+                        <MudTextField Label="Remarks / Notes" Variant="Variant.Outlined" Lines="2" @bind-Value="_model.Remarks" />
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <!-- Summary & Totals -->
+            <MudItem xs="12" md="4">
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Bill Summary</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            <div class="d-flex justify-content-between">
+                                <MudText>Subtotal</MudText>
+                                <MudText>@_model.Subtotal.ToString("C2")</MudText>
+                            </div>
+                            
+                            <MudNumericField Label="Freight (Bhada)" Variant="Variant.Outlined" Margin="Margin.Dense" Value="@_model.FreightCharge" ValueChanged="@((decimal val) => { _model.FreightCharge = val; OnChargeChanged(); })" />
+                            <MudNumericField Label="Loading Charge" Variant="Variant.Outlined" Margin="Margin.Dense" Value="@_model.LoadingCharge" ValueChanged="@((decimal val) => { _model.LoadingCharge = val; OnChargeChanged(); })" />
+                            
+                            <div class="d-flex justify-content-between">
+                                <MudText>CGST</MudText>
+                                <MudText>@_model.CgstAmount.ToString("C2")</MudText>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <MudText>SGST</MudText>
+                                <MudText>@_model.SgstAmount.ToString("C2")</MudText>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <MudText>Rounding</MudText>
+                                <MudText>@_model.RoundingAmount.ToString("C2")</MudText>
+                            </div>
+                            
+                            <MudDivider />
+                            
+                            <div class="d-flex justify-content-between mt-2">
+                                <MudText Typo="Typo.h5" Color="Color.Primary"><b>Net Total</b></MudText>
+                                <MudText Typo="Typo.h5" Color="Color.Primary"><b>@_model.TotalAmount.ToString("C2")</b></MudText>
+                            </div>
+                            
+                            <MudDivider Class="my-2" />
+                            
+                            <MudSelect T="string" Label="Payment Mode" @bind-Value="_model.PaymentMode" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelectItem Value="@("A/C")">A/C (Credit)</MudSelectItem>
+                                <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
+                                <MudSelectItem Value="@("Bank/UPI")">Bank/UPI</MudSelectItem>
+                            </MudSelect>
+
+                            <div class="d-flex align-items-center mt-2 gap-2">
+                                <MudNumericField Label="Paid Amount" Variant="Variant.Outlined" Margin="Margin.Dense" Value="@_model.PaidAmount" ValueChanged="@((decimal val) => { _model.PaidAmount = val; CalculateTotals(); })" Min="0" Max="@_model.TotalAmount" />
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => { _model.PaidAmount = _model.TotalAmount; CalculateTotals(); })">Full</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => { _model.PaidAmount = 0; CalculateTotals(); })">Zero</MudButton>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-2">
+                                <MudText Typo="Typo.subtitle1" Color="Color.Error"><b>Due Amount (A/C)</b></MudText>
+                                <MudText Typo="Typo.subtitle1" Color="Color.Error"><b>@_model.DueAmount.ToString("C2")</b></MudText>
+                            </div>
+                        </MudStack>
+                    </MudCardContent>
+                    <MudCardActions Class="pb-4 px-4">
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" Disabled="@_isSaving">
+                            @(_isSaving ? "Saving..." : "Generate Invoice")
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+}
+
+@code {
+    private CreateInvoiceModel _model = new();
+    private DateTime? _invoiceDate = DateTime.Today;
+    private List<CustomerListDto> _customers = new();
+    private CustomerListDto? _selectedCustomer;
+    private List<ProductListDto> _products = new();
+    private bool _isLoadingData = true;
+    private bool _isSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoadingData = true;
+        try
+        {
+            _customers = await CustomerService.GetCustomersAsync();
+            _products = await ProductService.GetProductsAsync();
+        }
+        finally
+        {
+            _isLoadingData = false;
+        }
+    }
+
+    private void OnCustomerChanged(Guid customerId)
+    {
+        _model.CustomerId = customerId;
+        _selectedCustomer = _customers.FirstOrDefault(c => c.Id == customerId);
+        if (_selectedCustomer != null)
+        {
+            _model.FreightCharge = _selectedCustomer.DefaultFreightRate;
+            CalculateTotals();
+        }
+    }
+
+    private void AddItem()
+    {
+        _model.Items.Add(new CreateInvoiceItemModel());
+    }
+
+    private void RemoveItem(CreateInvoiceItemModel item)
+    {
+        _model.Items.Remove(item);
+        CalculateTotals();
+    }
+
+    private async Task OnProductChanged(CreateInvoiceItemModel item, Guid productId)
+    {
+        item.SelectedProductId = productId;
+        item.VariantId = Guid.Empty;
+        item.SelectedVariant = null;
+        item.SelectedProductVariants = null;
+        
+        if (productId != Guid.Empty)
+        {
+            var productDetails = await ProductService.GetProductByIdAsync(productId);
+            if (productDetails != null)
+            {
+                item.SelectedProductVariants = productDetails.Variants;
+            }
+        }
+    }
+
+    private void OnVariantChanged(CreateInvoiceItemModel item, Guid variantId)
+    {
+        item.VariantId = variantId;
+        if (item.SelectedProductVariants != null)
+        {
+            var variant = item.SelectedProductVariants.FirstOrDefault(v => v.Id == variantId);
+            if (variant != null)
+            {
+                item.SelectedVariant = variant;
+                // Calculate selling price from purchase rate + margin
+                item.Rate = variant.LastPurchaseRate * (1 + (variant.DefaultMargin / 100m));
+                CalculateItemTotal(item);
+            }
+        }
+    }
+
+    private void OnQtyChanged(CreateInvoiceItemModel item, int qty)
+    {
+        item.QtyPcs = qty;
+        // Standard formula: if we have standard weight, calculate it
+        if (item.SelectedVariant != null && item.SelectedVariant.UnitPcsToKg > 0)
+        {
+            item.WeightKg = qty * item.SelectedVariant.UnitPcsToKg;
+        }
+        CalculateItemTotal(item);
+    }
+
+    private void OnWeightChanged(CreateInvoiceItemModel item, decimal weight)
+    {
+        item.WeightKg = weight;
+        CalculateItemTotal(item);
+    }
+
+    private void OnRateChanged(CreateInvoiceItemModel item, decimal rate)
+    {
+        item.Rate = rate;
+        CalculateItemTotal(item);
+    }
+
+    private void CalculateItemTotal(CreateInvoiceItemModel item)
+    {
+        item.TotalPrice = item.WeightKg * item.Rate;
+        CalculateTotals();
+    }
+
+    private void OnChargeChanged()
+    {
+        CalculateTotals();
+    }
+
+    private void CalculateTotals()
+    {
+        _model.Subtotal = _model.Items.Sum(i => i.TotalPrice);
+        
+        var taxableValue = _model.Subtotal + _model.FreightCharge + _model.LoadingCharge;
+        
+        _model.CgstAmount = Math.Round(taxableValue * 0.09m, 2);
+        _model.SgstAmount = Math.Round(taxableValue * 0.09m, 2);
+        
+        var totalBeforeRounding = taxableValue + _model.CgstAmount + _model.SgstAmount;
+        _model.TotalAmount = Math.Round(totalBeforeRounding, 0); // Nearest Rupee
+        _model.RoundingAmount = Math.Round(_model.TotalAmount - totalBeforeRounding, 2);
+        
+        // Ensure paid amount doesn't exceed total
+        if (_model.PaidAmount > _model.TotalAmount)
+        {
+            _model.PaidAmount = _model.TotalAmount;
+        }
+        
+        _model.DueAmount = _model.TotalAmount - _model.PaidAmount;
+    }
+
+    private async Task SaveInvoiceAsync()
+    {
+        if (_model.CustomerId == Guid.Empty)
+        {
+            Snackbar.Add("Please select a customer.", MudBlazor.Severity.Warning);
+            return;
+        }
+
+        if (!_model.Items.Any())
+        {
+            Snackbar.Add("Please add at least one item.", MudBlazor.Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            _model.InvoiceDate = _invoiceDate ?? DateTime.Today;
+            var invoiceId = await SalesService.CreateInvoiceAsync(_model);
+            
+            // Auto approve for now (can be separated later)
+            await SalesService.ApproveInvoiceAsync(invoiceId);
+            
+            Snackbar.Add("Sales Invoice generated successfully!", MudBlazor.Severity.Success);
+            NavManager.NavigateTo("/sales");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", MudBlazor.Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

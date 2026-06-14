@@ -8,6 +8,7 @@ namespace VikashERP.Web.Services.Interfaces;
 public interface IProductWebService
 {
     Task<List<ProductListDto>> GetProductsAsync();
+    Task<List<ProductDto>> GetProductsWithVariantsAsync();
     Task<ProductDto?> GetProductByIdAsync(Guid id);
     Task<ProductDto?> CreateProductAsync(CreateProductDto request);
     Task<ProductDto?> UpdateProductAsync(Guid id, UpdateProductDto request);

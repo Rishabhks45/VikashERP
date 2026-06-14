@@ -1,4 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE SEQUENCE IF NOT EXISTS sales_invoice_seq START 1;
 
 -- Table: invoices
 -- Description: Sales invoice records
@@ -8,14 +9,20 @@ CREATE TABLE invoices (
     invoice_number character varying(100) NOT NULL,
     customer_id UUID NOT NULL,
     subtotal numeric(12,2) NOT NULL DEFAULT 0,
+    freight_charge numeric(12,2) NOT NULL DEFAULT 0,
+    loading_charge numeric(12,2) NOT NULL DEFAULT 0,
     cgst_amount numeric(12,2) NOT NULL DEFAULT 0,
     sgst_amount numeric(12,2) NOT NULL DEFAULT 0,
     igst_amount numeric(12,2) NOT NULL DEFAULT 0,
+    rounding_amount numeric(12,2) NOT NULL DEFAULT 0,
     total_amount numeric(12,2) NOT NULL DEFAULT 0,
     paid_amount numeric(12,2) NOT NULL DEFAULT 0,
     due_amount numeric(12,2) NOT NULL DEFAULT 0,
     payment_mode character varying(50) NOT NULL,
-    invoice_date date NOT NULL DEFAULT CURRENT_DATE,
+    vehicle_number character varying(50) NULL,
+    remarks character varying(1000) NULL,
+    status integer NOT NULL DEFAULT 0,
+    invoice_date timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_invoices_Customers" FOREIGN KEY (customer_id) REFERENCES "Customers" ("Id") ON DELETE RESTRICT,
     created_by UUID NULL,

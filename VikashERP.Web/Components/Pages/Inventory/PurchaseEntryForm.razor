@@ -1,6 +1,7 @@
 @page "/purchases/new"
 @using VikashERP.Web.Models
 @using VikashERP.Web.Services.Interfaces
+@using VikashERP.SharedKernel.Enums
 @inject IPurchaseWebService PurchaseService
 @inject ISupplierWebService SupplierService
 @inject IProductWebService ProductService
@@ -44,6 +45,9 @@
                     <div style="padding: 0.625rem; display:flex; flex-direction:column; gap:0.4rem;">
                         <MudSelect T="Guid" Label="Supplier *" @bind-Value="purchaseDto.SupplierId"
                                    Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" AnchorOrigin="Origin.BottomLeft">
+                            <MudSelectItem T="Guid" Value="Guid.Empty" Disabled="true">
+                                <em style="color:var(--mud-palette-text-disabled); font-size:0.85rem;">-- Select Supplier --</em>
+                            </MudSelectItem>
                             @foreach (var s in suppliers)
                             {
                                 <MudSelectItem T="Guid" Value="@s.Id">@s.Name</MudSelectItem>
@@ -69,6 +73,15 @@
                                             Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Min="0" Style="flex:1" />
                         </div>
 
+                        <div style="display:flex; gap:0.4rem; margin-top:0.4rem;">
+                            <MudNumericField @bind-Value="purchaseDto.CgstAmount" Label="CGST (+)"
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Min="0" Style="flex:1" />
+                            <MudNumericField @bind-Value="purchaseDto.SgstAmount" Label="SGST (+)"
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Min="0" Style="flex:1" />
+                            <MudNumericField @bind-Value="purchaseDto.RoundingAmount" Label="Round (+/-)"
+                                            Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Style="flex:1" />
+                        </div>
+
                         <!-- Net Amount Summary -->
                         <div style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08)); border:1px solid rgba(99,102,241,0.18); border-radius:8px; padding:0.6rem 0.75rem; margin-top:0.25rem;">
                             <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
@@ -77,8 +90,16 @@
                                     <td style="text-align:right; font-weight:500; padding:0.15rem 0;">₹@ItemsTotal.ToString("N2")</td>
                                 </tr>
                                 <tr>
-                                    <td style="color:var(--mud-palette-text-secondary); padding:0.15rem 0;">Charges</td>
+                                    <td style="color:var(--mud-palette-text-secondary); padding:0.15rem 0;">Charges (F+L)</td>
                                     <td style="text-align:right; font-weight:500; padding:0.15rem 0;">₹@((purchaseDto.FreightCharge + purchaseDto.LoadingCharge).ToString("N2"))</td>
+                                </tr>
+                                <tr>
+                                    <td style="color:var(--mud-palette-text-secondary); padding:0.15rem 0;">Taxes (CGST+SGST)</td>
+                                    <td style="text-align:right; font-weight:500; padding:0.15rem 0;">₹@((purchaseDto.CgstAmount + purchaseDto.SgstAmount).ToString("N2"))</td>
+                                </tr>
+                                <tr>
+                                    <td style="color:var(--mud-palette-text-secondary); padding:0.15rem 0;">Rounding</td>
+                                    <td style="text-align:right; font-weight:500; padding:0.15rem 0;">₹@purchaseDto.RoundingAmount.ToString("N2")</td>
                                 </tr>
                                 <tr>
                                     <td colspan="2"><hr style="border:none; border-top:1px solid rgba(99,102,241,0.2); margin:0.3rem 0;" /></td>
@@ -113,23 +134,33 @@
                         }
                     </div>
 
-                    <!-- Add Item Row - compact like excel toolbar -->
-                    <div style="padding:0.5rem 0.625rem; background:var(--mud-palette-background); border-bottom:1px solid var(--mud-palette-lines-default);">
-                        <MudGrid Spacing="1" AlignItems="AlignItems.End">
-                            <MudItem xs="6" sm="3">
+                    <!-- Add Item Row -->
+                    <div style="padding:0.625rem 0.75rem; border-bottom:1px solid var(--mud-palette-lines-default);">
+                        <div style="display:flex; gap:0.5rem; align-items:flex-end; flex-wrap:wrap;">
+
+                            <!-- Product -->
+                            <div style="flex:2; min-width:130px;">
                                 <MudSelect T="Guid" Label="Product" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
                                            ValueChanged="OnProductSelected" AnchorOrigin="Origin.BottomLeft">
+                                    <MudSelectItem T="Guid" Value="Guid.Empty" Disabled="true">
+                                        <em style="color:var(--mud-palette-text-disabled); font-size:0.85rem;">-- Select Product --</em>
+                                    </MudSelectItem>
                                     @foreach (var prod in products)
                                     {
                                         <MudSelectItem T="Guid" Value="@prod.Id">@prod.Name</MudSelectItem>
                                     }
                                 </MudSelect>
-                            </MudItem>
-                            <MudItem xs="6" sm="3">
-                                <MudSelect T="Guid" Label="Size" @bind-Value="newItem.ProductVariantId"
+                            </div>
+
+                            <!-- Size -->
+                            <div style="flex:2; min-width:120px;">
+                                <MudSelect T="Guid" Label="Size / Variant" @bind-Value="newItem.ProductVariantId"
                                            Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
                                            AnchorOrigin="Origin.BottomLeft"
                                            Disabled="@(selectedProductVariants == null || !selectedProductVariants.Any())">
+                                    <MudSelectItem T="Guid" Value="Guid.Empty" Disabled="true">
+                                        <em style="color:var(--mud-palette-text-disabled); font-size:0.85rem;">-- Select Size --</em>
+                                    </MudSelectItem>
                                     @if (selectedProductVariants != null)
                                     {
                                         @foreach (var v in selectedProductVariants)
@@ -138,26 +169,64 @@
                                         }
                                     }
                                 </MudSelect>
-                            </MudItem>
-                            <MudItem xs="4" sm="2">
-                                <MudNumericField @bind-Value="newItem.QuantityPcs" Label="Pcs"
+                            </div>
+
+                            <!-- Pcs -->
+                            <div style="flex:1; min-width:70px;">
+                                <MudNumericField @bind-Value="newItem.QuantityPcs" Label="Qty (Pcs)"
                                                 Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Min="0" />
-                            </MudItem>
-                            <MudItem xs="4" sm="2">
-                                <MudNumericField @bind-Value="newItem.WeightKg" Label="Kg"
-                                                Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Min="0" />
-                            </MudItem>
-                            <MudItem xs="3" sm="1">
-                                <MudNumericField @bind-Value="newItem.Rate" Label="Rate"
-                                                Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Min="0" />
-                            </MudItem>
-                            <MudItem xs="1" sm="1">
-                                <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Small"
-                                               Style="padding:6px;"
-                                               OnClick="AddItem"
-                                               Disabled="@(newItem.ProductVariantId == Guid.Empty || newItem.QuantityPcs <= 0 || newItem.WeightKg <= 0 || newItem.Rate <= 0)" />
-                            </MudItem>
-                        </MudGrid>
+                            </div>
+
+                            <!-- Kg — hidden when Pcs mode -->
+                            @if (newItem.RateOn == RateOn.Kg)
+                            {
+                                <div style="flex:1; min-width:70px;">
+                                    <MudNumericField @bind-Value="newItem.WeightKg" Label="Weight (Kg)"
+                                                    Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Min="0" />
+                                </div>
+                            }
+
+                            <!-- Rate + inline Kg/Pcs toggle -->
+                            <div style="flex:1.5; min-width:110px;">
+                                <div style="font-size:0.7rem; color:var(--mud-palette-text-secondary); margin-bottom:2px; font-weight:500;">Rate</div>
+                                <div style="display:flex; align-items:center; gap:0; border:1px solid var(--mud-palette-lines-default); border-radius:8px; overflow:hidden; height:36px;">
+                                    <input type="number" min="0" step="0.01"
+                                           value="@newItem.Rate"
+                                           @onchange="@OnRateChanged"
+                                           style="flex:1; border:none; outline:none; padding:0 0.5rem; font-size:0.85rem; height:100%; background:transparent; color:var(--mud-palette-text-primary); min-width:50px;" />
+                                    <!-- Kg / Pcs pill -->
+                                    <div style="display:flex; height:100%; border-left:1px solid var(--mud-palette-lines-default);">
+                                        <button @onclick="@(() => { newItem.RateOn = RateOn.Kg; RecalculateAmount(); StateHasChanged(); })"
+                                                style="padding:0 0.5rem; border:none; font-size:0.7rem; font-weight:700; cursor:pointer; background:@(newItem.RateOn == RateOn.Kg ? "#6366f1" : "var(--mud-palette-background-grey)"); color:@(newItem.RateOn == RateOn.Kg ? "white" : "var(--mud-palette-text-secondary)"); transition:all 0.15s; white-space:nowrap;">
+                                            /Kg
+                                        </button>
+                                        <button @onclick="@(() => { newItem.RateOn = RateOn.Pcs; newItem.WeightKg = 0; RecalculateAmount(); StateHasChanged(); })"
+                                                style="padding:0 0.5rem; border:none; border-left:1px solid var(--mud-palette-lines-default); font-size:0.7rem; font-weight:700; cursor:pointer; background:@(newItem.RateOn == RateOn.Pcs ? "#6366f1" : "var(--mud-palette-background-grey)"); color:@(newItem.RateOn == RateOn.Pcs ? "white" : "var(--mud-palette-text-secondary)"); transition:all 0.15s; white-space:nowrap;">
+                                            /Pcs
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Amount (Editable) -->
+                            <div style="flex:1.5; min-width:110px;">
+                                <div style="font-size:0.7rem; color:var(--mud-palette-text-secondary); margin-bottom:2px; font-weight:500;">Amount ₹</div>
+                                <input type="number" min="0" step="0.01"
+                                       value="@newItem.TotalPrice"
+                                       @onchange="@OnAmountChanged"
+                                       style="width:100%; border:1px solid var(--mud-palette-lines-default); border-radius:8px; outline:none; padding:0 0.5rem; font-size:0.85rem; height:36px; background:transparent; color:var(--mud-palette-text-primary);" />
+                            </div>
+
+                            <!-- Add Button -->
+                            <div style="flex-shrink:0;">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="AddItem" Disabled="@(!CanAddItem())"
+                                           Style="height:36px; min-width:44px; padding:0 0.75rem;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+                                </MudButton>
+                            </div>
+
+                        </div>
                     </div>
 
                     <!-- Excel-style compact items table -->
@@ -191,10 +260,25 @@
                                     <tr style="@(isEven ? "background:var(--mud-palette-background-grey);" : "") border-bottom:1px solid var(--mud-palette-lines-default);">
                                         <td style="padding:0.3rem 0.75rem; color:var(--mud-palette-text-secondary); font-size:0.75rem;">@rowNum</td>
                                         <td style="padding:0.3rem 0.75rem; font-weight:500; color:var(--mud-palette-text-primary);">@vName</td>
-                                        <td style="padding:0.3rem 0.5rem; text-align:right; color:var(--mud-palette-text-secondary);">@item.QuantityPcs</td>
-                                        <td style="padding:0.3rem 0.5rem; text-align:right; color:var(--mud-palette-text-secondary);">@item.WeightKg</td>
-                                        <td style="padding:0.3rem 0.5rem; text-align:right; color:var(--mud-palette-text-secondary);">@item.Rate</td>
-                                        <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:var(--mud-palette-text-primary);">₹@((item.WeightKg * item.Rate).ToString("N2"))</td>
+                                        <td style="padding:0.3rem 0.5rem; text-align:right; color:var(--mud-palette-text-secondary);">
+                                            <input type="number" min="0" step="1" @bind="item.QuantityPcs" style="width:60px; text-align:right; border:1px solid var(--mud-palette-lines-default); border-radius:4px; padding:2px 4px; font-size:0.75rem; background:transparent; color:var(--mud-palette-text-primary);" />
+                                        </td>
+                                        <td style="padding:0.3rem 0.5rem; text-align:right; color:var(--mud-palette-text-secondary);">
+                                            <input type="number" min="0" step="0.01" @bind="item.WeightKg" style="width:60px; text-align:right; border:1px solid var(--mud-palette-lines-default); border-radius:4px; padding:2px 4px; font-size:0.75rem; background:transparent; color:var(--mud-palette-text-primary);" />
+                                        </td>
+                                        <td style="padding:0.3rem 0.5rem; text-align:right; color:var(--mud-palette-text-secondary);">
+                                            <div style="display:flex; justify-content:flex-end; align-items:center; gap:2px;">
+                                                <span style="font-size:0.7rem;">₹</span>
+                                                <input type="number" min="0" step="0.01" value="@item.Rate" @onchange="@(e => OnGridRateChanged(item, e))" style="width:70px; text-align:right; border:1px solid var(--mud-palette-lines-default); border-radius:4px; padding:2px 4px; font-size:0.75rem; background:transparent; color:var(--mud-palette-text-primary);" />
+                                                <span style="font-size:0.65rem; background:rgba(99,102,241,0.12); color:#6366f1; border-radius:3px; padding:1px 4px;">/@item.RateOn</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding:0.3rem 0.5rem; text-align:right; font-weight:700; color:var(--mud-palette-text-primary);">
+                                            <div style="display:flex; justify-content:flex-end; align-items:center; gap:2px;">
+                                                <span style="font-size:0.7rem;">₹</span>
+                                                <input type="number" min="0" step="0.01" value="@(item.TotalPrice > 0 ? item.TotalPrice : CalcItemTotal(item))" @onchange="@(e => OnGridAmountChanged(item, e))" style="width:80px; text-align:right; border:1px solid var(--mud-palette-lines-default); border-radius:4px; padding:2px 4px; font-size:0.75rem; font-weight:700; background:transparent; color:var(--mud-palette-text-primary);" />
+                                            </div>
+                                        </td>
                                         <td style="padding:0.2rem 0.4rem; text-align:center;">
                                             <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Color="Color.Error"
                                                            Style="padding:3px;" OnClick="@(() => RemoveItem(item))" />
@@ -234,8 +318,49 @@
         set => purchaseDto.InvoiceDate = value ?? DateTime.Today;
     }
 
-    private decimal ItemsTotal => purchaseDto.Items.Sum(x => x.WeightKg * x.Rate);
-    private decimal TotalAmount => ItemsTotal + purchaseDto.FreightCharge + purchaseDto.LoadingCharge;
+    private decimal CalcItemTotal(CreatePurchaseEntryItemDto item) =>
+        item.TotalPrice > 0 ? item.TotalPrice : (item.RateOn == RateOn.Pcs ? item.QuantityPcs * item.Rate : item.WeightKg * item.Rate);
+
+    private decimal ItemsTotal => purchaseDto.Items.Sum(CalcItemTotal);
+    private decimal TotalAmount => ItemsTotal + purchaseDto.FreightCharge + purchaseDto.LoadingCharge + purchaseDto.CgstAmount + purchaseDto.SgstAmount + purchaseDto.RoundingAmount;
+
+    private void RecalculateAmount()
+    {
+        newItem.TotalPrice = newItem.RateOn == RateOn.Pcs ? newItem.QuantityPcs * newItem.Rate : newItem.WeightKg * newItem.Rate;
+    }
+
+    private void OnRateChanged(ChangeEventArgs e)
+    {
+        newItem.Rate = decimal.TryParse(e.Value?.ToString(), out var r) ? r : 0;
+        RecalculateAmount();
+    }
+
+    private void OnAmountChanged(ChangeEventArgs e)
+    {
+        newItem.TotalPrice = decimal.TryParse(e.Value?.ToString(), out var a) ? a : 0;
+        // Optionally reverse-calculate rate if weight > 0
+        var divBy = newItem.RateOn == RateOn.Pcs ? newItem.QuantityPcs : newItem.WeightKg;
+        if (divBy > 0 && newItem.TotalPrice > 0)
+        {
+            newItem.Rate = Math.Round(newItem.TotalPrice / divBy, 2);
+        }
+    }
+
+    private void OnGridRateChanged(CreatePurchaseEntryItemDto item, ChangeEventArgs e)
+    {
+        item.Rate = decimal.TryParse(e.Value?.ToString(), out var r) ? r : 0;
+        item.TotalPrice = item.RateOn == RateOn.Pcs ? item.QuantityPcs * item.Rate : item.WeightKg * item.Rate;
+    }
+
+    private void OnGridAmountChanged(CreatePurchaseEntryItemDto item, ChangeEventArgs e)
+    {
+        item.TotalPrice = decimal.TryParse(e.Value?.ToString(), out var a) ? a : 0;
+        var divBy = item.RateOn == RateOn.Pcs ? item.QuantityPcs : item.WeightKg;
+        if (divBy > 0 && item.TotalPrice > 0)
+        {
+            item.Rate = Math.Round(item.TotalPrice / divBy, 2);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -265,17 +390,24 @@
         }
     }
 
+    private bool CanAddItem() =>
+        newItem.ProductVariantId != Guid.Empty &&
+        newItem.QuantityPcs > 0 &&
+        newItem.Rate > 0 &&
+        (newItem.RateOn == RateOn.Pcs || newItem.WeightKg > 0);
+
     private void AddItem()
     {
-        if (newItem.ProductVariantId == Guid.Empty || newItem.QuantityPcs <= 0 || newItem.WeightKg <= 0 || newItem.Rate <= 0)
-            return;
+        if (!CanAddItem()) return;
 
         purchaseDto.Items.Add(new CreatePurchaseEntryItemDto
         {
             ProductVariantId = newItem.ProductVariantId,
             QuantityPcs = newItem.QuantityPcs,
             WeightKg = newItem.WeightKg,
-            Rate = newItem.Rate
+            Rate = newItem.Rate,
+            RateOn = newItem.RateOn,
+            TotalPrice = newItem.TotalPrice
         });
 
         if (selectedProductVariants != null)
@@ -288,7 +420,8 @@
             }
         }
 
-        newItem = new CreatePurchaseEntryItemDto();
+        var rateOn = newItem.RateOn;
+        newItem = new CreatePurchaseEntryItemDto { RateOn = rateOn }; // preserve RateOn selection
     }
 
     private void RemoveItem(CreatePurchaseEntryItemDto item) => purchaseDto.Items.Remove(item);

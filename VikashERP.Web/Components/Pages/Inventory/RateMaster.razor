@@ -1,0 +1,202 @@
+@page "/rate-master"
+@using VikashERP.Web.Models
+@using VikashERP.Web.Services.Interfaces
+@using MudBlazor
+@inject IProductWebService ProductService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Rate Master | Vikash Ironx</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6 mb-16">
+    <MudText Typo="Typo.h4" Class="mb-6 fw-bold" Style="color: var(--mud-palette-primary-darken);">
+        <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Large" Class="mr-2" Style="vertical-align: sub;" />
+        Rate Master (Margin Setup)
+    </MudText>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+    }
+    else
+    {
+        <MudDataGrid Items="@_flattenedVariants" Filterable="true" SortMode="SortMode.Multiple" Groupable="true" Hover="true" Dense="true" Elevation="2" Style="border-radius: 12px; overflow: hidden; background: white;">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Dynamic Pricing Configuration</MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="_searchString" Placeholder="Search variants..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Immediate="true" />
+            </ToolBarContent>
+            <Columns>
+                <PropertyColumn Property="x => x.ProductCategory" Title="Category" Grouping="true" />
+                <PropertyColumn Property="x => x.ProductName" Title="Product" Grouping="true" />
+                <PropertyColumn Property="x => x.Size" Title="Size" />
+                <PropertyColumn Property="x => x.Thickness" Title="Thickness" />
+                <TemplateColumn Title="Last Purchase Rate" SortBy="@(x => x.LastPurchaseRate)">
+                    <CellTemplate>
+                        <MudText Typo="Typo.body2" Color="Color.Default">
+                            <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" Class="mr-1" Style="vertical-align: text-bottom; color: #94a3b8;" />
+                            ₹ @context.Item.LastPurchaseRate.ToString("N2") / @context.Item.LastPurchaseRateOn.ToString()
+                        </MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Margin (+₹)" SortBy="@(x => x.DefaultMargin)">
+                    <CellTemplate>
+                        <MudNumericField Value="@context.Item.DefaultMargin" 
+                                         ValueChanged="@( (decimal val) => OnMarginChanged(context.Item, val) )"
+                                         Variant="Variant.Outlined" 
+                                         Margin="Margin.Dense" 
+                                         HideSpinButtons="true" 
+                                         Min="0" 
+                                         Adornment="Adornment.Start" 
+                                         AdornmentText="₹"
+                                         Style="max-width: 120px;" />
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Selling Rate" SortBy="@(x => x.SellingRate)">
+                    <CellTemplate>
+                        <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small">
+                            ₹ @context.Item.SellingRate.ToString("N2") / @context.Item.LastPurchaseRateOn.ToString()
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <CellTemplate>
+                        @if (context.Item.IsDirty)
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => SaveVariantAsync(context.Item))" StartIcon="@Icons.Material.Filled.Save">Save</MudButton>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="VariantRow" />
+            </PagerContent>
+        </MudDataGrid>
+    }
+</MudContainer>
+
+@code {
+    private bool _isLoading = true;
+    private string _searchString = "";
+    private List<ProductDto> _products = new();
+    private List<VariantRow> _flattenedVariants = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _products = await ProductService.GetProductsWithVariantsAsync();
+            FlattenVariants();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading rate master: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void FlattenVariants()
+    {
+        _flattenedVariants.Clear();
+        foreach (var product in _products)
+        {
+            foreach (var variant in product.Variants)
+            {
+                _flattenedVariants.Add(new VariantRow
+                {
+                    ProductId = product.Id,
+                    ProductCategory = product.CategoryName,
+                    ProductName = product.Name,
+                    VariantId = variant.Id,
+                    Size = variant.Size,
+                    Thickness = variant.Thickness,
+                    LastPurchaseRate = variant.LastPurchaseRate,
+                    LastPurchaseRateOn = variant.LastPurchaseRateOn,
+                    DefaultMargin = variant.DefaultMargin,
+                    ParentProduct = product // keep reference
+                });
+            }
+        }
+    }
+
+    private void OnMarginChanged(VariantRow row, decimal newMargin)
+    {
+        row.DefaultMargin = newMargin;
+        row.IsDirty = true;
+    }
+
+    private async Task SaveVariantAsync(VariantRow row)
+    {
+        try
+        {
+            // Map ParentProduct to UpdateProductDto
+            var updateDto = new UpdateProductDto
+            {
+                CategoryId = row.ParentProduct.CategoryId,
+                Name = row.ParentProduct.Name,
+                HsnCode = row.ParentProduct.HsnCode,
+                IsActive = row.ParentProduct.IsActive,
+                Variants = row.ParentProduct.Variants.Select(v => new UpdateProductVariantDto
+                {
+                    Id = v.Id,
+                    Size = v.Size,
+                    Thickness = v.Thickness,
+                    UnitPcsToKg = v.UnitPcsToKg,
+                    AlertQtyPcs = v.AlertQtyPcs,
+                    IsActive = v.IsActive,
+                    DefaultMargin = v.Id == row.VariantId ? row.DefaultMargin : v.DefaultMargin // Set new margin for this row
+                }).ToList()
+            };
+
+            var result = await ProductService.UpdateProductAsync(row.ProductId, updateDto);
+            if (result != null)
+            {
+                // Update local state
+                var variant = row.ParentProduct.Variants.FirstOrDefault(v => v.Id == row.VariantId);
+                if (variant != null)
+                {
+                    variant.DefaultMargin = row.DefaultMargin;
+                }
+                row.IsDirty = false;
+                Snackbar.Add($"Margin updated for {row.ProductName} - {row.Size}", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to update margin.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving: {ex.Message}", Severity.Error);
+        }
+    }
+
+    public class VariantRow
+    {
+        public Guid ProductId { get; set; }
+        public string ProductCategory { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        
+        public Guid VariantId { get; set; }
+        public string Size { get; set; } = string.Empty;
+        public string Thickness { get; set; } = string.Empty;
+        
+        public decimal LastPurchaseRate { get; set; }
+        public VikashERP.SharedKernel.Enums.RateOn LastPurchaseRateOn { get; set; }
+        public decimal DefaultMargin { get; set; }
+        
+        public decimal SellingRate => LastPurchaseRate + DefaultMargin;
+        public bool IsDirty { get; set; }
+        
+        public ProductDto ParentProduct { get; set; } = null!;
+    }
+}

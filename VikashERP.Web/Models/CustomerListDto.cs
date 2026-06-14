@@ -16,5 +16,6 @@ public class CustomerListDto
     public string DefaultPaymentMode { get; set; } = string.Empty;
     public decimal CreditLimit { get; set; }
     public decimal CurrentBalance { get; set; }
+    public decimal DefaultFreightRate { get; set; }
     public DateTime CreatedAt { get; set; }
 }

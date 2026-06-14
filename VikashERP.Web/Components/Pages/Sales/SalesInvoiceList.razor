@@ -1,0 +1,71 @@
+@page "/sales"
+@using VikashERP.Web.Models
+@using VikashERP.Web.Services
+@inject ISalesWebService SalesService
+@inject NavigationManager NavManager
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<PageTitle>Sales & Billing</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Sales Invoices</h2>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => NavManager.NavigateTo("/sales/create"))">
+        New Invoice
+    </MudButton>
+</div>
+
+<MudDataGrid Items="@_invoices" Loading="@_isLoading" T="InvoiceListDto">
+    <Columns>
+        <PropertyColumn Property="x => x.InvoiceDate" Title="Date" Format="dd MMM yyyy" />
+        <PropertyColumn Property="x => x.InvoiceNumber" Title="Invoice No" />
+        <PropertyColumn Property="x => x.CustomerName" Title="Customer" />
+        <PropertyColumn Property="x => x.TotalAmount" Title="Amount" Format="C2" />
+        <TemplateColumn Title="Status">
+            <CellTemplate>
+                @if (context.Item.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Approved)
+                {
+                    <MudChip Size="Size.Small" Color="Color.Success">Approved</MudChip>
+                }
+                else if (context.Item.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft)
+                {
+                    <MudChip Size="Size.Small" Color="Color.Warning">Draft</MudChip>
+                }
+                else
+                {
+                    <MudChip Size="Size.Small" Color="Color.Error">Cancelled</MudChip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Actions">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" Title="View" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="InvoiceListDto" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private List<InvoiceListDto> _invoices = new();
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _invoices = await SalesService.GetInvoicesAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

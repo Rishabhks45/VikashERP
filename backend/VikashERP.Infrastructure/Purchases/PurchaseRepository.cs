@@ -98,6 +98,14 @@ public class PurchaseRepository : Repository<PurchaseEntry>, IPurchaseRepository
                     Remarks = $"Purchase Inward {entry.InvoiceNumber}"
                 };
                 _context.StockLedgers.Add(stockEntry);
+
+                // Update Last Purchase Rate on the Variant
+                if (item.ProductVariant != null)
+                {
+                    item.ProductVariant.LastPurchaseRate = item.Rate;
+                    item.ProductVariant.LastPurchaseRateOn = item.RateOn;
+                    _context.ProductVariants.Update(item.ProductVariant);
+                }
             }
 
             // 3. Mark as Approved

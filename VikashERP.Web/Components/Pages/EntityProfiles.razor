@@ -189,6 +189,7 @@
                                 </MudSelect>
 
                                 <MudNumericField @bind-Value="_editModel.CreditLimit" Label="Credit Limit" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Format="N2" />
+                                <MudNumericField @bind-Value="_editModel.DefaultFreightRate" Label="Default Freight (Bhada)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Format="N2" />
                             </MudStack>
                         </div>
 
@@ -300,6 +301,7 @@
             Address = customer.Address,
             DefaultPaymentMode = customer.DefaultPaymentMode,
             CreditLimit = customer.CreditLimit,
+            DefaultFreightRate = customer.DefaultFreightRate,
             IsNewCustomer = false
         };
         _editingCustomerId = customer.Id;

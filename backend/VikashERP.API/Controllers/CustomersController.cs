@@ -133,6 +133,7 @@ public class CustomersController : ControllerBase
             Address = NullIfWhiteSpace(dto.Address),
             DefaultPaymentMode = paymentMode,
             CreditLimit = dto.CreditLimit,
+            DefaultFreightRate = dto.DefaultFreightRate,
             CurrentBalance = 0,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = User.GetAuthenticatedUserId()
@@ -173,6 +174,7 @@ public class CustomersController : ControllerBase
         customer.Address = NullIfWhiteSpace(dto.Address);
         customer.DefaultPaymentMode = paymentMode;
         customer.CreditLimit = dto.CreditLimit;
+        customer.DefaultFreightRate = dto.DefaultFreightRate;
         customer.UpdatedAt = DateTime.UtcNow;
         customer.UpdatedBy = User.GetAuthenticatedUserId();
 
@@ -210,6 +212,7 @@ public class CustomersController : ControllerBase
         DefaultPaymentMode = customer.DefaultPaymentMode.ToFriendlyName(),
         CreditLimit = customer.CreditLimit,
         CurrentBalance = customer.CurrentBalance,
+        DefaultFreightRate = customer.DefaultFreightRate,
         CreatedAt = customer.CreatedAt,
         UpdatedAt = customer.UpdatedAt
     };

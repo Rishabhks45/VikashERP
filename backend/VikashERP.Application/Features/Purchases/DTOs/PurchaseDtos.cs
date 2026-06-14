@@ -13,6 +13,9 @@ public class PurchaseEntryDto
     public decimal TotalAmount { get; set; }
     public decimal LoadingCharge { get; set; }
     public decimal FreightCharge { get; set; }
+    public decimal CgstAmount { get; set; }
+    public decimal SgstAmount { get; set; }
+    public decimal RoundingAmount { get; set; }
     public decimal NetAmount { get; set; }
     public PurchaseEntryStatus Status { get; set; }
     public string? Remarks { get; set; }
@@ -31,6 +34,7 @@ public class PurchaseEntryItemDto
     public int QuantityPcs { get; set; }
     public decimal WeightKg { get; set; }
     public decimal Rate { get; set; }
+    public RateOn RateOn { get; set; } = RateOn.Kg;
     public decimal TotalPrice { get; set; }
 }
 
@@ -41,6 +45,9 @@ public class CreatePurchaseEntryDto
     public DateTime InvoiceDate { get; set; } = DateTime.UtcNow;
     public decimal LoadingCharge { get; set; }
     public decimal FreightCharge { get; set; }
+    public decimal CgstAmount { get; set; }
+    public decimal SgstAmount { get; set; }
+    public decimal RoundingAmount { get; set; }
     public string? Remarks { get; set; }
     public string? VehicleNumber { get; set; }
 
@@ -53,4 +60,6 @@ public class CreatePurchaseEntryItemDto
     public int QuantityPcs { get; set; }
     public decimal WeightKg { get; set; }
     public decimal Rate { get; set; }
+    public RateOn RateOn { get; set; } = RateOn.Kg;
+    public decimal TotalPrice { get; set; }
 }

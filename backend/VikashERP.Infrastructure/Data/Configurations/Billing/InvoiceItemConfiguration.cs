@@ -15,7 +15,8 @@ public class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceItem>
             entity.HasKey(e => e.Id);
             entity.ConfigureGuidPrimaryKey( e => e.Id);
             entity.Property(e => e.WeightKg).HasPrecision(12, 3);
-            entity.Property(e => e.RatePerKg).HasPrecision(12, 2);
+            entity.Property(e => e.Rate).HasPrecision(12, 2);
+            entity.Property(e => e.RateOn).HasConversion<int>().IsRequired();
             entity.Property(e => e.CgstRate).HasPrecision(5, 2);
             entity.Property(e => e.SgstRate).HasPrecision(5, 2);
             entity.Property(e => e.IgstRate).HasPrecision(5, 2);

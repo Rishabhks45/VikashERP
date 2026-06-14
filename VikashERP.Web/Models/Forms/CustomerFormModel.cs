@@ -11,5 +11,6 @@ public class CustomerFormModel
     public string? Address { get; set; }
     public string DefaultPaymentMode { get; set; } = "A/C";
     public decimal CreditLimit { get; set; }
+    public decimal DefaultFreightRate { get; set; }
     public bool IsNewCustomer { get; set; } = true;
 }

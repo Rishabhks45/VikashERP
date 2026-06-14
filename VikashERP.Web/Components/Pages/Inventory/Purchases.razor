@@ -83,7 +83,7 @@
                             <td style="padding: 1rem 1.25rem; color: var(--mud-palette-text-secondary);">@purchase.InvoiceNumber</td>
                             <td style="padding: 1rem 1.25rem; text-align: right; font-weight: 700; color: var(--mud-palette-text-primary);">₹@purchase.NetAmount.ToString("N2")</td>
                             <td style="padding: 1rem 1.25rem; text-align: center;">
-                                @if (purchase.Status == "Approved")
+                                @if (purchase.Status == VikashERP.SharedKernel.Enums.PurchaseEntryStatus.Approved)
                                 {
                                     <span style="background: rgba(34,197,94,0.12); color: #16a34a; border: 1px solid rgba(34,197,94,0.25); border-radius: 20px; padding: 0.3rem 0.85rem; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">
                                         ✓ Approved
@@ -100,7 +100,7 @@
                                 <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
                                     <MudIconButton Icon="@Icons.Material.Outlined.Visibility" Size="Size.Small" Color="Color.Primary"
                                                    OnClick="@(() => ViewPurchase(purchase.Id))" Title="View Details" />
-                                    @if (purchase.Status == "Draft")
+                                    @if (purchase.Status == VikashERP.SharedKernel.Enums.PurchaseEntryStatus.Draft)
                                     {
                                         <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle" Size="Size.Small" Color="Color.Success"
                                                        OnClick="@(() => ApprovePurchase(purchase.Id))" Title="Approve" />

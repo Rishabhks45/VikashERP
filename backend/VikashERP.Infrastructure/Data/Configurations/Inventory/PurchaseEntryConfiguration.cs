@@ -31,6 +31,18 @@ public class PurchaseEntryConfiguration : IEntityTypeConfiguration<PurchaseEntry
         builder.Property(x => x.Status)
             .HasConversion<int>();
 
+        builder.Property(x => x.CgstAmount)
+            .HasColumnType("decimal(18,2)")
+            .HasDefaultValue(0);
+
+        builder.Property(x => x.SgstAmount)
+            .HasColumnType("decimal(18,2)")
+            .HasDefaultValue(0);
+
+        builder.Property(x => x.RoundingAmount)
+            .HasColumnType("decimal(18,2)")
+            .HasDefaultValue(0);
+
         builder.Ignore(x => x.NetAmount);
 
         builder.HasOne(x => x.Supplier)
