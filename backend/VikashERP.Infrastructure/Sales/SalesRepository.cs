@@ -139,4 +139,46 @@ public class SalesService : ISalesService
         await _context.SaveChangesAsync(cancellationToken);
         return invoice.Id;
     }
+
+    public async Task<Guid> UpdateInvoiceAsync(Guid id, Invoice updatedInvoice, CancellationToken cancellationToken)
+    {
+        var existingInvoice = await _context.Invoices.FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+        if (existingInvoice == null) throw new Exception("Invoice not found.");
+
+        if (existingInvoice.Status != VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft)
+            throw new Exception("Only Draft invoices can be edited.");
+
+        existingInvoice.CustomerId = updatedInvoice.CustomerId;
+        existingInvoice.Subtotal = updatedInvoice.Subtotal;
+        existingInvoice.FreightCharge = updatedInvoice.FreightCharge;
+        existingInvoice.LoadingCharge = updatedInvoice.LoadingCharge;
+        existingInvoice.CgstAmount = updatedInvoice.CgstAmount;
+        existingInvoice.SgstAmount = updatedInvoice.SgstAmount;
+        existingInvoice.IgstAmount = updatedInvoice.IgstAmount;
+        existingInvoice.RoundingAmount = updatedInvoice.RoundingAmount;
+        existingInvoice.TotalAmount = updatedInvoice.TotalAmount;
+        existingInvoice.PaidAmount = updatedInvoice.PaidAmount;
+        existingInvoice.CashAmount = updatedInvoice.CashAmount;
+        existingInvoice.BankAmount = updatedInvoice.BankAmount;
+        existingInvoice.DueAmount = updatedInvoice.DueAmount;
+        existingInvoice.PaymentMode = updatedInvoice.PaymentMode;
+        existingInvoice.VehicleNumber = updatedInvoice.VehicleNumber;
+        existingInvoice.Remarks = updatedInvoice.Remarks;
+        existingInvoice.InvoiceDate = updatedInvoice.InvoiceDate;
+        existingInvoice.UpdatedAt = DateTime.UtcNow;
+
+        // Delete existing items directly to avoid navigation property tracking issues
+        var existingItems = await _context.InvoiceItems.Where(i => i.InvoiceId == id).ToListAsync(cancellationToken);
+        _context.InvoiceItems.RemoveRange(existingItems);
+        
+        // Add new items directly
+        foreach (var item in updatedInvoice.Items)
+        {
+            item.InvoiceId = id;
+            _context.InvoiceItems.Add(item);
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return id;
+    }
 }

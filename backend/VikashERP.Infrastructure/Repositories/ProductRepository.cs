@@ -19,6 +19,7 @@ public class ProductRepository : IProductRepository
         return await _context.Products
             .Include(p => p.Category)
             .Include(p => p.Variants.Where(v => !v.IsDeleted))
+            .Include(p => p.SubImages.Where(s => !s.IsDeleted))
             .Where(p => !p.IsDeleted)
             .OrderBy(p => p.Name)
             .ToListAsync(cancellationToken);
@@ -29,12 +30,15 @@ public class ProductRepository : IProductRepository
         return await _context.Products
             .Include(p => p.Category)
             .Include(p => p.Variants.Where(v => !v.IsDeleted))
+            .Include(p => p.SubImages.Where(s => !s.IsDeleted))
             .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted, cancellationToken);
     }
 
     public async Task<Product?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
     {
         return await _context.Products
+            .Include(p => p.Variants.Where(v => !v.IsDeleted))
+            .Include(p => p.SubImages.Where(s => !s.IsDeleted))
             .FirstOrDefaultAsync(p => p.Name.ToLower() == name.ToLower() && !p.IsDeleted, cancellationToken);
     }
 

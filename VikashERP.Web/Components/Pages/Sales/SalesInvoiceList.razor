@@ -2,7 +2,10 @@
 @using VikashERP.Web.Models
 @using VikashERP.Web.Services
 @inject ISalesWebService SalesService
+@inject ICustomerWebService CustomerService
+@inject IDialogService DialogService
 @inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 <PageTitle>Sales & Billing</PageTitle>
@@ -39,6 +42,11 @@
         <TemplateColumn Title="Actions">
             <CellTemplate>
                 <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" Title="View" />
+                <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Small" Color="Color.Dark" Title="Print" Href="@($"/sales/print/{context.Item.Id}")" Target="_blank" />
+                @if (context.Item.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Warning" Title="Edit" OnClick="@(() => EditDraft(context.Item.Id))" />
+                }
             </CellTemplate>
         </TemplateColumn>
     </Columns>
@@ -54,6 +62,11 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
+    }
+
+    private void EditDraft(Guid invoiceId)
+    {
+        NavManager.NavigateTo($"/sales/create?draftId={invoiceId}");
     }
 
     private async Task LoadDataAsync()

@@ -9,6 +9,7 @@
 @inject IProductWebService ProductService
 @inject ICategoryService CategoryService
 @inject ISnackbar Snackbar
+@inject IFileUploadService FileUploadService
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
@@ -66,6 +67,35 @@
                         <MudTextField @bind-Value="_productModel.HsnCode" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Optional" />
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Selling Unit</label>
+                        <MudSelect T="VikashERP.SharedKernel.Enums.RateOn" @bind-Value="_productModel.SellingUnit" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" Required="true">
+                            <MudSelectItem T="VikashERP.SharedKernel.Enums.RateOn" Value="VikashERP.SharedKernel.Enums.RateOn.Kg">Kg</MudSelectItem>
+                            <MudSelectItem T="VikashERP.SharedKernel.Enums.RateOn" Value="VikashERP.SharedKernel.Enums.RateOn.Pcs">Pcs</MudSelectItem>
+                        </MudSelect>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Product Image</label>
+                        <MudFileUpload T="IBrowserFile" FilesChanged="UploadImage" Accept=".png, .jpg, .jpeg">
+                            <ActivatorContent>
+                                <MudButton HtmlTag="label"
+                                           Variant="Variant.Outlined"
+                                           Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.CloudUpload">
+                                    Upload Image
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                        @if (!string.IsNullOrEmpty(_productModel.ProductImageUrl))
+                        {
+                            <div class="mt-3" style="position:relative; width:max-content;">
+                                <MudImage Src="@_productModel.ProductImageUrl" Alt="Product Image" Elevation="4" Class="rounded-lg" ObjectFit="ObjectFit.Cover" Height="120" Width="120" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" Size="Size.Small" Class="pa-1" Style="position:absolute; top:-10px; right:-10px; background:white; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.1);" OnClick="RemoveImage" />
+                            </div>
+                        }
+                    </div>
+
                     <div class="form-group switch-group mt-2">
                         <div class="switch-info">
                             <label class="form-label mb-0">Active Status</label>
@@ -73,6 +103,47 @@
                         </div>
                         <MudSwitch T="bool" @bind-Value="_productModel.IsActive" Color="Color.Primary" />
                     </div>
+                </div>
+
+                <!-- Left Column (Bottom): Product Gallery -->
+                <div class="glass-panel p-4 flex-col gap-4 mt-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="section-title mb-0">Product Gallery</h3>
+                        <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadGalleryImages" Accept=".png, .jpg, .jpeg" MaximumFileCount="10">
+                            <ActivatorContent>
+                                <MudButton HtmlTag="label"
+                                           Variant="Variant.Outlined"
+                                           Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.AddPhotoAlternate"
+                                           Size="Size.Small">
+                                    Add Images
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                    </div>
+
+                    @if (_productModel.SubImages.Count == 0)
+                    {
+                        <div class="empty-state" style="padding: 1.5rem 1rem;">
+                            <MudIcon Icon="@Icons.Material.Filled.PhotoLibrary" Size="Size.Medium" Color="Color.Default" />
+                            <p style="font-size: 0.85rem;">No gallery images. Add extra views here.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem;">
+                            @foreach (var subImage in _productModel.SubImages.OrderBy(s => s.DisplayOrder))
+                            {
+                                <div class="gallery-item" style="border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; background: var(--mud-palette-background); position: relative;">
+                                    <MudImage Src="@subImage.ImageUrl" ObjectFit="ObjectFit.Cover" Height="100" Class="rounded-lg mb-2" Style="width:100%" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Error" Size="Size.Small" Class="pa-1" Style="position:absolute; top:-5px; right:-5px; background:white; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.1);" OnClick="@(() => RemoveGalleryImage(subImage))" />
+                                    
+                                    <MudTextField @bind-Value="subImage.Description" Placeholder="Description" Margin="Margin.Dense" Typo="Typo.caption" Class="mb-1" Style="font-size: 0.75rem;" />
+                                    <MudNumericField @bind-Value="subImage.DisplayOrder" Margin="Margin.Dense" Min="1" Label="Order" Style="font-size: 0.75rem;" />
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
 
                 <!-- Right Column: Variants -->
@@ -232,6 +303,8 @@
                         CategoryId = product.CategoryId,
                         Name = product.Name,
                         HsnCode = product.HsnCode,
+                        SellingUnit = product.SellingUnit,
+                        ProductImageUrl = product.ProductImageUrl,
                         IsActive = product.IsActive,
                         Variants = product.Variants.Select(v => new ProductVariantFormModel
                         {
@@ -241,6 +314,13 @@
                             UnitPcsToKg = v.UnitPcsToKg,
                             AlertQtyPcs = v.AlertQtyPcs,
                             IsActive = v.IsActive
+                        }).ToList(),
+                        SubImages = product.SubImages.Select(s => new ProductSubImageFormModel
+                        {
+                            Id = s.Id,
+                            ImageUrl = s.ImageUrl,
+                            Description = s.Description,
+                            DisplayOrder = s.DisplayOrder
                         }).ToList()
                     };
                 }
@@ -271,6 +351,76 @@
         _productModel.Variants.Remove(variant);
     }
 
+    private async Task UploadImage(IBrowserFile file)
+    {
+        if (file == null) return;
+        
+        var category = _categories.FirstOrDefault(c => c.Id == _productModel.CategoryId);
+        string folder = category?.Name ?? "Uncategorized";
+        
+        var validation = await FileUploadService.ValidateFileAsync(file);
+        if (!validation.IsValid)
+        {
+            Snackbar.Add(validation.ErrorMessage, Severity.Error);
+            return;
+        }
+
+        try
+        {
+            var url = await FileUploadService.HandleFileUploadAsync(file, folder);
+            _productModel.ProductImageUrl = url;
+            Snackbar.Add("Image uploaded successfully.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void RemoveImage()
+    {
+        _productModel.ProductImageUrl = null;
+    }
+
+    private async Task UploadGalleryImages(IReadOnlyList<IBrowserFile> files)
+    {
+        if (files == null || files.Count == 0) return;
+        
+        var category = _categories.FirstOrDefault(c => c.Id == _productModel.CategoryId);
+        string folder = category?.Name ?? "Uncategorized";
+        
+        foreach (var file in files)
+        {
+            var validation = await FileUploadService.ValidateFileAsync(file);
+            if (!validation.IsValid)
+            {
+                Snackbar.Add($"{file.Name}: {validation.ErrorMessage}", Severity.Error);
+                continue;
+            }
+
+            try
+            {
+                var url = await FileUploadService.HandleFileUploadAsync(file, folder);
+                var newOrder = _productModel.SubImages.Count > 0 ? _productModel.SubImages.Max(s => s.DisplayOrder) + 1 : 1;
+                _productModel.SubImages.Add(new ProductSubImageFormModel
+                {
+                    ImageUrl = url,
+                    DisplayOrder = newOrder
+                });
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"{file.Name}: Upload failed - {ex.Message}", Severity.Error);
+            }
+        }
+        Snackbar.Add("Gallery images uploaded.", Severity.Success);
+    }
+
+    private void RemoveGalleryImage(ProductSubImageFormModel subImage)
+    {
+        _productModel.SubImages.Remove(subImage);
+    }
+
     private async Task SaveProductAsync()
     {
         if (_productModel.CategoryId == Guid.Empty)
@@ -295,6 +445,8 @@
                     CategoryId = _productModel.CategoryId,
                     Name = _productModel.Name,
                     HsnCode = _productModel.HsnCode,
+                    SellingUnit = _productModel.SellingUnit,
+                    ProductImageUrl = _productModel.ProductImageUrl,
                     IsActive = _productModel.IsActive,
                     Variants = _productModel.Variants.Select(v => new CreateProductVariantDto
                     {
@@ -303,6 +455,12 @@
                         UnitPcsToKg = v.UnitPcsToKg,
                         AlertQtyPcs = v.AlertQtyPcs,
                         IsActive = v.IsActive
+                    }).ToList(),
+                    SubImages = _productModel.SubImages.Select(s => new CreateProductSubImageDto
+                    {
+                        ImageUrl = s.ImageUrl,
+                        Description = s.Description,
+                        DisplayOrder = s.DisplayOrder
                     }).ToList()
                 };
 
@@ -324,6 +482,8 @@
                     CategoryId = _productModel.CategoryId,
                     Name = _productModel.Name,
                     HsnCode = _productModel.HsnCode,
+                    SellingUnit = _productModel.SellingUnit,
+                    ProductImageUrl = _productModel.ProductImageUrl,
                     IsActive = _productModel.IsActive,
                     Variants = _productModel.Variants.Select(v => new UpdateProductVariantDto
                     {
@@ -333,6 +493,13 @@
                         UnitPcsToKg = v.UnitPcsToKg,
                         AlertQtyPcs = v.AlertQtyPcs,
                         IsActive = v.IsActive
+                    }).ToList(),
+                    SubImages = _productModel.SubImages.Select(s => new UpdateProductSubImageDto
+                    {
+                        Id = s.Id,
+                        ImageUrl = s.ImageUrl,
+                        Description = s.Description,
+                        DisplayOrder = s.DisplayOrder
                     }).ToList()
                 };
 

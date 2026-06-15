@@ -42,6 +42,14 @@ public class SalesController : ControllerBase
         return Ok(new { Id = invoiceId });
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateInvoice(Guid id, [FromBody] CreateInvoiceDto dto, CancellationToken cancellationToken)
+    {
+        var command = new UpdateInvoiceCommand(id, dto);
+        var invoiceId = await _mediator.Send(command, cancellationToken);
+        return Ok(new { Id = invoiceId });
+    }
+
     [HttpPost("{id:guid}/approve")]
     public async Task<IActionResult> ApproveInvoice(Guid id, CancellationToken cancellationToken)
     {

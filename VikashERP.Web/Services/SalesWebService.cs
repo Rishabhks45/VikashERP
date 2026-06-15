@@ -8,6 +8,7 @@ public interface ISalesWebService
     Task<List<InvoiceListDto>> GetInvoicesAsync();
     Task<InvoiceDetailDto?> GetInvoiceByIdAsync(Guid id);
     Task<Guid> CreateInvoiceAsync(CreateInvoiceModel model);
+    Task<Guid> UpdateInvoiceAsync(Guid id, CreateInvoiceModel model);
     Task<bool> ApproveInvoiceAsync(Guid id);
 }
 
@@ -33,6 +34,14 @@ public class SalesWebService : ISalesWebService
     public async Task<Guid> CreateInvoiceAsync(CreateInvoiceModel model)
     {
         var response = await _httpClient.PostAsJsonAsync("api/sales", model);
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<dynamic>();
+        return Guid.Parse(result!.GetProperty("id").GetString()!);
+    }
+
+    public async Task<Guid> UpdateInvoiceAsync(Guid id, CreateInvoiceModel model)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"api/sales/{id}", model);
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<dynamic>();
         return Guid.Parse(result!.GetProperty("id").GetString()!);

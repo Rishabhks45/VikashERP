@@ -7,6 +7,7 @@ public class Product : BaseEntity
     public string Name { get; set; } = string.Empty;
     public string? HsnCode { get; set; }
     public string? ProductImageUrl { get; set; }
+    public VikashERP.SharedKernel.Enums.RateOn SellingUnit { get; set; } = VikashERP.SharedKernel.Enums.RateOn.Kg;
 
 
     public Category Category { get; set; } = null!;

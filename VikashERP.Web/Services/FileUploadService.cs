@@ -82,9 +82,12 @@ public class FileUploadService : IFileUploadService
         return result;
     }
 
-    public async Task<string> HandleFileUploadAsync(IBrowserFile file)
+    public async Task<string> HandleFileUploadAsync(IBrowserFile file, string subFolder = "")
     {
-        var imagesDir = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", ImagePath);
+        var safeSubFolder = string.IsNullOrWhiteSpace(subFolder) ? "" : string.Join("_", subFolder.Split(Path.GetInvalidFileNameChars()));
+        var basePath = string.IsNullOrWhiteSpace(safeSubFolder) ? ImagePath : Path.Combine(ImagePath, safeSubFolder);
+        var imagesDir = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", basePath);
+        
         if (!Directory.Exists(imagesDir))
         {
             Directory.CreateDirectory(imagesDir);
@@ -97,7 +100,7 @@ public class FileUploadService : IFileUploadService
         await using Stream uploadStream = file.OpenReadStream(MaxFileSize);
         await uploadStream.CopyToAsync(fileStream);
 
-        return $"/uploads/{ImagePath}/{fileName}";
+        return $"/uploads/{basePath.Replace("\\", "/")}/{fileName}";
     }
 
     public async Task<string> HandleFileUploadInByteAsync(byte[] file)

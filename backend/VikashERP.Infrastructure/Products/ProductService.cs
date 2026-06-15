@@ -24,6 +24,8 @@ public class ProductService : IProductService
             Name = p.Name,
             CategoryName = p.Category?.Name ?? "Unknown",
             HsnCode = p.HsnCode,
+            SellingUnit = p.SellingUnit,
+            ProductImageUrl = p.ProductImageUrl,
             TotalVariants = p.Variants?.Count(v => !v.IsDeleted) ?? 0,
             IsActive = p.IsActive,
             CreatedAt = p.CreatedAt
@@ -40,6 +42,8 @@ public class ProductService : IProductService
             CategoryName = p.Category?.Name ?? "Unknown",
             Name = p.Name,
             HsnCode = p.HsnCode,
+            SellingUnit = p.SellingUnit,
+            ProductImageUrl = p.ProductImageUrl,
             IsActive = p.IsActive,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt,
@@ -55,7 +59,15 @@ public class ProductService : IProductService
                 LastPurchaseRateOn = v.LastPurchaseRateOn,
                 DefaultMargin = v.DefaultMargin,
                 IsActive = v.IsActive
-            }).ToList()
+            }).ToList(),
+            SubImages = p.SubImages.Select(s => new ProductSubImageDto
+            {
+                Id = s.Id,
+                ProductId = s.ProductId,
+                ImageUrl = s.ImageUrl,
+                Description = s.Description,
+                DisplayOrder = s.DisplayOrder
+            }).OrderBy(s => s.DisplayOrder).ToList()
         }).ToList();
     }
 
@@ -71,6 +83,8 @@ public class ProductService : IProductService
             CategoryName = p.Category?.Name ?? "Unknown",
             Name = p.Name,
             HsnCode = p.HsnCode,
+            SellingUnit = p.SellingUnit,
+            ProductImageUrl = p.ProductImageUrl,
             IsActive = p.IsActive,
             CreatedAt = p.CreatedAt,
             UpdatedAt = p.UpdatedAt,
@@ -86,7 +100,15 @@ public class ProductService : IProductService
                 LastPurchaseRateOn = v.LastPurchaseRateOn,
                 DefaultMargin = v.DefaultMargin,
                 IsActive = v.IsActive
-            }).ToList()
+            }).ToList(),
+            SubImages = p.SubImages.Select(s => new ProductSubImageDto
+            {
+                Id = s.Id,
+                ProductId = s.ProductId,
+                ImageUrl = s.ImageUrl,
+                Description = s.Description,
+                DisplayOrder = s.DisplayOrder
+            }).OrderBy(s => s.DisplayOrder).ToList()
         };
     }
 
@@ -103,6 +125,8 @@ public class ProductService : IProductService
             CategoryId = request.CategoryId,
             Name = request.Name,
             HsnCode = request.HsnCode,
+            SellingUnit = request.SellingUnit,
+            ProductImageUrl = request.ProductImageUrl,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = userId
@@ -122,8 +146,24 @@ public class ProductService : IProductService
             CreatedBy = userId
         }).ToList();
 
+        var subImages = request.SubImages.Select(s => new ProductSubImage
+        {
+            Id = Guid.NewGuid(),
+            ProductId = product.Id,
+            ImageUrl = s.ImageUrl,
+            Description = s.Description,
+            DisplayOrder = s.DisplayOrder,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = userId
+        }).ToList();
+
         await _repository.AddAsync(product, cancellationToken);
         await _repository.AddVariantsAsync(variants, cancellationToken);
+        // Assuming we have AddSubImagesAsync or we just add to context
+        if (subImages.Any())
+        {
+            product.SubImages = subImages;
+        }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return await GetByIdAsync(product.Id, cancellationToken) ?? throw new Exception("Failed to retrieve created product.");
@@ -142,6 +182,8 @@ public class ProductService : IProductService
         product.CategoryId = request.CategoryId;
         product.Name = request.Name;
         product.HsnCode = request.HsnCode;
+        product.SellingUnit = request.SellingUnit;
+        product.ProductImageUrl = request.ProductImageUrl;
         product.IsActive = request.IsActive;
         product.UpdatedAt = DateTime.UtcNow;
         product.UpdatedBy = userId;
@@ -175,27 +217,83 @@ public class ProductService : IProductService
             variantsToUpdate.Add(existing);
         }
 
-        // 3. Add new variants
-        var newVariants = request.Variants.Where(v => !v.Id.HasValue).Select(v => new ProductVariant
+        // Handle SubImages
+        var existingSubImages = product.SubImages.ToList();
+        var updatedSubImageIds = request.SubImages.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToList();
+
+        // 1. Mark missing subImages as deleted
+        var subImagesToDelete = existingSubImages.Where(s => !updatedSubImageIds.Contains(s.Id)).ToList();
+        foreach (var s in subImagesToDelete)
         {
-            Id = Guid.NewGuid(),
-            ProductId = product.Id,
-            Size = v.Size.Trim(),
-            Thickness = v.Thickness.Trim(),
-            UnitPcsToKg = v.UnitPcsToKg,
-            AlertQtyPcs = v.AlertQtyPcs,
-            DefaultMargin = v.DefaultMargin,
-            IsActive = v.IsActive,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = userId
-        }).ToList();
+            s.IsDeleted = true;
+            s.IsActive = false;
+            s.UpdatedAt = DateTime.UtcNow;
+            s.UpdatedBy = userId;
+        }
 
-        await _repository.UpdateAsync(product, cancellationToken);
-        if (variantsToDelete.Any()) await _repository.DeleteVariantsAsync(variantsToDelete, cancellationToken);
-        if (variantsToUpdate.Any()) await _repository.UpdateVariantsAsync(variantsToUpdate, cancellationToken);
-        if (newVariants.Any()) await _repository.AddVariantsAsync(newVariants, cancellationToken);
+        // 2. Add new subImages
+        var newSubImagesReq = request.SubImages.Where(s => !s.Id.HasValue).ToList();
+        foreach (var s in newSubImagesReq)
+        {
+            product.SubImages.Add(new ProductSubImage
+            {
+                Id = Guid.NewGuid(),
+                ProductId = product.Id,
+                ImageUrl = s.ImageUrl,
+                Description = s.Description,
+                DisplayOrder = s.DisplayOrder,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = userId
+            });
+        }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // 3. Update existing subImages
+        var subImagesToUpdate = existingSubImages.Where(s => updatedSubImageIds.Contains(s.Id)).ToList();
+        foreach (var s in subImagesToUpdate)
+        {
+            var updateReqImg = request.SubImages.First(req => req.Id == s.Id);
+            s.ImageUrl = updateReqImg.ImageUrl;
+            s.Description = updateReqImg.Description;
+            s.DisplayOrder = updateReqImg.DisplayOrder;
+            s.UpdatedAt = DateTime.UtcNow;
+            s.UpdatedBy = userId;
+        }
+
+        // 4. Add new variants directly to product collection
+        var newVariants = request.Variants.Where(v => !v.Id.HasValue).ToList();
+        foreach (var v in newVariants)
+        {
+            product.Variants.Add(new ProductVariant
+            {
+                Id = Guid.NewGuid(),
+                ProductId = product.Id,
+                Size = v.Size.Trim(),
+                Thickness = v.Thickness.Trim(),
+                UnitPcsToKg = v.UnitPcsToKg,
+                AlertQtyPcs = v.AlertQtyPcs,
+                DefaultMargin = v.DefaultMargin,
+                IsActive = v.IsActive,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = userId
+            });
+        }
+
+        // We do NOT need to call UpdateAsync, DeleteVariantsAsync, etc., 
+        // because EF Core's ChangeTracker automatically detects changes to the loaded 'product' and its collections.
+
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException ex)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var entry in ex.Entries)
+            {
+                sb.AppendLine(entry.Entity.GetType().Name);
+            }
+            throw new Exception("DB CONCURRENCY ON: " + sb.ToString(), ex);
+        }
 
         return await GetByIdAsync(product.Id, cancellationToken);
     }

@@ -27,6 +27,8 @@ public class CreateInvoiceDto
     public decimal RoundingAmount { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
+    public decimal CashAmount { get; set; }
+    public decimal BankAmount { get; set; }
     public decimal DueAmount { get; set; }
     public string PaymentMode { get; set; } = "A/C";
     public string? VehicleNumber { get; set; }
@@ -58,6 +60,8 @@ public class InvoiceDetailDto : InvoiceListDto
     public decimal IgstAmount { get; set; }
     public decimal RoundingAmount { get; set; }
     public decimal PaidAmount { get; set; }
+    public decimal CashAmount { get; set; }
+    public decimal BankAmount { get; set; }
     public decimal DueAmount { get; set; }
     public string PaymentMode { get; set; } = string.Empty;
     public string? VehicleNumber { get; set; }
@@ -69,8 +73,10 @@ public class InvoiceItemDetailDto
 {
     public Guid Id { get; set; }
     public Guid VariantId { get; set; }
+    public Guid ProductId { get; set; }
     public string VariantName { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
+    public string HsnCode { get; set; } = string.Empty;
     public int QtyPcs { get; set; }
     public decimal WeightKg { get; set; }
     public decimal Rate { get; set; }

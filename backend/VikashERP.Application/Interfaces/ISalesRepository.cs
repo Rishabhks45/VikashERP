@@ -13,4 +13,5 @@ public interface ISalesRepository : VikashERP.Domain.Interfaces.IRepository<Invo
 public interface ISalesService
 {
     Task<Guid> CreateInvoiceAsync(Invoice invoice, CancellationToken cancellationToken);
+    Task<Guid> UpdateInvoiceAsync(Guid id, Invoice updatedInvoice, CancellationToken cancellationToken);
 }

@@ -1,0 +1,252 @@
+/* Premium Redesign for Transaction Audit (Sales Invoice) */
+
+.transaction-audit-container {
+    font-family: 'Inter', 'Roboto', sans-serif;
+    color: var(--mud-palette-text-primary);
+    background-color: var(--mud-palette-background);
+    min-height: 100vh;
+    padding-bottom: 2rem;
+}
+
+/* Headers & Typography */
+.section-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--mud-palette-text-secondary);
+    margin-bottom: 1rem;
+}
+
+.audit-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--mud-palette-text-primary);
+    margin: 0;
+}
+
+.audit-subtitle {
+    font-size: 0.85rem;
+    color: var(--mud-palette-text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* Premium Cards */
+.premium-card {
+    background: var(--mud-palette-surface);
+    border-radius: 12px;
+    border: 1px solid var(--mud-palette-lines-default);
+    box-shadow: var(--mud-elevation-1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.premium-card:hover {
+    box-shadow: var(--mud-elevation-3);
+}
+
+/* Entity Shop Card specifically */
+.entity-info-box {
+    background-color: var(--mud-palette-background-grey);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.entity-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+/* Trade Ledger */
+.ledger-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: end;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed var(--mud-palette-lines-default);
+    margin-bottom: 1rem;
+}
+
+.ledger-header-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.ledger-header-item {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--mud-palette-text-secondary);
+    letter-spacing: 0.05em;
+}
+
+.insert-line-btn {
+    border: 1px dashed var(--mud-palette-lines-default);
+    color: var(--mud-palette-primary);
+    background-color: transparent;
+    width: 100%;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.insert-line-btn:hover {
+    border-color: var(--mud-palette-primary);
+    background-color: var(--mud-palette-background-grey);
+}
+
+/* Collection Breakdown */
+.collection-box {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: var(--mud-palette-surface);
+}
+
+.collection-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background-color: var(--mud-palette-background-grey);
+    color: var(--mud-palette-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.total-dues-chip {
+    background-color: var(--mud-palette-error-hover);
+    color: var(--mud-palette-error);
+    border-radius: 16px;
+    padding: 0.25rem 1rem;
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Digital Settlement */
+.qr-container {
+    border: 1px dashed var(--mud-palette-lines-default);
+    background-color: var(--mud-palette-background-grey);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.qr-code {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+}
+
+/* Audit Summary Row */
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--mud-palette-text-primary);
+}
+
+.summary-row-bold {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--mud-palette-text-primary);
+    border-top: 1px dashed var(--mud-palette-lines-default);
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+}
+
+/* Input Overrides for Sleek Look */
+::deep .mud-input-outlined {
+    border-radius: 8px !important;
+}
+
+/* Action Buttons */
+.btn-retail {
+    border-color: var(--mud-palette-warning);
+    color: var(--mud-palette-warning);
+    font-weight: 600;
+    border-radius: 8px;
+}
+
+.btn-new-trans {
+    background-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+    font-weight: 600;
+    border-radius: 8px;
+}
+
+.btn-commit {
+    background-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+}
+
+.btn-archive {
+    border-color: var(--mud-palette-lines-default);
+    color: var(--mud-palette-text-primary);
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+}
+
+/* Warehouse Pulse */
+.warehouse-pulse {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.pulse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--mud-palette-text-secondary);
+}
+
+/* Collection Inputs */
+.collection-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--mud-palette-text-primary);
+    background-color: transparent;
+}

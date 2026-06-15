@@ -11,7 +11,7 @@ public class FileValidationResult
 
 public interface IFileUploadService
 {
-    Task<string> HandleFileUploadAsync(IBrowserFile file);
+    Task<string> HandleFileUploadAsync(IBrowserFile file, string subFolder = "");
     Task<string> HandleFileUploadInByteAsync(byte[] file);
     Task<FileValidationResult> ValidateFileAsync(IBrowserFile file);
     Task<bool> DeleteFileAsync(string relativePath);

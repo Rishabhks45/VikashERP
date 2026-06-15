@@ -17,6 +17,8 @@ CREATE TABLE invoices (
     rounding_amount numeric(12,2) NOT NULL DEFAULT 0,
     total_amount numeric(12,2) NOT NULL DEFAULT 0,
     paid_amount numeric(12,2) NOT NULL DEFAULT 0,
+    cash_amount numeric(12,2) NOT NULL DEFAULT 0,
+    bank_amount numeric(12,2) NOT NULL DEFAULT 0,
     due_amount numeric(12,2) NOT NULL DEFAULT 0,
     payment_mode character varying(50) NOT NULL,
     vehicle_number character varying(50) NULL,
