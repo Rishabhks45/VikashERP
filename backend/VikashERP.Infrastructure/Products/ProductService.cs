@@ -1,6 +1,7 @@
 using VikashERP.Application.Features.Products.DTOs;
 using VikashERP.Application.Interfaces;
 using VikashERP.Domain.Entities;
+using VikashERP.Infrastructure.Data;
 
 namespace VikashERP.Infrastructure.Products;
 
@@ -8,11 +9,13 @@ public class ProductService : IProductService
 {
     private readonly IProductRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ApplicationDbContext _context;
 
-    public ProductService(IProductRepository repository, IUnitOfWork unitOfWork)
+    public ProductService(IProductRepository repository, IUnitOfWork unitOfWork, ApplicationDbContext context)
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<IReadOnlyList<ProductListDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -159,10 +162,9 @@ public class ProductService : IProductService
 
         await _repository.AddAsync(product, cancellationToken);
         await _repository.AddVariantsAsync(variants, cancellationToken);
-        // Assuming we have AddSubImagesAsync or we just add to context
         if (subImages.Any())
         {
-            product.SubImages = subImages;
+            _context.ProductSubImages.AddRange(subImages);
         }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -231,11 +233,11 @@ public class ProductService : IProductService
             s.UpdatedBy = userId;
         }
 
-        // 2. Add new subImages
+        // 2. Add new subImages directly to DbContext
         var newSubImagesReq = request.SubImages.Where(s => !s.Id.HasValue).ToList();
         foreach (var s in newSubImagesReq)
         {
-            product.SubImages.Add(new ProductSubImage
+            _context.ProductSubImages.Add(new ProductSubImage
             {
                 Id = Guid.NewGuid(),
                 ProductId = product.Id,
@@ -259,11 +261,11 @@ public class ProductService : IProductService
             s.UpdatedBy = userId;
         }
 
-        // 4. Add new variants directly to product collection
+        // 4. Add new variants directly to DbContext
         var newVariants = request.Variants.Where(v => !v.Id.HasValue).ToList();
         foreach (var v in newVariants)
         {
-            product.Variants.Add(new ProductVariant
+            _context.ProductVariants.Add(new ProductVariant
             {
                 Id = Guid.NewGuid(),
                 ProductId = product.Id,

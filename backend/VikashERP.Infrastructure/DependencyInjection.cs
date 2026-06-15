@@ -35,6 +35,8 @@ public static class DependencyInjection
         services.AddScoped<IInventoryService, Inventory.InventoryService>();
         services.AddScoped<VikashERP.Application.Interfaces.ISalesRepository, Sales.SalesRepository>();
         services.AddScoped<VikashERP.Application.Interfaces.ISalesService, Sales.SalesService>();
+        services.AddScoped<IExpenseRepository, Expenses.ExpenseRepository>();
+        services.AddScoped<IExpenseService, Expenses.ExpenseService>();
         services.AddScoped<ISharedRepository, Repositories.SharedRepository>();
 
         return services;

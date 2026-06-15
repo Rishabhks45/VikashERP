@@ -38,6 +38,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<PurchaseEntry> PurchaseEntries => Set<PurchaseEntry>();
     public DbSet<PurchaseEntryItem> PurchaseEntryItems => Set<PurchaseEntryItem>();
+    public DbSet<Expense> Expenses => Set<Expense>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

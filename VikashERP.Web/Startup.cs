@@ -94,6 +94,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<IInventoryWebService, InventoryWebService>();
         builder.Services.AddScoped<ISalesWebService, SalesWebService>();
         builder.Services.AddScoped<ICustomerWebService, CustomerWebService>();
+        builder.Services.AddScoped<IExpenseWebService, ExpenseWebService>();
         builder.Services.AddValidatorsFromAssemblyContaining<LoginFormModelValidator>();
     }
 

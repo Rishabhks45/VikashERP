@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\VikashERP.SharedKernel\VikashERP.SharedKernel.csproj" />
+    <ProjectReference Include="..\VikashERP.Infrastructure\VikashERP.Infrastructure.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

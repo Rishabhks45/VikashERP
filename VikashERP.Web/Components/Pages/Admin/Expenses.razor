@@ -1,0 +1,592 @@
+@page "/expenses"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IAsyncDisposable
+@using System.Net.Http.Json
+@using VikashERP.Web.Services.Interfaces
+@using VikashERP.Web.Models
+@using VikashERP.Web.Validation
+@inject IExpenseWebService ExpenseWebService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Daily Expenses</PageTitle>
+
+<PageLoader IsVisible="@_loading" Text="Loading expenses ledger..." />
+
+<MudStack Class="expenses-page" Spacing="4">
+    <!-- Header Hero -->
+    <div class="org-hero">
+        <MudStack Spacing="0" Class="org-hero-copy">
+            <MudText Typo="Typo.h5" HtmlTag="h1">Daily Expenses</MudText>
+            <MudText Typo="Typo.body2" Class="dashboard-subtitle org-subtitle">
+                Record and track operational overheads such as tea, fuel, rent, utilities, and daily wages to evaluate business P&L.
+            </MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Filled"
+                   Class="dashboard-action-primary org-save-btn"
+                   StartIcon="@Icons.Material.Filled.AddCard"
+                   OnClick="OpenAddDrawer"
+                   Disabled="@_loading">
+            Log Expense
+        </MudButton>
+    </div>
+
+    @if (!_loading)
+    {
+        <!-- KPI Cards -->
+        <MudGrid Spacing="2" Class="dashboard-kpis">
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-blue">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Expenses (Monthly)</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@TotalMonthlyExpenses.ToString("N0")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Current month</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-green">
+                        <MudIcon Icon="@Icons.Material.Filled.Today" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Today's Expenditure</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@TodayExpenses.ToString("N0")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-up">Today's sum</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-amber">
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Top Expense Category</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong" Style="font-size: 1.15rem; line-height: 1.5;">@TopCategory</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Highest utility cost</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-purple">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Payment Mode Split</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong" Style="font-size: 0.95rem; line-height: 1.8;">@PaymentModeSplit</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Cash vs Digital</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Main Datagrid Panel -->
+        <MudPaper Elevation="0" Class="org-tab-panel pa-6">
+            <MudGrid Class="mb-4 d-flex align-center">
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="_searchQuery"
+                                   Placeholder="Search by remarks or category..."
+                                   Adornment="Adornment.Start"
+                                   AdornmentIcon="@Icons.Material.Filled.Search"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Class="search-bar-full"
+                                   Immediate="true" />
+                </MudItem>
+                <MudItem xs="6" md="2">
+                    <MudSelect T="string" @bind-Value="_categoryFilter" Label="Category Filter" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                        <MudSelectItem Value="@("")">All Categories</MudSelectItem>
+                        @foreach (var cat in _categories)
+                        {
+                            <MudSelectItem Value="@cat">@cat</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" md="2">
+                    <MudSelect T="string" @bind-Value="_paymentModeFilter" Label="Payment Mode" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                        <MudSelectItem Value="@("")">All Modes</MudSelectItem>
+                        @foreach (var mode in _paymentModes)
+                        {
+                            <MudSelectItem Value="@mode">@mode</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudDateRangePicker @ref="_dateRangePicker" Label="Date Range Filter" @bind-DateRange="_dateRange" AutoClose="true" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
+                </MudItem>
+            </MudGrid>
+
+            <MudDataGrid Items="@FilteredExpenses" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Filterable="true" Loading="@_loading" Class="invoice-table">
+                <Columns>
+                    <PropertyColumn Property="x => x.ExpenseDate" Title="Date" Format="dd/MM/yyyy">
+                        <CellTemplate>
+                            <div style="font-weight: 500;">@context.Item.ExpenseDate.ToLocalTime().ToString("dd MMM yyyy")</div>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Category" Title="Category">
+                        <CellTemplate>
+                            <span class="category-chip @GetCategoryClass(context.Item.Category)">@context.Item.Category</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Amount" Title="Amount">
+                        <CellTemplate>
+                            <span style="font-weight: 700; color: #ef4444;">₹@context.Item.Amount.ToString("N2")</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.PaymentMode" Title="Payment Mode">
+                        <CellTemplate>
+                            <span class="payment-mode-chip @GetPaymentModeClass(context.Item.PaymentMode)">@context.Item.PaymentMode</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Remarks" Title="Remarks" />
+                    <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditDrawer(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => ConfirmDeleteAsync(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudStack>
+
+<!-- Slide-out Creation & Edit Drawer -->
+@if (_drawerOpen)
+{
+    <div class="email-slide-overlay @(_drawerClosing ? "fade-out" : "fade-in")" @onclick="CloseDrawer">
+        <div class="email-slide-panel @(_drawerClosing ? "slide-out-right" : "slide-in-right")" @onclick:stopPropagation="true">
+            <div class="email-slide-panel-inner">
+                <div class="et-drawer-header">
+                    <div class="et-drawer-header-main">
+                        <div class="et-drawer-header-icon">
+                            <MudIcon Icon="@(_isNewExpense ? Icons.Material.Filled.PostAdd : Icons.Material.Filled.Edit)" />
+                        </div>
+                        <div class="et-drawer-header-copy">
+                            <h2 class="et-drawer-header-title">@(_isNewExpense ? "Record Expense" : "Modify Expense Details")</h2>
+                            <p class="et-drawer-header-sub">
+                                @(_isNewExpense ? "Record operational expenses and update the trade ledger." : "Update details for the logged expense transaction.")
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="et-drawer-close" aria-label="Close panel" @onclick="CloseDrawer">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" />
+                    </button>
+                </div>
+
+                <div class="email-slide-panel-main">
+                    <EditForm Model="@_editModel" OnValidSubmit="SaveExpenseAsync" Class="email-slide-panel-form" novalidate>
+                        <FluentValidationValidator />
+                        <div class="email-slide-panel-body" tabindex="-1">
+                            <MudStack Spacing="4">
+                                <MudDatePicker @bind-Date="_editModel.ExpenseDate" Label="Expense Date *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.ExpenseDate)" MaxDate="DateTime.Today" />
+
+                                <MudAutocomplete T="string" @bind-Value="_editModel.Category" Label="Category *"
+                                                 SearchFunc="SearchCategories" CoerceText="true" CoerceValue="true" ResetValueOnEmptyText="true"
+                                                 Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.Category)" PopoverFixed="true" />
+                                
+                                <MudNumericField @bind-Value="_editModel.Amount" Label="Amount (₹) *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.Amount)" HideSpinButtons="true" />
+
+                                <MudSelect T="string" @bind-Value="_editModel.PaymentMode" Label="Payment Mode *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.PaymentMode)" PopoverFixed="true">
+                                    @foreach (var mode in _paymentModes)
+                                    {
+                                        <MudSelectItem Value="@mode">@mode</MudSelectItem>
+                                    }
+                                </MudSelect>
+
+                                <MudTextField @bind-Value="_editModel.Remarks" Label="Remarks / Descriptions" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" For="@(() => _editModel.Remarks)" />
+                            </MudStack>
+                        </div>
+
+                        <div class="email-slide-panel-footer">
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton Variant="Variant.Text" Disabled="_saving" OnClick="CloseDrawer">Cancel</MudButton>
+                                <MudSpacer />
+                                <MudButton Variant="Variant.Filled"
+                                           Class="dashboard-action-primary save-btn"
+                                           ButtonType="ButtonType.Submit"
+                                           Disabled="_saving">
+                                    @(_saving ? "Processing..." : (_isNewExpense ? "Record Expense" : "Update Expense"))
+                                </MudButton>
+                            </MudStack>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<ConfirmationModal IsVisible="@_showDeleteModal"
+                   Title="Delete Expense Entry"
+                   Message="Are you sure you want to permanently delete this expense record?"
+                   SubMessage="@($"{_expenseToDelete?.Category} - ₹{_expenseToDelete?.Amount:N2} on {_expenseToDelete?.ExpenseDate.ToLocalTime().ToString("dd/MM/yyyy")}")"
+                   ConfirmButtonText="Delete Entry"
+                   CancelButtonText="Cancel"
+                   IsProcessing="@_deletingProcess"
+                   ProcessingText="Deleting..."
+                   OnConfirm="ExecuteDeleteAsync"
+                   OnCancel="CancelDelete" />
+
+@code {
+    private List<ExpenseListDto> _expenses = [];
+    private string _searchQuery = string.Empty;
+    private string _categoryFilter = string.Empty;
+    private string _paymentModeFilter = string.Empty;
+    private DateRange _dateRange = new DateRange(DateTime.Today.AddDays(-30), DateTime.Today);
+    private MudDateRangePicker? _dateRangePicker;
+    private bool _loading = true;
+    private bool _saving = false;
+
+    private bool _drawerOpen = false;
+    private bool _drawerClosing = false;
+    private bool _bodyScrollLocked = false;
+    private bool _isNewExpense = true;
+    private ExpenseFormModel _editModel = new();
+    private Guid _editingExpenseId;
+
+    private bool _showDeleteModal = false;
+    private bool _deletingProcess = false;
+    private ExpenseListDto? _expenseToDelete = null;
+
+    private string[] _categories = new[]
+    {
+        "Tea & Snacks",
+        "Fuel / Transport",
+        "Office Rent",
+        "Electricity / Utility",
+        "Daily Wages / Salary",
+        "Repairs & Maintenance",
+        "Other"
+    };
+
+    private string[] _paymentModes = new[] { "Cash", "UPI", "NetBanking" };
+
+    private IEnumerable<ExpenseListDto> FilteredExpenses
+    {
+        get
+        {
+            var query = _expenses.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                query = query.Where(e => 
+                    e.Category.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                    (e.Remarks != null && e.Remarks.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_categoryFilter))
+            {
+                query = query.Where(e => string.Equals(e.Category, _categoryFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_paymentModeFilter))
+            {
+                query = query.Where(e => string.Equals(e.PaymentMode, _paymentModeFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (_dateRange?.Start.HasValue == true)
+            {
+                query = query.Where(e => e.ExpenseDate.Date >= _dateRange.Start.Value.Date);
+            }
+
+            if (_dateRange?.End.HasValue == true)
+            {
+                query = query.Where(e => e.ExpenseDate.Date <= _dateRange.End.Value.Date);
+            }
+
+            return query;
+        }
+    }
+
+    private decimal TotalMonthlyExpenses => _expenses
+        .Where(e => e.ExpenseDate.Year == DateTime.Today.Year && e.ExpenseDate.Month == DateTime.Today.Month)
+        .Sum(e => e.Amount);
+
+    private decimal TodayExpenses => _expenses
+        .Where(e => e.ExpenseDate.Date == DateTime.Today.Date)
+        .Sum(e => e.Amount);
+
+    private string TopCategory => GetTopCategory();
+    private string PaymentModeSplit => GetPaymentModeSplit();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExpensesAsync();
+    }
+
+    private async Task LoadExpensesAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            _expenses = await ExpenseWebService.GetExpensesAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Failed to fetch expenses: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<IEnumerable<string>> SearchCategories(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return _categories;
+        return _categories.Where(x => x.Contains(value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void OpenAddDrawer()
+    {
+        _editModel = new ExpenseFormModel 
+        { 
+            ExpenseDate = DateTime.Today,
+            PaymentMode = "Cash"
+        };
+        _isNewExpense = true;
+        _drawerOpen = true;
+    }
+
+    private async Task OpenEditDrawer(ExpenseListDto expense)
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            var fullExpense = await ExpenseWebService.GetExpenseByIdAsync(expense.Id);
+            if (fullExpense != null)
+            {
+                _editModel = new ExpenseFormModel
+                {
+                    ExpenseDate = fullExpense.ExpenseDate,
+                    Category = fullExpense.Category,
+                    Amount = fullExpense.Amount,
+                    PaymentMode = fullExpense.PaymentMode,
+                    Remarks = fullExpense.Remarks
+                };
+                _editingExpenseId = fullExpense.Id;
+                _isNewExpense = false;
+                _drawerOpen = true;
+            }
+            else
+            {
+                NotificationService.Error("Failed to fetch expense details.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Error loading details: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CloseDrawer()
+    {
+        if (_drawerClosing)
+            return;
+
+        _drawerClosing = true;
+        StateHasChanged();
+        await Task.Delay(300);
+        _drawerOpen = false;
+        _drawerClosing = false;
+        _editModel = new ExpenseFormModel();
+    }
+
+    private async Task SaveExpenseAsync()
+    {
+        _saving = true;
+        StateHasChanged();
+        try
+        {
+            if (_isNewExpense)
+            {
+                var request = new CreateExpenseDto
+                {
+                    ExpenseDate = _editModel.ExpenseDate ?? DateTime.UtcNow,
+                    Category = _editModel.Category,
+                    Amount = _editModel.Amount,
+                    PaymentMode = _editModel.PaymentMode,
+                    Remarks = _editModel.Remarks
+                };
+
+                var response = await ExpenseWebService.CreateExpenseAsync(request);
+                if (response != null)
+                {
+                    NotificationService.Success("Expense recorded successfully.");
+                    _drawerOpen = false;
+                    await LoadExpensesAsync();
+                }
+                else
+                {
+                    NotificationService.Error("Failed to record expense. Please try again.");
+                }
+            }
+            else
+            {
+                var request = new UpdateExpenseDto
+                {
+                    ExpenseDate = _editModel.ExpenseDate ?? DateTime.UtcNow,
+                    Category = _editModel.Category,
+                    Amount = _editModel.Amount,
+                    PaymentMode = _editModel.PaymentMode,
+                    Remarks = _editModel.Remarks
+                };
+
+                var success = await ExpenseWebService.UpdateExpenseAsync(_editingExpenseId, request);
+                if (success)
+                {
+                    NotificationService.Success("Expense updated successfully.");
+                    _drawerOpen = false;
+                    await LoadExpensesAsync();
+                }
+                else
+                {
+                    NotificationService.Error("Failed to update expense.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"API Error: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ConfirmDeleteAsync(ExpenseListDto expense)
+    {
+        _expenseToDelete = expense;
+        _showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        _showDeleteModal = false;
+        _expenseToDelete = null;
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        if (_expenseToDelete is null) return;
+        _deletingProcess = true;
+        StateHasChanged();
+        try
+        {
+            var success = await ExpenseWebService.DeleteExpenseAsync(_expenseToDelete.Id);
+            if (success)
+            {
+                NotificationService.Success("Expense deleted successfully.");
+                _showDeleteModal = false;
+                _expenseToDelete = null;
+                await LoadExpensesAsync();
+            }
+            else
+            {
+                NotificationService.Error("Failed to delete expense entry.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"API execution error: {ex.Message}");
+        }
+        finally
+        {
+            _deletingProcess = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetTopCategory()
+    {
+        if (!_expenses.Any()) return "N/A";
+        var top = _expenses
+            .GroupBy(e => e.Category)
+            .Select(g => new { Category = g.Key, Total = g.Sum(e => e.Amount) })
+            .OrderByDescending(x => x.Total)
+            .FirstOrDefault();
+        return top != null ? $"{top.Category} (₹{top.Total:N0})" : "N/A";
+    }
+
+    private string GetPaymentModeSplit()
+    {
+        if (!_expenses.Any()) return "Cash: 0% | UPI: 0%";
+        var cash = _expenses.Where(e => string.Equals(e.PaymentMode, "Cash", StringComparison.OrdinalIgnoreCase)).Sum(e => e.Amount);
+        var upi = _expenses.Where(e => string.Equals(e.PaymentMode, "UPI", StringComparison.OrdinalIgnoreCase)).Sum(e => e.Amount);
+        var net = _expenses.Where(e => string.Equals(e.PaymentMode, "NetBanking", StringComparison.OrdinalIgnoreCase)).Sum(e => e.Amount);
+        var total = cash + upi + net;
+        if (total == 0) return "Cash: 0% | UPI: 0%";
+        
+        var cashPct = (cash / total) * 100;
+        var upiPct = (upi / total) * 100;
+        var netPct = (net / total) * 100;
+
+        return $"Cash: {cashPct:0}% | UPI: {upiPct:0}% | Net: {netPct:0}%";
+    }
+
+    private string GetCategoryClass(string category) => category switch
+    {
+        "Tea & Snacks" => "cat-tea",
+        "Fuel / Transport" => "cat-fuel",
+        "Office Rent" => "cat-rent",
+        "Electricity / Utility" => "cat-utility",
+        "Daily Wages / Salary" => "cat-wages",
+        "Repairs & Maintenance" => "cat-repairs",
+        _ => "cat-other"
+    };
+
+    private string GetPaymentModeClass(string mode) => mode switch
+    {
+        "Cash" => "mode-cash",
+        "UPI" => "mode-upi",
+        _ => "mode-netbanking"
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var shouldLock = _drawerOpen && !_drawerClosing;
+        if (shouldLock == _bodyScrollLocked)
+            return;
+
+        _bodyScrollLocked = shouldLock;
+        await JSRuntime.InvokeVoidAsync("eval", shouldLock
+            ? "document.documentElement.classList.add('email-panel-open');document.body.classList.add('email-panel-open')"
+            : "document.documentElement.classList.remove('email-panel-open');document.body.classList.remove('email-panel-open')");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_bodyScrollLocked)
+            return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "document.documentElement.classList.remove('email-panel-open');document.body.classList.remove('email-panel-open')");
+        }
+        catch
+        {
+            // Ignored if JS runtime is disconnected during disposal
+        }
+    }
+}

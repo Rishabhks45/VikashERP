@@ -1,16 +1,38 @@
 using System;
-using VikashERP.SharedKernel.Services;
+using Microsoft.EntityFrameworkCore;
+using VikashERP.Infrastructure.Data;
 
-var encryptionService = new EncryptionService();
-var masterKey = "aU5FU1RIQY5NUzU3Q1JFVEtFWTk4NzY1NDMyMUFCQ0RFRkdISUdLTE1OTw==";
+var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=vikashironix;Username=postgres;Password=sa");
 
-var targetHash = "RRCbZND+orT8Q/uQPUYrxoGF970IawlrzgS4MjWMPaKIGTcpBrN5CfgzhHI7NlHycw==";
-try
+using var context = new ApplicationDbContext(optionsBuilder.Options);
+using var conn = context.Database.GetDbConnection();
+conn.Open();
+
+void PrintState(string stage)
 {
-    var decrypted = encryptionService.Decrypt(targetHash, masterKey);
-    Console.WriteLine($"Decrypted Stored Password: '{decrypted}'");
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = "SELECT relname, relkind FROM pg_class WHERE LOWER(relname) = 'expenses';";
+    using var reader = cmd.ExecuteReader();
+    bool found = false;
+    while (reader.Read())
+    {
+        found = true;
+        Console.WriteLine($"[{stage}] Found: Name='{reader.GetString(0)}', Kind='{reader.GetChar(1)}'");
+    }
+    if (!found)
+    {
+        Console.WriteLine($"[{stage}] No relation matching 'expenses' was found.");
+    }
 }
-catch (Exception ex)
+
+PrintState("BEFORE DROP");
+
+using (var cmdDrop = conn.CreateCommand())
 {
-    Console.WriteLine($"Failed to decrypt: {ex.Message}");
+    cmdDrop.CommandText = "DROP TABLE IF EXISTS \"Expenses\" CASCADE;";
+    cmdDrop.ExecuteNonQuery();
+    Console.WriteLine("Executed DROP TABLE command.");
 }
+
+PrintState("AFTER DROP");
