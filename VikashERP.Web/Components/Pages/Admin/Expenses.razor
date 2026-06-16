@@ -129,7 +129,7 @@
                 <Columns>
                     <PropertyColumn Property="x => x.ExpenseDate" Title="Date" Format="dd/MM/yyyy">
                         <CellTemplate>
-                            <div style="font-weight: 500;">@context.Item.ExpenseDate.ToLocalTime().ToString("dd MMM yyyy")</div>
+                            <div style="font-weight: 500;">@context.Item.ExpenseDate.ToKolkataTime().ToString("dd MMM yyyy")</div>
                         </CellTemplate>
                     </PropertyColumn>
                     <PropertyColumn Property="x => x.Category" Title="Category">
@@ -229,7 +229,7 @@
 <ConfirmationModal IsVisible="@_showDeleteModal"
                    Title="Delete Expense Entry"
                    Message="Are you sure you want to permanently delete this expense record?"
-                   SubMessage="@($"{_expenseToDelete?.Category} - ₹{_expenseToDelete?.Amount:N2} on {_expenseToDelete?.ExpenseDate.ToLocalTime().ToString("dd/MM/yyyy")}")"
+                   SubMessage="@($"{_expenseToDelete?.Category} - ₹{_expenseToDelete?.Amount:N2} on {_expenseToDelete?.ExpenseDate.ToKolkataTime().ToString("dd/MM/yyyy")}")"
                    ConfirmButtonText="Delete Entry"
                    CancelButtonText="Cancel"
                    IsProcessing="@_deletingProcess"

@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace VikashERP.API.Controllers;
 
@@ -16,11 +20,12 @@ public class UploadController : ControllerBase
     }
 
     [HttpPost("product-image")]
-    public async Task<IActionResult> UploadProductImage([FromForm] IFormFile file, [FromForm] string categoryName)
+    public async Task<IActionResult> UploadProductImage([FromForm] ProductImageUploadRequest request)
     {
-        if (file == null || file.Length == 0)
+        if (request.File == null || request.File.Length == 0)
             return BadRequest("No file uploaded.");
 
+        var categoryName = request.CategoryName;
         if (string.IsNullOrWhiteSpace(categoryName))
             categoryName = "Uncategorized";
 
@@ -33,15 +38,22 @@ public class UploadController : ControllerBase
         if (!Directory.Exists(uploadsFolder))
             Directory.CreateDirectory(uploadsFolder);
 
-        var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+        var uniqueFileName = Guid.NewGuid().ToString() + "_" + request.File.FileName;
         var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
-            await file.CopyToAsync(stream);
+            await request.File.CopyToAsync(stream);
         }
 
         var relativePath = $"/uploads/{safeCategoryName}/{uniqueFileName}";
         return Ok(new { Url = relativePath });
     }
 }
+
+public class ProductImageUploadRequest
+{
+    public IFormFile File { get; set; } = null!;
+    public string CategoryName { get; set; } = string.Empty;
+}
+

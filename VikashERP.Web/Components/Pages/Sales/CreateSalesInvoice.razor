@@ -10,39 +10,63 @@
 
 <PageTitle>Transaction Audit</PageTitle>
 
-<div class="transaction-audit-container p-4">    
-    <!-- Top Header Bar -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="ta-page">
+
+    <!-- ── TOP HEADER ─────────────────────────────────── -->
+    <div class="ta-header">
         <div>
-            <h2 class="audit-title">Transaction Audit</h2>
-            <div class="audit-subtitle">Synchronized fiscal auditing & warehouse allocation.</div>
+            <div class="ta-title">Transaction Audit</div>
+            <div class="ta-subtitle">Synchronized fiscal auditing &amp; warehouse allocation</div>
         </div>
-        <div class="d-flex gap-3">
-            <MudButton Variant="Variant.Outlined" Class="btn-retail" StartIcon="@Icons.Material.Filled.Storefront">Retail Sale (Khudra)</MudButton>
-            <MudButton Variant="Variant.Filled" Class="btn-new-trans" StartIcon="@Icons.Material.Filled.Add">New Transaction</MudButton>
+        <div class="d-flex gap-2 align-items-center">
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Storefront"
+                       Class="btn-khudra"
+                       Href="/sales/create?type=retail"
+                       Target="_blank">
+                Retail Sale (Khudra)
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Class="btn-newtx"
+                       Href="/sales/create"
+                       Target="_blank">
+                New Transaction
+            </MudButton>
         </div>
     </div>
 
     @if (_isLoadingData)
     {
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Class="mt-5 mx-auto" Style="display:block;" />
+        <div class="d-flex justify-content-center mt-10">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
     }
     else
     {
         <EditForm Model="@_model" OnValidSubmit="SaveInvoiceAsync" novalidate>
             <DataAnnotationsValidator />
 
-            <MudGrid>
-                <!-- LEFT COLUMN: Ledger & Logistics -->
+            <MudGrid Spacing="3">
+
+                <!-- ══════════════════ LEFT COLUMN ══════════════════ -->
                 <MudItem xs="12" md="8">
-                    
-                    <!-- 1. ENTITY / SHOP -->
-                    <div class="premium-card">
-                        <div class="section-header">Entity / Shop</div>
-                        
-                        <MudGrid>
+
+                    <!-- CARD 1 · CUSTOMER / SHOP -->
+                    <MudPaper Class="ta-card" Elevation="0">
+                        <div class="card-label">Customer / Shop</div>
+                        <MudGrid Spacing="2">
                             <MudItem xs="12" md="8">
-                                <MudSelect T="Guid" Placeholder="Search anything..." Variant="Variant.Outlined" Margin="Margin.Dense" Value="@_model.CustomerId" ValueChanged="OnCustomerChanged" Required="true" AdornmentIcon="@Icons.Material.Filled.Search">
+                                <MudSelect T="Guid"
+                                           Placeholder="Search customer or shop..."
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           Value="@_model.CustomerId"
+                                           ValueChanged="OnCustomerChanged"
+                                           Required="true"
+                                           AdornmentIcon="@Icons.Material.Filled.Search"
+                                           Adornment="Adornment.End">
                                     <MudSelectItem T="Guid" Value="Guid.Empty">-- Select Customer --</MudSelectItem>
                                     @foreach (var c in _customers)
                                     {
@@ -51,70 +75,102 @@
                                 </MudSelect>
                             </MudItem>
                             <MudItem xs="12" md="4">
-                                <MudDatePicker Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Date="_invoiceDate" Required="true" AdornmentIcon="@Icons.Material.Filled.CalendarMonth" />
+                                <MudDatePicker Variant="Variant.Outlined"
+                                               Margin="Margin.Dense"
+                                               @bind-Date="_invoiceDate"
+                                               Required="true"
+                                               Adornment="Adornment.End"
+                                               AdornmentIcon="@Icons.Material.Filled.CalendarMonth"
+                                               MinDate="DateTime.Today" />
                             </MudItem>
                         </MudGrid>
 
                         @if (_selectedCustomer != null)
                         {
-                            if (_selectedCustomer.FirstName.Contains("Cash", StringComparison.OrdinalIgnoreCase) || 
-                                _selectedCustomer.CompanyName?.Contains("CASH", StringComparison.OrdinalIgnoreCase) == true ||
-                                _selectedCustomer.CompanyName?.Contains("KHUDRA", StringComparison.OrdinalIgnoreCase) == true)
+                            bool isKhudra = _selectedCustomer.FirstName.Contains("Cash", StringComparison.OrdinalIgnoreCase)
+                                         || _selectedCustomer.CompanyName?.Contains("CASH", StringComparison.OrdinalIgnoreCase) == true
+                                         || _selectedCustomer.CompanyName?.Contains("KHUDRA", StringComparison.OrdinalIgnoreCase) == true;
+                            if (isKhudra)
                             {
-                                <div class="mt-3">
-                                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">Walk-in Customer Name (Optional)</div>
-                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_khudraName" Placeholder="Enter name..." AdornmentIcon="@Icons.Material.Filled.PersonOutline" />
-                                </div>
+                                <MudTextField Class="mt-3"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              @bind-Value="_khudraName"
+                                              Label="Walk-in Customer Name (Optional)"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@Icons.Material.Filled.PersonOutline" />
                             }
                             else
                             {
-                                <div class="entity-info-box mt-3">
-                                    <div class="entity-avatar">
-                                        @(_selectedCustomer.CompanyName?.FirstOrDefault().ToString() ?? _selectedCustomer.FirstName.FirstOrDefault().ToString())
-                                    </div>
+                                <div class="entity-chip mt-3">
+                                    <MudAvatar Color="Color.Primary" Size="Size.Small">
+                                        @(_selectedCustomer.CompanyName?.FirstOrDefault() ?? _selectedCustomer.FirstName.FirstOrDefault())
+                                    </MudAvatar>
                                     <div>
-                                        <div style="font-weight: 700; color: var(--mud-palette-text-primary);">@(_selectedCustomer.CompanyName ?? $"{_selectedCustomer.FirstName} {_selectedCustomer.LastName}")</div>
-                                        <div style="font-size: 0.8rem; color: var(--mud-palette-text-secondary);">
-                                            @_selectedCustomer.FirstName @_selectedCustomer.LastName • @_selectedCustomer.Phone
-                                            @if (!string.IsNullOrWhiteSpace(_selectedCustomer.Gstin)) { <span> • GSTIN: @_selectedCustomer.Gstin</span> }
+                                        <div class="entity-name">@(_selectedCustomer.CompanyName ?? $"{_selectedCustomer.FirstName} {_selectedCustomer.LastName}")</div>
+                                        <div class="entity-meta">
+                                            @_selectedCustomer.FirstName @_selectedCustomer.LastName &bull; @_selectedCustomer.Phone
+                                            @if (!string.IsNullOrWhiteSpace(_selectedCustomer.Gstin))
+                                            { <span>&nbsp;&bull; GSTIN: @_selectedCustomer.Gstin</span> }
                                         </div>
                                     </div>
                                 </div>
                             }
                         }
-                    </div>
+                    </MudPaper>
 
-                    <!-- 2. TRADE LEDGER -->
-                    <div class="premium-card">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <div class="section-header mb-0">Trade Ledger</div>
-                            <MudSwitch T="bool" Value="@_isGstApplied" ValueChanged="@((bool val) => OnGstToggled(val))" Color="Color.Primary" Label="GST (18%)" />
-                        </div>
-                        
-                        <div class="ledger-header-row">
-                            <div class="ledger-header-item">Resource</div>
-                            <div class="ledger-header-item text-center">Qty (Pcs)</div>
-                            <div class="ledger-header-item text-center">Weight</div>
-                            <div class="ledger-header-item text-center">Rate</div>
-                            <div class="ledger-header-item text-right">Total</div>
-                            <div style="width: 32px;"></div>
+                    <!-- CARD 2 · TRADE LEDGER -->
+                    <MudPaper Class="ta-card" Elevation="0">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="card-label mb-0">Trade Ledger</div>
+                            <MudSwitch T="bool"
+                                       Value="@_isGstApplied"
+                                       ValueChanged="@((bool v) => OnGstToggled(v))"
+                                       Color="Color.Primary"
+                                       Label="GST (18%)"
+                                       Size="Size.Small" />
                         </div>
 
+                        <!-- Column Headers -->
+                        <div class="ledger-grid ledger-head">
+                            <span>Resource</span>
+                            <span class="text-end">Qty (Pcs)</span>
+                            <span class="text-end">Weight (Kg)</span>
+                            <span class="text-end">Rate (₹/Kg)</span>
+                            <span class="text-end">Total (₹)</span>
+                            <span></span>
+                        </div>
+
+                        <!-- Item Rows -->
                         @foreach (var item in _model.Items)
                         {
-                            <div class="ledger-row">
-                                <div class="d-flex gap-2 w-100">
-                                    <MudSelect T="Guid" Placeholder="Select Resource..." Variant="Variant.Outlined" Margin="Margin.Dense" Value="@item.SelectedProductId" ValueChanged="@(async (Guid val) => await OnProductChanged(item, val))" Class="flex-grow-1">
+                            <div class="ledger-grid ledger-row-item">
+
+                                <!-- Resource + optional variant -->
+                                <div class="d-flex gap-1">
+                                    <MudSelect T="Guid"
+                                               Placeholder="Select Resource"
+                                               Variant="Variant.Outlined"
+                                               Margin="Margin.Dense"
+                                               Value="@item.SelectedProductId"
+                                               ValueChanged="@(async (Guid v) => await OnProductChanged(item, v))"
+                                               Style="flex:1">
                                         <MudSelectItem T="Guid" Value="Guid.Empty">-- Select Resource --</MudSelectItem>
                                         @foreach (var p in _products)
                                         {
                                             <MudSelectItem T="Guid" Value="@p.Id">@p.Name</MudSelectItem>
                                         }
                                     </MudSelect>
-                                    @if (item.SelectedProductVariants != null && item.SelectedProductVariants.Any())
+                                    @if (item.SelectedProductVariants?.Any() == true)
                                     {
-                                        <MudSelect T="Guid" Placeholder="Select Variant" Variant="Variant.Outlined" Margin="Margin.Dense" Value="@item.VariantId" ValueChanged="@((Guid val) => OnVariantChanged(item, val))" Class="flex-grow-1">
-                                            <MudSelectItem T="Guid" Value="Guid.Empty">-- Select Variant --</MudSelectItem>
+                                        <MudSelect T="Guid"
+                                                   Placeholder="Variant"
+                                                   Variant="Variant.Outlined"
+                                                   Margin="Margin.Dense"
+                                                   Value="@item.VariantId"
+                                                   ValueChanged="@((Guid v) => OnVariantChanged(item, v))"
+                                                   Style="flex:1">
+                                            <MudSelectItem T="Guid" Value="Guid.Empty">-- Variant --</MudSelectItem>
                                             @foreach (var v in item.SelectedProductVariants)
                                             {
                                                 <MudSelectItem T="Guid" Value="@v.Id">@v.Size @v.Thickness</MudSelectItem>
@@ -122,222 +178,339 @@
                                         </MudSelect>
                                     }
                                 </div>
+
+                                <!-- Qty -->
                                 @if (item.RateOn == VikashERP.SharedKernel.Enums.RateOn.Pcs)
                                 {
-                                    <div>
-                                        <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Value="@item.QtyPcs" ValueChanged="@((int val) => OnQtyChanged(item, val))" />
-                                    </div>
-                                    <div>
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2 text-center">-</MudText>
-                                    </div>
+                                    <MudNumericField T="int"
+                                                     Variant="Variant.Outlined"
+                                                     Margin="Margin.Dense"
+                                                     HideSpinButtons="true"
+                                                     Value="@item.QtyPcs"
+                                                     ValueChanged="@((int v) => OnQtyChanged(item, v))"
+                                                     Class="field-right" />
                                 }
                                 else
                                 {
-                                    <div>
-                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2 text-center">-</MudText>
-                                    </div>
-                                    <div>
-                                        <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Value="@item.WeightKg" ValueChanged="@((decimal val) => OnWeightChanged(item, val))" Format="N2" />
+                                    <div class="d-flex align-items-center justify-content-end">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">—</MudText>
                                     </div>
                                 }
-                                <div class="d-flex align-center">
-                                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Value="@item.Rate" ValueChanged="@((decimal val) => OnRateChanged(item, val))" Format="N2" Class="flex-grow-1" />
-                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">/ @item.RateOn.ToString()</MudText>
-                                </div>
-                                <div class="text-right" style="font-weight: 600; font-size: 0.95rem; align-self: center;">
-                                    ₹ @item.TotalPrice.ToString("N0")
-                                </div>
-                                <div style="align-self: center;">
-                                    <MudIconButton Icon="@Icons.Material.Outlined.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveItem(item))" />
+
+                                <!-- Weight -->
+                                @if (item.RateOn != VikashERP.SharedKernel.Enums.RateOn.Pcs)
+                                {
+                                    <MudNumericField T="decimal"
+                                                     Variant="Variant.Outlined"
+                                                     Margin="Margin.Dense"
+                                                     HideSpinButtons="true"
+                                                     Format="N2"
+                                                     Value="@item.WeightKg"
+                                                     ValueChanged="@((decimal v) => OnWeightChanged(item, v))"
+                                                     Class="field-right" />
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-end">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">—</MudText>
+                                    </div>
+                                }
+
+                                <!-- Rate -->
+                                <MudNumericField T="decimal"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense"
+                                                 HideSpinButtons="true"
+                                                 Format="N2"
+                                                 Value="@item.Rate"
+                                                 ValueChanged="@((decimal v) => OnRateChanged(item, v))"
+                                                 Class="field-right" />
+
+                                <!-- Total (read-only) -->
+                                <MudTextField T="string"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Value="@item.TotalPrice.ToString("N0")"
+                                              ReadOnly="true"
+                                              Class="field-right total-cell"
+                                              Adornment="Adornment.Start"
+                                              AdornmentText="₹" />
+
+                                <!-- Delete -->
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <MudIconButton Icon="@Icons.Material.Outlined.Delete"
+                                                   Color="Color.Error"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => RemoveItem(item))" />
                                 </div>
                             </div>
                         }
 
-                        <button type="button" class="insert-line-btn mt-2" @onclick="AddItem">
-                            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-1" Style="vertical-align: middle;" /> Insert Line
-                        </button>
-                    </div>
+                        <!-- Insert Line -->
+                        <MudButton FullWidth="true"
+                                   Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   Color="Color.Primary"
+                                   Class="insert-btn mt-2"
+                                   OnClick="AddItem"
+                                   ButtonType="ButtonType.Button">
+                            Insert Line
+                        </MudButton>
+                    </MudPaper>
 
-                    <!-- 3. OPERATIONAL LOGISTICS -->
-                    <div class="premium-card">
-                        <div class="section-header">Operational Logistics</div>
-                        <MudGrid>
+                    <!-- CARD 3 · OPERATIONAL LOGISTICS -->
+                    <MudPaper Class="ta-card" Elevation="0">
+                        <div class="card-label">Operational Logistics</div>
+                        <MudGrid Spacing="2">
                             <MudItem xs="12" md="6">
-                                <div style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">Bhada</div>
-                                <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" Value="@_model.FreightCharge" ValueChanged="@((decimal val) => { _model.FreightCharge = val; CalculateTotals(); })" AdornmentIcon="@Icons.Material.Filled.LocalShipping" AdornmentColor="Color.Primary" />
+                                <MudNumericField T="decimal"
+                                                 Label="Bhada (₹)"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense"
+                                                 HideSpinButtons="true"
+                                                 Value="@_model.FreightCharge"
+                                                 ValueChanged="@((decimal v) => { _model.FreightCharge = v; CalculateTotals(); })" />
                             </MudItem>
                             <MudItem xs="12" md="6">
-                                <div style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">GSTIN / Remarks</div>
-                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.Remarks" AdornmentIcon="@Icons.Material.Filled.Notes" />
+                                <MudTextField Label="GSTIN / Remarks"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              @bind-Value="_model.Remarks"
+                                              Placeholder="Enter GSTIN or remarks (optional)" />
                             </MudItem>
                         </MudGrid>
-                    </div>
+                    </MudPaper>
 
-                    <!-- 4. ACTION BUTTONS -->
-                    <div class="d-flex gap-3 mt-4">
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Class="btn-commit" StartIcon="@Icons.Material.Filled.CloudUpload" Disabled="@_isSaving">
-                            @(_isSaving ? "Processing..." : "Commit")
+                    <!-- ACTION BUTTONS -->
+                    <div class="d-flex gap-3 align-items-center mt-2">
+                        <MudButton ButtonType="ButtonType.Submit"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Check"
+                                   Size="Size.Large"
+                                   Class="btn-commit"
+                                   Disabled="@_isSaving">
+                            @(_isSaving ? "Processing..." : "COMMIT")
                         </MudButton>
-                        <MudButton Variant="Variant.Outlined" Class="btn-archive" StartIcon="@Icons.Material.Filled.FolderOpen" OnClick="SaveAsDraftAsync" Disabled="@_isSaving">Archive</MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.Folder"
+                                   Size="Size.Large"
+                                   Class="btn-archive"
+                                   OnClick="SaveAsDraftAsync"
+                                   Disabled="@_isSaving">
+                            ARCHIVE
+                        </MudButton>
                     </div>
 
                 </MudItem>
 
-                <!-- RIGHT COLUMN: Audit & Collection -->
+                <!-- ══════════════════ RIGHT COLUMN ══════════════════ -->
                 <MudItem xs="12" md="4">
-                    
-                    <!-- 5. AUDIT SUMMARY -->
-                    <div class="premium-card">
-                        <div class="section-header">Audit Summary</div>
-                        
+
+                    <!-- CARD · AUDIT SUMMARY -->
+                    <MudPaper Class="ta-card" Elevation="0">
+                        <div class="card-label">Audit Summary</div>
+
                         <div class="summary-row">
                             <span>Aggregate Base</span>
-                            <span style="font-weight: 600;">₹ @_model.Subtotal.ToString("N0")</span>
+                            <span class="summary-val">₹ @_model.Subtotal.ToString("N0")</span>
                         </div>
                         <div class="summary-row">
                             <span>Logistics (Bhada)</span>
-                            <span style="font-weight: 600;">₹ @_model.FreightCharge.ToString("N0")</span>
+                            <span class="summary-val">₹ @_model.FreightCharge.ToString("N0")</span>
                         </div>
                         <div class="summary-row">
                             <span>Labour + Rounding</span>
-                            <span style="font-weight: 600;">₹ @((_model.LoadingCharge + _model.RoundingAmount).ToString("N0"))</span>
+                            <span class="summary-val">₹ @((_model.LoadingCharge + _model.RoundingAmount).ToString("N0"))</span>
                         </div>
-
-                        <!-- Add GST display here if GST is toggled -->
                         @if (_isGstApplied)
                         {
-                            <div class="summary-row" style="color: var(--mud-palette-primary);">
+                            <div class="summary-row gst-row">
                                 <span>CGST (9%) + SGST (9%)</span>
-                                <span style="font-weight: 600;">₹ @((_model.CgstAmount + _model.SgstAmount).ToString("N0"))</span>
+                                <span class="summary-val">₹ @((_model.CgstAmount + _model.SgstAmount).ToString("N0"))</span>
                             </div>
                         }
-                        
-                        <div class="summary-row-bold">
-                            <div>
-                                <div style="font-size: 0.65rem; color: var(--mud-palette-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;">Final Valuation</div>
-                                <div class="d-flex align-items-center gap-1">
-                                    <span>₹ @_model.TotalAmount.ToString("N0")</span>
-                                </div>
-                            </div>
-                            <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Dark" />
-                        </div>
-                    </div>
 
-                    <!-- 6. COLLECTION BREAKDOWN -->
-                    <div class="premium-card">
-                        <div class="section-header">Collection Breakdown</div>
-                        
-                        <!-- Cash Block -->
-                        <div class="collection-box">
-                            <div class="collection-icon">
+                        <MudDivider Class="my-2" />
+
+                        <div class="final-val-row">
+                            <div>
+                                <div class="final-label">FINAL VALUATION</div>
+                                <div class="final-amount">₹ @_model.TotalAmount.ToString("N0")</div>
+                            </div>
+                            <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Default" />
+                        </div>
+                    </MudPaper>
+
+                    <!-- CARD · COLLECTION BREAKDOWN -->
+                    <MudPaper Class="ta-card" Elevation="0">
+                        <div class="card-label">Collection Breakdown</div>
+
+                        <!-- Cash -->
+                        <div class="coll-box">
+                            <div class="coll-icon coll-icon-cash">
                                 <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" />
                             </div>
-                            <div class="flex-grow-1">
-                                <div style="font-size: 0.7rem; font-weight: 700; color: var(--mud-palette-text-secondary);">CASH PAYMENT (नकद)</div>
-                                <input type="number" class="collection-input" @bind="_cashPayment" @bind:event="oninput" @onkeyup="OnPaymentInputChanged" placeholder="0" />
+                            <div class="coll-body">
+                                <div class="coll-label">CASH PAYMENT (नकद)</div>
+                                <MudNumericField T="decimal"
+                                                 Variant="Variant.Text"
+                                                 Margin="Margin.None"
+                                                 HideSpinButtons="true"
+                                                 Value="@_cashPayment"
+                                                 ValueChanged="@((decimal v) => { _cashPayment = v; UpdateModelPaymentInfo(); })"
+                                                 Class="coll-input"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentText="₹" />
                             </div>
                         </div>
 
-                        <!-- A/C Block -->
-                        <div class="collection-box">
-                            <div class="collection-icon" style="background-color: var(--mud-palette-surface); border: 1px solid var(--mud-palette-lines-default); color: var(--mud-palette-text-secondary);">
+                        <!-- A/C -->
+                        <div class="coll-box">
+                            <div class="coll-icon coll-icon-ac">
                                 <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" />
                             </div>
-                            <div class="flex-grow-1">
-                                <div style="font-size: 0.7rem; font-weight: 700; color: var(--mud-palette-text-secondary);">A/C PAYMENT (बैंक)</div>
-                                <input type="number" class="collection-input" @bind="_acPayment" @bind:event="oninput" @onkeyup="OnPaymentInputChanged" placeholder="0" />
+                            <div class="coll-body">
+                                <div class="coll-label">A/C PAYMENT (उधार)</div>
+                                <MudNumericField T="decimal"
+                                                 Variant="Variant.Text"
+                                                 Margin="Margin.None"
+                                                 HideSpinButtons="true"
+                                                 Value="@_acPayment"
+                                                 ValueChanged="@((decimal v) => { _acPayment = v; UpdateModelPaymentInfo(); })"
+                                                 Class="coll-input"
+                                                 Adornment="Adornment.Start"
+                                                 AdornmentText="₹" />
                             </div>
                         </div>
 
-                        <div class="d-flex gap-2 mt-3 mb-4">
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="SetFullCash" Style="font-weight: 600;">FULL CASH</MudButton>
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" OnClick="SetFullAC" Style="font-weight: 600;">FULL A/C</MudButton>
+                        <!-- Quick-fill + Dues -->
+                        <div class="d-flex align-items-center gap-1 mt-2 mb-3">
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                       OnClick="SetFullCash" Style="font-weight:700; padding:2px 8px;">
+                                FULL CASH
+                            </MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                       OnClick="SetFullAC" Style="font-weight:700; padding:2px 8px;">
+                                FULL A/C
+                            </MudButton>
                             <MudSpacer />
-                            <div class="total-dues-chip">
+                            <MudChip T="string" Color="Color.Error" Size="Size.Small" Class="dues-chip">
                                 TOTAL DUES: ₹ @_model.DueAmount.ToString("N0")
+                            </MudChip>
+                        </div>
+
+                        <!-- UPI QR -->
+                        <div class="upi-box">
+                            <div class="upi-label">Digital Settlement (UPI)</div>
+                            <img src="@GetQrCodeUrl()" alt="UPI QR Code" class="upi-qr" />
+                            <div class="upi-id">risham123sharma@ybl</div>
+                            <div class="upi-verified">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                         Color="Color.Success"
+                                         Style="font-size:14px;" />
+                                Verified: Rishabh Kumar Sharma
                             </div>
                         </div>
-                        
-                        <!-- 7. DIGITAL SETTLEMENT -->
-                        <div class="qr-container">
-                            <div style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-primary); margin-bottom: 0.5rem; text-transform: uppercase;">Digital Settlement (UPI)</div>
-                            
-                            <img src="@GetQrCodeUrl()" alt="UPI QR Code" class="qr-code" />
-                            
-                            <div style="font-weight: 700; font-size: 0.85rem; color: var(--mud-palette-text-primary); margin-top: 0.5rem;">risham123sharma@ybl</div>
-                            <div style="font-size: 0.75rem; color: var(--mud-palette-text-secondary);">Verified: Rishabh Kumar Sharma</div>
-                        </div>
 
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Visibility" Class="mt-3 w-100" Style="font-weight: 700;">INSPECT INVOICE</MudButton>
-                    </div>
+                        <MudButton FullWidth="true"
+                                   Variant="Variant.Text"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Visibility"
+                                   Class="mt-2"
+                                   Style="font-weight:700; letter-spacing:.05em;">
+                            INSPECT INVOICE
+                        </MudButton>
+                    </MudPaper>
 
-                    <!-- 8. WAREHOUSE PULSE -->
+                    <!-- Warehouse Pulse (conditional) -->
                     @if (_model.Items.Any() && _model.Items.Last().SelectedVariant != null)
                     {
-                        var lastItem = _model.Items.Last();
-                        <div class="warehouse-pulse">
-                            <div class="pulse-header">
-                                <span style="text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; font-size: 0.7rem;">Warehouse Pulse</span>
+                        var last = _model.Items.Last();
+                        <MudPaper Class="ta-card" Elevation="0">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="card-label mb-0" style="font-size:.65rem;">Warehouse Pulse</div>
                                 <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" Color="Color.Primary" />
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span style="font-weight: 700; font-size: 0.85rem; color: #0f172a;">@lastItem.VariantName</span>
-                                <span style="font-weight: 700; font-size: 0.85rem; color: #3b82f6;">N/A</span>
+                                <MudText Typo="Typo.body2" Style="font-weight:700;">@last.VariantName</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Primary">N/A</MudText>
                             </div>
-                            <MudProgressLinear Color="Color.Primary" Value="100" Class="my-2" />
-                        </div>
+                            <MudProgressLinear Color="Color.Primary" Value="100" Rounded="true" Size="Size.Small" />
+                        </MudPaper>
                     }
 
                 </MudItem>
             </MudGrid>
-            
-            <!-- 9. PENDING DRAFTS (Mock UI placeholder) -->
-            <div class="premium-card mt-5" style="background-color: var(--mud-palette-background-grey);">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <!-- ── PENDING DRAFTS ──────────────────────────────── -->
+            <MudPaper Class="ta-card mt-5 pending-card" Elevation="0">
+                <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <div style="font-weight: 800; font-size: 1.1rem; color: var(--mud-palette-text-primary);">PENDING DRAFTS</div>
-                        <div style="font-size: 0.8rem; color: var(--mud-palette-text-secondary);">Unfinished fiscal audits in your queue.</div>
+                        <div class="pending-title">PENDING DRAFTS</div>
+                        <div class="pending-sub">Unfinished fiscal audits in your queue.</div>
                     </div>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Sync" Style="font-weight: 700;">SYNCHRONIZE QUEUE</MudButton>
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Sync"
+                               Style="font-weight:700; letter-spacing:.04em;">
+                        SYNCHRONIZE QUEUE
+                    </MudButton>
                 </div>
-                
-                <div style="font-size: 0.7rem; font-weight: 700; color: var(--mud-palette-text-secondary); text-transform: uppercase; display: grid; grid-template-columns: 1.5fr 3fr 1fr 1fr 1fr; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px dashed var(--mud-palette-lines-default);">
-                    <div>Draft ID</div>
-                    <div>Shop / Entity</div>
-                    <div>Date</div>
-                    <div>Total (₹)</div>
-                    <div class="text-right">Actions</div>
+
+                <!-- Table Head -->
+                <div class="drafts-grid drafts-head">
+                    <span>Draft ID</span>
+                    <span>Shop / Entity</span>
+                    <span>Date</span>
+                    <span>Total (₹)</span>
+                    <span class="text-end">Actions</span>
                 </div>
-                
+
                 @if (!_drafts.Any())
                 {
-                    <div class="text-center p-3" style="color: var(--mud-palette-text-secondary); font-size: 0.85rem;">
-                        No pending drafts.
+                    <div class="drafts-empty">
+                        <MudIcon Icon="@Icons.Material.Filled.Description" Style="font-size:2.5rem; opacity:.4;" />
+                        <div style="font-weight:700; font-size:.9rem; margin-top:.5rem;">No pending drafts.</div>
+                        <div style="font-size:.8rem; opacity:.6;">Unfinished fiscal audits in your queue.</div>
                     </div>
                 }
                 else
                 {
                     @foreach (var draft in _drafts)
                     {
-                        <div style="display: grid; grid-template-columns: 1.5fr 3fr 1fr 1fr 1fr; align-items: center; padding: 0.75rem 0; font-size: 0.9rem; font-weight: 600;">
-                            <div style="color: var(--mud-palette-primary);">@draft.InvoiceNumber</div>
-                            <div style="color: var(--mud-palette-text-primary);">@draft.CustomerName</div>
-                            <div style="color: var(--mud-palette-text-secondary);">@draft.InvoiceDate.ToString("dd MMM yyyy")</div>
-                            <div style="color: var(--mud-palette-success);">₹ @draft.TotalAmount.ToString("N0")</div>
-                            <div class="text-right d-flex gap-2 justify-content-end">
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined" Title="Load Draft" OnClick="@(() => LoadDraftAsync(draft.Id))" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined" Title="Discard" />
+                        <div class="drafts-grid drafts-row">
+                            <span class="draft-id">@draft.InvoiceNumber</span>
+                            <span>@draft.CustomerName</span>
+                            <span style="color:var(--mud-palette-text-secondary);">@draft.InvoiceDate.ToString("dd MMM yyyy")</span>
+                            <span style="color:var(--mud-palette-success);">₹ @draft.TotalAmount.ToString("N0")</span>
+                            <div class="d-flex gap-1 justify-content-end">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Size="Size.Small"
+                                               Color="Color.Primary"
+                                               Variant="Variant.Outlined"
+                                               OnClick="@(() => LoadDraftAsync(draft.Id))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               Variant="Variant.Outlined" />
                             </div>
                         </div>
                     }
                 }
-            </div>
+            </MudPaper>
 
         </EditForm>
     }
 </div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "draftId")]
+    public Guid? DraftId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "type")]
+    public string? Type { get; set; }
+
     private CreateInvoiceModel _model = new();
     private DateTime? _invoiceDate = DateTime.Today;
     private List<CustomerListDto> _customers = new();
@@ -349,8 +522,6 @@
     private bool _isGstApplied = false;
     private string _khudraName = string.Empty;
     private Guid? _editingDraftId = null;
-
-    // Custom properties for the new UI's Collection block
     private decimal _cashPayment = 0;
     private decimal _acPayment = 0;
 
@@ -361,280 +532,145 @@
         {
             _customers = await CustomerService.GetCustomersAsync();
             _products = await ProductService.GetProductsAsync();
-            
-            var allInvoices = await SalesService.GetInvoicesAsync();
-            _drafts = allInvoices.Where(i => i.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft).ToList();
-            
-            // Add initial empty line
+
+            var all = await SalesService.GetInvoicesAsync();
+            _drafts = all.Where(i => i.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft).ToList();
+
             if (!_model.Items.Any()) AddItem();
-        }
-        finally
-        {
-            _isLoadingData = false;
-        }
-    }
 
-    private void OnCustomerChanged(Guid customerId)
-    {
-        _model.CustomerId = customerId;
-        _selectedCustomer = _customers.FirstOrDefault(c => c.Id == customerId);
-        if (_selectedCustomer != null)
-        {
-            _model.FreightCharge = _selectedCustomer.DefaultFreightRate;
-            CalculateTotals();
-        }
-    }
-
-    private void AddItem()
-    {
-        _model.Items.Add(new CreateInvoiceItemModel());
-    }
-
-    private void RemoveItem(CreateInvoiceItemModel item)
-    {
-        _model.Items.Remove(item);
-        CalculateTotals();
-    }
-
-    private async Task OnProductChanged(CreateInvoiceItemModel item, Guid productId)
-    {
-        item.SelectedProductId = productId;
-        item.VariantId = Guid.Empty;
-        item.SelectedVariant = null;
-        item.SelectedProductVariants = null;
-        
-        if (productId != Guid.Empty)
-        {
-            var productDetails = await ProductService.GetProductByIdAsync(productId);
-            if (productDetails != null)
+            if (DraftId.HasValue && DraftId.Value != Guid.Empty)
+                await LoadDraftAsync(DraftId.Value);
+            else if (Type == "retail")
             {
-                item.SelectedProductVariants = productDetails.Variants;
-                item.RateOn = productDetails.SellingUnit;
+                var cash = _customers.FirstOrDefault(c =>
+                    c.FirstName.Contains("Cash", StringComparison.OrdinalIgnoreCase) ||
+                    c.CompanyName?.Contains("CASH", StringComparison.OrdinalIgnoreCase) == true ||
+                    c.CompanyName?.Contains("KHUDRA", StringComparison.OrdinalIgnoreCase) == true);
+                if (cash != null) OnCustomerChanged(cash.Id);
             }
         }
+        finally { _isLoadingData = false; }
     }
 
-    private void OnVariantChanged(CreateInvoiceItemModel item, Guid variantId)
+    private void OnCustomerChanged(Guid id)
     {
-        item.VariantId = variantId;
-        if (item.SelectedProductVariants != null)
+        _model.CustomerId = id;
+        _selectedCustomer = _customers.FirstOrDefault(c => c.Id == id);
+        if (_selectedCustomer != null) { _model.FreightCharge = _selectedCustomer.DefaultFreightRate; CalculateTotals(); }
+    }
+
+    private void AddItem() => _model.Items.Add(new CreateInvoiceItemModel());
+    private void RemoveItem(CreateInvoiceItemModel item) { _model.Items.Remove(item); CalculateTotals(); }
+
+    private async Task OnProductChanged(CreateInvoiceItemModel item, Guid pid)
+    {
+        item.SelectedProductId = pid; item.VariantId = Guid.Empty; item.SelectedVariant = null; item.SelectedProductVariants = null;
+        if (pid != Guid.Empty)
         {
-            var variant = item.SelectedProductVariants.FirstOrDefault(v => v.Id == variantId);
-            if (variant != null)
-            {
-                item.SelectedVariant = variant;
-                item.VariantName = $"{variant.Size} {variant.Thickness}";
-                // Calculate selling price from purchase rate + margin
-                item.Rate = variant.LastPurchaseRate * (1 + (variant.DefaultMargin / 100m));
-                CalculateItemTotal(item);
-            }
+            var p = await ProductService.GetProductByIdAsync(pid);
+            if (p != null) { item.SelectedProductVariants = p.Variants; item.RateOn = p.SellingUnit; }
         }
     }
 
-    private void OnWeightChanged(CreateInvoiceItemModel item, decimal weight)
+    private void OnVariantChanged(CreateInvoiceItemModel item, Guid vid)
     {
-        item.WeightKg = weight;
-        CalculateItemTotal(item);
+        item.VariantId = vid;
+        var v = item.SelectedProductVariants?.FirstOrDefault(x => x.Id == vid);
+        if (v != null) { item.SelectedVariant = v; item.VariantName = $"{v.Size} {v.Thickness}"; item.Rate = v.LastPurchaseRate * (1 + v.DefaultMargin / 100m); CalculateItemTotal(item); }
     }
 
-    private void OnQtyChanged(CreateInvoiceItemModel item, int qty)
-    {
-        item.QtyPcs = qty;
-        CalculateItemTotal(item);
-    }
-
-    private void OnRateChanged(CreateInvoiceItemModel item, decimal rate)
-    {
-        item.Rate = rate;
-        CalculateItemTotal(item);
-    }
+    private void OnWeightChanged(CreateInvoiceItemModel item, decimal w) { item.WeightKg = w; CalculateItemTotal(item); }
+    private void OnQtyChanged(CreateInvoiceItemModel item, int q) { item.QtyPcs = q; CalculateItemTotal(item); }
+    private void OnRateChanged(CreateInvoiceItemModel item, decimal r) { item.Rate = r; CalculateItemTotal(item); }
 
     private void CalculateItemTotal(CreateInvoiceItemModel item)
     {
-        if (item.RateOn == VikashERP.SharedKernel.Enums.RateOn.Pcs)
-        {
-            item.TotalPrice = item.QtyPcs * item.Rate;
-        }
-        else
-        {
-            item.TotalPrice = item.WeightKg * item.Rate;
-        }
+        item.TotalPrice = item.RateOn == VikashERP.SharedKernel.Enums.RateOn.Pcs
+            ? item.QtyPcs * item.Rate
+            : item.WeightKg * item.Rate;
         CalculateTotals();
     }
 
     private void CalculateTotals()
     {
         _model.Subtotal = _model.Items.Sum(i => i.TotalPrice);
-        
-        // Auto-calculate Labour Charge: Rs 25 per Quintal (100 Kg)
-        decimal totalWeightKg = _model.Items.Sum(i => i.WeightKg);
-        _model.LoadingCharge = Math.Round((totalWeightKg / 100m) * 25m, 2);
-        
-        var taxableValue = _model.Subtotal + _model.FreightCharge + _model.LoadingCharge;
-        
-        if (_isGstApplied)
-        {
-            _model.CgstAmount = Math.Round(taxableValue * 0.09m, 2);
-            _model.SgstAmount = Math.Round(taxableValue * 0.09m, 2);
-        }
-        else
-        {
-            _model.CgstAmount = 0;
-            _model.SgstAmount = 0;
-        }
-        
-        var totalBeforeRounding = taxableValue + _model.CgstAmount + _model.SgstAmount;
-        _model.TotalAmount = Math.Round(totalBeforeRounding, 0); // Nearest Rupee
-        _model.RoundingAmount = Math.Round(_model.TotalAmount - totalBeforeRounding, 2);
-        
+        decimal totalKg = _model.Items.Sum(i => i.WeightKg);
+        _model.LoadingCharge = Math.Round(totalKg / 100m * 25m, 2);
+        var taxable = _model.Subtotal + _model.FreightCharge + _model.LoadingCharge;
+        if (_isGstApplied) { _model.CgstAmount = Math.Round(taxable * 0.09m, 2); _model.SgstAmount = Math.Round(taxable * 0.09m, 2); }
+        else { _model.CgstAmount = 0; _model.SgstAmount = 0; }
+        var pre = taxable + _model.CgstAmount + _model.SgstAmount;
+        _model.TotalAmount = Math.Round(pre, 0);
+        _model.RoundingAmount = Math.Round(_model.TotalAmount - pre, 2);
         UpdateModelPaymentInfo();
     }
 
-    private void OnGstToggled(bool value)
-    {
-        _isGstApplied = value;
-        CalculateTotals();
-    }
+    private void OnGstToggled(bool v) { _isGstApplied = v; CalculateTotals(); }
 
-    private void OnPaymentInputChanged(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
-    {
-        // When user types in either box, recalculate the DueAmount
-        UpdateModelPaymentInfo();
-    }
-
-    private void SetFullCash()
-    {
-        _cashPayment = _model.TotalAmount;
-        _acPayment = 0;
-        UpdateModelPaymentInfo();
-    }
-
-    private void SetFullAC()
-    {
-        _cashPayment = 0;
-        _acPayment = _model.TotalAmount;
-        UpdateModelPaymentInfo();
-    }
+    private void SetFullCash() { _cashPayment = _model.TotalAmount; _acPayment = 0; UpdateModelPaymentInfo(); }
+    private void SetFullAC() { _cashPayment = 0; _acPayment = _model.TotalAmount; UpdateModelPaymentInfo(); }
 
     private void UpdateModelPaymentInfo()
     {
-        var totalPaid = _cashPayment + _acPayment;
-        if (totalPaid > _model.TotalAmount)
-        {
-            // Optional: You could show a warning here if they overpay, 
-            // but for now we just let DueAmount go negative or cap it.
-            _model.DueAmount = 0;
-        }
-        else
-        {
-            _model.DueAmount = _model.TotalAmount - totalPaid;
-        }
-
-        _model.PaidAmount = totalPaid;
-        
+        var paid = _cashPayment + _acPayment;
+        _model.DueAmount = paid > _model.TotalAmount ? 0 : _model.TotalAmount - paid;
+        _model.PaidAmount = paid;
         if (_cashPayment > 0 && _acPayment == 0) _model.PaymentMode = "Cash";
         else if (_acPayment > 0 && _cashPayment == 0) _model.PaymentMode = "A/C";
         else if (_cashPayment > 0 && _acPayment > 0) _model.PaymentMode = "Partial";
         else _model.PaymentMode = "Udhaar";
     }
 
-    private async Task SaveInvoiceAsync()
-    {
-        await ProcessSaveAsync(VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Approved);
-    }
-
-    private async Task SaveAsDraftAsync()
-    {
-        await ProcessSaveAsync(VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft);
-    }
+    private async Task SaveInvoiceAsync() => await ProcessSaveAsync(VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Approved);
+    private async Task SaveAsDraftAsync() => await ProcessSaveAsync(VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft);
 
     private async Task ProcessSaveAsync(VikashERP.SharedKernel.Enums.SalesInvoiceStatus status)
     {
-        if (_model.CustomerId == Guid.Empty)
-        {
-            Snackbar.Add("Please select an Entity / Shop.", MudBlazor.Severity.Warning);
-            return;
-        }
-
-        if (!_model.Items.Any() || _model.Items.All(i => i.SelectedProductId == Guid.Empty))
-        {
-            Snackbar.Add("Trade ledger cannot be empty.", MudBlazor.Severity.Warning);
-            return;
-        }
+        if (_model.CustomerId == Guid.Empty) { Snackbar.Add("Please select an Entity / Shop.", MudBlazor.Severity.Warning); return; }
+        if (_invoiceDate.HasValue && _invoiceDate.Value.Date < DateTime.Today) { Snackbar.Add("Back-dated invoices are not allowed.", MudBlazor.Severity.Warning); return; }
+        if (!_model.Items.Any() || _model.Items.All(i => i.SelectedProductId == Guid.Empty)) { Snackbar.Add("Trade ledger cannot be empty.", MudBlazor.Severity.Warning); return; }
 
         _isSaving = true;
         try
         {
-            // Handle Khudra Customer on-the-fly creation
-            if (_selectedCustomer != null && !string.IsNullOrWhiteSpace(_khudraName) && 
-                (_selectedCustomer.FirstName.Contains("Cash", StringComparison.OrdinalIgnoreCase) || 
+            bool isKhudra = _selectedCustomer != null && !string.IsNullOrWhiteSpace(_khudraName) &&
+                (_selectedCustomer.FirstName.Contains("Cash", StringComparison.OrdinalIgnoreCase) ||
                  _selectedCustomer.CompanyName?.Contains("CASH", StringComparison.OrdinalIgnoreCase) == true ||
-                 _selectedCustomer.CompanyName?.Contains("KHUDRA", StringComparison.OrdinalIgnoreCase) == true))
+                 _selectedCustomer.CompanyName?.Contains("KHUDRA", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (isKhudra)
             {
-                var newCustomer = await CustomerService.CreateCustomerAsync(new CreateCustomerDto
-                {
-                    FirstName = _khudraName.Trim(),
-                    LastName = " (Retail)",
-                    Phone = "0000000000",
-                    DefaultPaymentMode = "Cash"
-                });
-                
-                if (newCustomer != null)
-                {
-                    _model.CustomerId = newCustomer.Id;
-                    _khudraName = string.Empty; // Reset to avoid double creation
-                }
+                var nc = await CustomerService.CreateCustomerAsync(new CreateCustomerDto { FirstName = _khudraName.Trim(), LastName = " (Retail)", Phone = "0000000000", DefaultPaymentMode = "Cash" });
+                if (nc != null) { _model.CustomerId = nc.Id; _khudraName = string.Empty; }
             }
 
             _model.InvoiceDate = _invoiceDate ?? DateTime.Today;
             _model.CashAmount = _cashPayment;
             _model.BankAmount = _acPayment;
-            
-            Guid invoiceId;
-            if (_editingDraftId.HasValue)
-            {
-                invoiceId = await SalesService.UpdateInvoiceAsync(_editingDraftId.Value, _model);
-            }
-            else
-            {
-                invoiceId = await SalesService.CreateInvoiceAsync(_model);
-            }
-            
+
+            Guid invoiceId = _editingDraftId.HasValue
+                ? await SalesService.UpdateInvoiceAsync(_editingDraftId.Value, _model)
+                : await SalesService.CreateInvoiceAsync(_model);
+
             if (status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Approved)
             {
                 await SalesService.ApproveInvoiceAsync(invoiceId);
                 Snackbar.Add("Transaction committed successfully!", MudBlazor.Severity.Success);
             }
-            else
-            {
-                Snackbar.Add("Transaction saved as draft.", MudBlazor.Severity.Info);
-            }
-            
+            else { Snackbar.Add("Transaction saved as draft.", MudBlazor.Severity.Info); }
+
             NavManager.NavigateTo("/sales");
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error: {ex.Message}", MudBlazor.Severity.Error);
-        }
-        finally
-        {
-            _isSaving = false;
-        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", MudBlazor.Severity.Error); }
+        finally { _isSaving = false; }
     }
 
     private string GetQrCodeUrl()
     {
-        // For UPI QR Code, we set the amount to DueAmount if it's > 0, otherwise TotalAmount
-        decimal qrAmount = _model.DueAmount > 0 ? _model.DueAmount : _model.TotalAmount;
-        
-        string upiString = "upi://pay?pa=risham123sharma@ybl&pn=Rishabh%20Kumar%20Sharma&cu=INR";
-        if (qrAmount > 0)
-        {
-            upiString += $"&am={qrAmount}";
-        }
-        
-        // Generate a real QR code using an external API
-        return $"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={Uri.EscapeDataString(upiString)}";
+        decimal amt = _model.DueAmount > 0 ? _model.DueAmount : _model.TotalAmount;
+        string upi = "upi://pay?pa=risham123sharma@ybl&pn=Rishabh%20Kumar%20Sharma&cu=INR";
+        if (amt > 0) upi += $"&am={amt}";
+        return $"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={Uri.EscapeDataString(upi)}";
     }
 
     private async Task LoadDraftAsync(Guid id)
@@ -642,68 +678,40 @@
         _isLoadingData = true;
         try
         {
-            var draft = await SalesService.GetInvoiceByIdAsync(id);
-            if (draft != null)
+            var d = await SalesService.GetInvoiceByIdAsync(id);
+            if (d != null)
             {
                 _editingDraftId = id;
                 _model = new CreateInvoiceModel
                 {
-                    CustomerId = draft.CustomerId,
-                    CustomerName = draft.CustomerName,
-                    Subtotal = draft.Subtotal,
-                    FreightCharge = draft.FreightCharge,
-                    LoadingCharge = draft.LoadingCharge,
-                    CgstAmount = draft.CgstAmount,
-                    SgstAmount = draft.SgstAmount,
-                    IgstAmount = draft.IgstAmount,
-                    RoundingAmount = draft.RoundingAmount,
-                    TotalAmount = draft.TotalAmount,
-                    PaidAmount = draft.PaidAmount,
-                    CashAmount = draft.CashAmount,
-                    BankAmount = draft.BankAmount,
-                    DueAmount = draft.DueAmount,
-                    PaymentMode = draft.PaymentMode,
-                    VehicleNumber = draft.VehicleNumber,
-                    Remarks = draft.Remarks,
-                    Items = new List<CreateInvoiceItemModel>()
+                    CustomerId = d.CustomerId, CustomerName = d.CustomerName, Subtotal = d.Subtotal,
+                    FreightCharge = d.FreightCharge, LoadingCharge = d.LoadingCharge, CgstAmount = d.CgstAmount,
+                    SgstAmount = d.SgstAmount, IgstAmount = d.IgstAmount, RoundingAmount = d.RoundingAmount,
+                    TotalAmount = d.TotalAmount, PaidAmount = d.PaidAmount, CashAmount = d.CashAmount,
+                    BankAmount = d.BankAmount, DueAmount = d.DueAmount, PaymentMode = d.PaymentMode,
+                    VehicleNumber = d.VehicleNumber, Remarks = d.Remarks, Items = new()
                 };
-
-                foreach(var i in draft.Items)
+                foreach (var i in d.Items)
                 {
-                    var pDetails = await ProductService.GetProductByIdAsync(i.ProductId);
+                    var pd = await ProductService.GetProductByIdAsync(i.ProductId);
                     _model.Items.Add(new CreateInvoiceItemModel
                     {
-                        VariantId = i.VariantId,
-                        VariantName = i.VariantName,
-                        QtyPcs = i.QtyPcs,
-                        WeightKg = i.WeightKg,
-                        Rate = i.Rate,
-                        RateOn = Enum.TryParse<VikashERP.SharedKernel.Enums.RateOn>(i.RateOn, out var rateOn) ? rateOn : VikashERP.SharedKernel.Enums.RateOn.Kg,
-                        CgstRate = i.CgstRate,
-                        SgstRate = i.SgstRate,
-                        TotalPrice = i.TotalPrice,
-                        SelectedProductId = i.ProductId,
-                        SelectedProductVariants = pDetails?.Variants,
-                        SelectedVariant = pDetails?.Variants?.FirstOrDefault(v => v.Id == i.VariantId)
+                        VariantId = i.VariantId, VariantName = i.VariantName, QtyPcs = i.QtyPcs,
+                        WeightKg = i.WeightKg, Rate = i.Rate,
+                        RateOn = Enum.TryParse<VikashERP.SharedKernel.Enums.RateOn>(i.RateOn, out var ro) ? ro : VikashERP.SharedKernel.Enums.RateOn.Kg,
+                        CgstRate = i.CgstRate, SgstRate = i.SgstRate, TotalPrice = i.TotalPrice,
+                        SelectedProductId = i.ProductId, SelectedProductVariants = pd?.Variants,
+                        SelectedVariant = pd?.Variants?.FirstOrDefault(v => v.Id == i.VariantId)
                     });
                 }
-                
-                _selectedCustomer = _customers.FirstOrDefault(c => c.Id == draft.CustomerId);
-                _invoiceDate = draft.InvoiceDate;
-                _cashPayment = draft.CashAmount;
-                _acPayment = draft.BankAmount;
-                _isGstApplied = draft.CgstAmount > 0;
-                
-                Snackbar.Add("Draft loaded successfully.", MudBlazor.Severity.Success);
+                _selectedCustomer = _customers.FirstOrDefault(c => c.Id == d.CustomerId);
+                _invoiceDate = d.InvoiceDate;
+                _cashPayment = d.CashAmount; _acPayment = d.BankAmount;
+                _isGstApplied = d.CgstAmount > 0;
+                Snackbar.Add("Draft loaded.", MudBlazor.Severity.Success);
             }
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error loading draft: {ex.Message}", MudBlazor.Severity.Error);
-        }
-        finally
-        {
-            _isLoadingData = false;
-        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", MudBlazor.Severity.Error); }
+        finally { _isLoadingData = false; }
     }
 }

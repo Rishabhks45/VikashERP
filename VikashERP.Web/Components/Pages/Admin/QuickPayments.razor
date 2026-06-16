@@ -1,0 +1,453 @@
+@page "/quick-payments"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@implements IAsyncDisposable
+@using System.Net.Http.Json
+@using VikashERP.Web.Services
+@using VikashERP.Web.Services.Interfaces
+@using VikashERP.Web.Models
+@using VikashERP.Web.Validation
+@inject ICustomerWebService CustomerWebService
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>Customer Quick Payments</PageTitle>
+
+<PageLoader IsVisible="@_loading" Text="Loading payments ledger..." />
+
+<MudStack Class="payments-page" Spacing="4">
+    <!-- Header Hero -->
+    <div class="org-hero">
+        <MudStack Spacing="0" Class="org-hero-copy">
+            <MudText Typo="Typo.h5" HtmlTag="h1">Customer Quick Payments</MudText>
+            <MudText Typo="Typo.body2" Class="dashboard-subtitle org-subtitle">
+                Record and audit dues payments received from customers to maintain accurate ledger balances and credit limits.
+            </MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Filled"
+                   Class="dashboard-action-primary org-save-btn"
+                   StartIcon="@Icons.Material.Filled.AddCard"
+                   OnClick="OpenAddDrawer"
+                   Disabled="@_loading">
+            Record Payment
+        </MudButton>
+    </div>
+
+    @if (!_loading)
+    {
+        <!-- KPI Cards -->
+        <MudGrid Spacing="2" Class="dashboard-kpis">
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-blue">
+                        <MudIcon Icon="@Icons.Material.Filled.Today" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Payments (Today)</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@TodayPayments.ToString("N0")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Today's collection</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-green">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Payments (Monthly)</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@MonthlyPayments.ToString("N0")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-up">This month</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-amber">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Top Payer (This Month)</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong" Style="font-size: 1.1rem; line-height: 1.5;">@TopPayer</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Highest dues cleared</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-purple">
+                        <MudIcon Icon="@Icons.Material.Filled.DonutLarge" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Cash vs Digital Split</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong" Style="font-size: 1.05rem; line-height: 1.6;">@PaymentSplit</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Collection channel</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Main Datagrid Panel -->
+        <MudPaper Elevation="0" Class="org-tab-panel pa-6">
+            <MudGrid Class="mb-4 d-flex align-center">
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_searchQuery"
+                                   Placeholder="Search by customer name or remarks..."
+                                   Adornment="Adornment.Start"
+                                   AdornmentIcon="@Icons.Material.Filled.Search"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Class="search-bar-full"
+                                   Immediate="true" />
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudSelect T="string" @bind-Value="_paymentModeFilter" Label="Payment Mode" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                        <MudSelectItem Value="@("")">All Modes</MudSelectItem>
+                        @foreach (var mode in _paymentModes)
+                        {
+                            <MudSelectItem Value="@mode">@mode</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudDateRangePicker Label="Date Range" @bind-DateRange="_dateRange" AutoClose="true" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
+                </MudItem>
+            </MudGrid>
+
+            <MudDataGrid Items="@FilteredPayments" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Filterable="true" Loading="@_loading" Class="invoice-table">
+                <Columns>
+                    <PropertyColumn Property="x => x.TransactionDate" Title="Date" Format="dd/MM/yyyy">
+                        <CellTemplate>
+                            <div style="font-weight: 500;">@context.Item.TransactionDate.ToKolkataTime().ToString("dd MMM yyyy")</div>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.CustomerName" Title="Customer Name">
+                        <CellTemplate>
+                            <span style="font-weight: 700; color: var(--mud-palette-text-primary);">@context.Item.CustomerName</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Amount" Title="Amount Paid">
+                        <CellTemplate>
+                            <span style="font-weight: 700; color: #10b981;">₹@context.Item.Amount.ToString("N2")</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.PaymentMode" Title="Payment Mode">
+                        <CellTemplate>
+                            <span class="payment-mode-chip @GetPaymentModeClass(context.Item.PaymentMode)">@context.Item.PaymentMode</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Remarks" Title="Remarks" />
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudStack>
+
+<!-- Slide-out Record Payment Drawer -->
+@if (_drawerOpen)
+{
+    <div class="email-slide-overlay @(_drawerClosing ? "fade-out" : "fade-in")" @onclick="CloseDrawer">
+        <div class="email-slide-panel @(_drawerClosing ? "slide-out-right" : "slide-in-right")" @onclick:stopPropagation="true">
+            <div class="email-slide-panel-inner">
+                <div class="et-drawer-header">
+                    <div class="et-drawer-header-main">
+                        <div class="et-drawer-header-icon">
+                            <MudIcon Icon="@Icons.Material.Filled.Payments" />
+                        </div>
+                        <div class="et-drawer-header-copy">
+                            <h2 class="et-drawer-header-title">Record Dues Payment</h2>
+                            <p class="et-drawer-header-sub">
+                                Record a cash or digital deposit to clear the outstanding balance of a customer.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="et-drawer-close" aria-label="Close panel" @onclick="CloseDrawer">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" />
+                    </button>
+                </div>
+
+                <div class="email-slide-panel-main">
+                    <EditForm Model="@_editModel" OnValidSubmit="SavePaymentAsync" Class="email-slide-panel-form" novalidate>
+                        <FluentValidationValidator />
+                        <div class="email-slide-panel-body" tabindex="-1">
+                            <MudStack Spacing="4">
+                                <MudDatePicker @bind-Date="_editModel.PaymentDate" Label="Payment Date *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.PaymentDate)" MaxDate="DateTime.Today" />
+
+                                <MudAutocomplete T="CustomerListDto" @bind-Value="_editModel.SelectedCustomer" Label="Customer *"
+                                                 SearchFunc="SearchCustomers" ToStringFunc="@CustomerToString" CoerceText="true" CoerceValue="true" ResetValueOnEmptyText="true"
+                                                 Variant="Variant.Outlined" Margin="Margin.Dense" PopoverFixed="true" Required="true"
+                                                 For="@(() => _editModel.SelectedCustomer)" />
+                                
+                                @if (_editModel.SelectedCustomer != null)
+                                {
+                                    <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Square="false" Dense="true" Class="rounded-lg">
+                                        Current Dues: <strong>₹@_editModel.SelectedCustomer.CurrentBalance.ToString("N2")</strong>
+                                    </MudAlert>
+                                }
+
+                                <MudNumericField @bind-Value="_editModel.Amount" Label="Amount Received (₹) *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.Amount)" HideSpinButtons="true" />
+
+                                <MudSelect T="string" @bind-Value="_editModel.PaymentMode" Label="Payment Mode *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.PaymentMode)" PopoverFixed="true">
+                                    @foreach (var mode in _paymentModes)
+                                    {
+                                        <MudSelectItem Value="@mode">@mode</MudSelectItem>
+                                    }
+                                </MudSelect>
+
+                                <MudTextField @bind-Value="_editModel.Remarks" Label="Remarks / Descriptions" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" For="@(() => _editModel.Remarks)" />
+                            </MudStack>
+                        </div>
+
+                        <div class="email-slide-panel-footer">
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton Variant="Variant.Text" Disabled="_saving" OnClick="CloseDrawer">Cancel</MudButton>
+                                <MudSpacer />
+                                <MudButton Variant="Variant.Filled"
+                                           Class="dashboard-action-primary save-btn"
+                                           ButtonType="ButtonType.Submit"
+                                           Disabled="_saving">
+                                    @(_saving ? "Recording..." : "Record Payment")
+                                </MudButton>
+                            </MudStack>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<RecentCustomerPaymentDto> _payments = [];
+    private List<CustomerListDto> _customers = [];
+    private string _searchQuery = string.Empty;
+    private string _paymentModeFilter = string.Empty;
+    private DateRange _dateRange = new DateRange(DateTime.Today.AddDays(-30), DateTime.Today);
+    private bool _loading = true;
+    private bool _saving = false;
+
+    private bool _drawerOpen = false;
+    private bool _drawerClosing = false;
+    private bool _bodyScrollLocked = false;
+    private QuickPaymentFormModel _editModel = new();
+
+
+    private string[] _paymentModes = new[] { "Cash", "UPI", "NetBanking" };
+
+    private IEnumerable<RecentCustomerPaymentDto> FilteredPayments
+    {
+        get
+        {
+            var query = _payments.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                query = query.Where(p => 
+                    p.CustomerName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                    (p.Remarks != null && p.Remarks.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_paymentModeFilter))
+            {
+                query = query.Where(p => string.Equals(p.PaymentMode, _paymentModeFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (_dateRange?.Start.HasValue == true)
+            {
+                query = query.Where(p => p.TransactionDate.Date >= _dateRange.Start.Value.Date);
+            }
+
+            if (_dateRange?.End.HasValue == true)
+            {
+                query = query.Where(p => p.TransactionDate.Date <= _dateRange.End.Value.Date);
+            }
+
+            return query;
+        }
+    }
+
+    private decimal TodayPayments => _payments
+        .Where(p => p.TransactionDate.Date == DateTime.Today.Date)
+        .Sum(p => p.Amount);
+
+    private decimal MonthlyPayments => _payments
+        .Where(p => p.TransactionDate.Year == DateTime.Today.Year && p.TransactionDate.Month == DateTime.Today.Month)
+        .Sum(p => p.Amount);
+
+    private string TopPayer => GetTopPayer();
+    private string PaymentSplit => GetPaymentSplit();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            _payments = await CustomerWebService.GetRecentPaymentsAsync();
+            _customers = await CustomerWebService.GetCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"Failed to fetch ledger details: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private Func<CustomerListDto, string> CustomerToString = c => c == null 
+        ? "" 
+        : $"{(c.CompanyName != null ? c.CompanyName + " - " : "")}{c.FirstName} {c.LastName} ({c.AccountNumber})";
+
+    private async Task<IEnumerable<CustomerListDto>> SearchCustomers(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return _customers;
+        return _customers.Where(c => 
+            c.FirstName.Contains(value, StringComparison.OrdinalIgnoreCase) || 
+            c.LastName.Contains(value, StringComparison.OrdinalIgnoreCase) || 
+            (c.CompanyName != null && c.CompanyName.Contains(value, StringComparison.OrdinalIgnoreCase)) ||
+            c.AccountNumber.Contains(value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void OpenAddDrawer()
+    {
+        _editModel = new QuickPaymentFormModel 
+        { 
+            PaymentDate = DateTime.Today,
+            PaymentMode = "Cash"
+        };
+
+        _drawerOpen = true;
+    }
+
+    private async Task CloseDrawer()
+    {
+        if (_drawerClosing)
+            return;
+
+        _drawerClosing = true;
+        StateHasChanged();
+        await Task.Delay(300);
+        _drawerOpen = false;
+        _drawerClosing = false;
+        _editModel = new QuickPaymentFormModel();
+
+    }
+
+    private async Task SavePaymentAsync()
+    {
+        if (_editModel.SelectedCustomer == null)
+        {
+            NotificationService.Warning("Please select a customer.");
+            return;
+        }
+
+        _saving = true;
+        StateHasChanged();
+        try
+        {
+            var request = new CreateCustomerPaymentDto
+            {
+                CustomerId = _editModel.SelectedCustomer.Id,
+                Amount = _editModel.Amount,
+                PaymentMode = _editModel.PaymentMode,
+                Remarks = _editModel.Remarks,
+                PaymentDate = _editModel.PaymentDate ?? DateTime.UtcNow
+            };
+
+            var success = await CustomerWebService.RecordCustomerPaymentAsync(request);
+            if (success)
+            {
+                NotificationService.Success($"Payment of ₹{request.Amount:N2} successfully recorded.");
+                _drawerOpen = false;
+                await LoadDataAsync();
+            }
+            else
+            {
+                NotificationService.Error("Failed to record payment. Please try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"API Connection Error: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetTopPayer()
+    {
+        if (!_payments.Any()) return "N/A";
+        var top = _payments
+            .Where(p => p.TransactionDate.Year == DateTime.Today.Year && p.TransactionDate.Month == DateTime.Today.Month)
+            .GroupBy(p => p.CustomerName)
+            .Select(g => new { Name = g.Key, Total = g.Sum(p => p.Amount) })
+            .OrderByDescending(x => x.Total)
+            .FirstOrDefault();
+        return top != null ? $"{top.Name} (₹{top.Total:N0})" : "N/A";
+    }
+
+    private string GetPaymentSplit()
+    {
+        if (!_payments.Any()) return "Cash: 0% | UPI: 0%";
+        var cash = _payments.Where(p => string.Equals(p.PaymentMode, "Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
+        var upi = _payments.Where(p => string.Equals(p.PaymentMode, "UPI", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
+        var net = _payments.Where(p => string.Equals(p.PaymentMode, "NetBanking", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
+        var total = cash + upi + net;
+        if (total == 0) return "Cash: 0% | UPI: 0%";
+        
+        var cashPct = (cash / total) * 100;
+        var upiPct = (upi / total) * 100;
+        var netPct = (net / total) * 100;
+
+        return $"Cash: {cashPct:0}% | UPI: {upiPct:0}% | Net: {netPct:0}%";
+    }
+
+    private string GetPaymentModeClass(string mode) => mode switch
+    {
+        "Cash" => "mode-cash",
+        "UPI" => "mode-upi",
+        _ => "mode-netbanking"
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var shouldLock = _drawerOpen && !_drawerClosing;
+        if (shouldLock == _bodyScrollLocked)
+            return;
+
+        _bodyScrollLocked = shouldLock;
+        await JSRuntime.InvokeVoidAsync("eval", shouldLock
+            ? "document.documentElement.classList.add('email-panel-open');document.body.classList.add('email-panel-open')"
+            : "document.documentElement.classList.remove('email-panel-open');document.body.classList.remove('email-panel-open')");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_bodyScrollLocked)
+            return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "document.documentElement.classList.remove('email-panel-open');document.body.classList.remove('email-panel-open')");
+        }
+        catch
+        {
+            // Ignored if JS runtime is disconnected during disposal
+        }
+    }
+}

@@ -1,252 +1,423 @@
-/* Premium Redesign for Transaction Audit (Sales Invoice) */
+/* ═══════════════════════════════════════════════════════
+   Transaction Audit — CreateSalesInvoice.razor.css
+   Full premium dark-mode design matching screenshot
+   ═══════════════════════════════════════════════════════ */
 
-.transaction-audit-container {
+/* ── Page wrapper ───────────────────────────────────────── */
+.ta-page {
+    padding: 1.5rem;
+    min-height: 100vh;
     font-family: 'Inter', 'Roboto', sans-serif;
     color: var(--mud-palette-text-primary);
-    background-color: var(--mud-palette-background);
-    min-height: 100vh;
-    padding-bottom: 2rem;
+    background: var(--mud-palette-background);
 }
 
-/* Headers & Typography */
-.section-header {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--mud-palette-text-secondary);
-    margin-bottom: 1rem;
+/* ── Top Header ─────────────────────────────────────────── */
+.ta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
 }
 
-.audit-title {
-    font-size: 1.8rem;
+.ta-title {
+    font-size: 1.7rem;
     font-weight: 800;
     color: var(--mud-palette-text-primary);
-    margin: 0;
+    line-height: 1.2;
 }
 
-.audit-subtitle {
-    font-size: 0.85rem;
+.ta-subtitle {
+    font-size: 0.8rem;
     color: var(--mud-palette-text-secondary);
-    margin-top: 0.25rem;
+    margin-top: 2px;
 }
 
-/* Premium Cards */
-.premium-card {
-    background: var(--mud-palette-surface);
-    border-radius: 12px;
-    border: 1px solid var(--mud-palette-lines-default);
-    box-shadow: var(--mud-elevation-1);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    transition: all 0.2s ease-in-out;
-}
-
-.premium-card:hover {
-    box-shadow: var(--mud-elevation-3);
-}
-
-/* Entity Shop Card specifically */
-.entity-info-box {
-    background-color: var(--mud-palette-background-grey);
-    border-radius: 8px;
-    padding: 1rem;
-    border: 1px solid var(--mud-palette-lines-default);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.entity-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background-color: var(--mud-palette-primary);
-    color: var(--mud-palette-primary-text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1.2rem;
-}
-
-/* Trade Ledger */
-.ledger-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr auto;
-    gap: 1rem;
-    align-items: end;
-    padding-bottom: 1rem;
-    border-bottom: 1px dashed var(--mud-palette-lines-default);
-    margin-bottom: 1rem;
-}
-
-.ledger-header-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr auto;
-    gap: 1rem;
-    padding-bottom: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.ledger-header-item {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--mud-palette-text-secondary);
-    letter-spacing: 0.05em;
-}
-
-.insert-line-btn {
-    border: 1px dashed var(--mud-palette-lines-default);
-    color: var(--mud-palette-primary);
-    background-color: transparent;
-    width: 100%;
-    border-radius: 8px;
-    padding: 0.75rem;
-    font-weight: 600;
-    transition: all 0.2s;
-    cursor: pointer;
-}
-
-.insert-line-btn:hover {
-    border-color: var(--mud-palette-primary);
-    background-color: var(--mud-palette-background-grey);
-}
-
-/* Collection Breakdown */
-.collection-box {
-    border: 1px solid var(--mud-palette-lines-default);
-    border-radius: 8px;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    background-color: var(--mud-palette-surface);
-}
-
-.collection-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    background-color: var(--mud-palette-background-grey);
-    color: var(--mud-palette-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.total-dues-chip {
-    background-color: var(--mud-palette-error-hover);
-    color: var(--mud-palette-error);
-    border-radius: 16px;
-    padding: 0.25rem 1rem;
-    font-weight: 700;
-    font-size: 0.85rem;
-    display: inline-flex;
-    align-items: center;
-}
-
-/* Digital Settlement */
-.qr-container {
-    border: 1px dashed var(--mud-palette-lines-default);
-    background-color: var(--mud-palette-background-grey);
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-align: center;
-    margin-top: 1rem;
-}
-
-.qr-code {
-    width: 150px;
-    height: 150px;
-    margin: 0 auto;
-}
-
-/* Audit Summary Row */
-.summary-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
-    font-size: 0.9rem;
-    color: var(--mud-palette-text-primary);
-}
-
-.summary-row-bold {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--mud-palette-text-primary);
-    border-top: 1px dashed var(--mud-palette-lines-default);
-    margin-top: 0.5rem;
-    padding-top: 1rem;
-}
-
-/* Input Overrides for Sleek Look */
-::deep .mud-input-outlined {
+/* ── Header Buttons ─────────────────────────────────────── */
+.btn-khudra {
+    border: 1.5px solid #f59e0b !important;
+    color: #f59e0b !important;
+    font-weight: 700 !important;
+    font-size: 0.73rem !important;
     border-radius: 8px !important;
+    height: 34px;
+    letter-spacing: .04em;
+    padding: 0 12px !important;
 }
 
-/* Action Buttons */
-.btn-retail {
-    border-color: var(--mud-palette-warning);
-    color: var(--mud-palette-warning);
-    font-weight: 600;
+.btn-newtx {
+    font-weight: 700 !important;
+    font-size: 0.73rem !important;
+    border-radius: 8px !important;
+    height: 34px;
+    letter-spacing: .04em;
+    padding: 0 12px !important;
+}
+
+/* ── Premium Card ───────────────────────────────────────── */
+.ta-card {
+    border-radius: 12px !important;
+    border: 1px solid var(--mud-palette-lines-default) !important;
+    background: var(--mud-palette-surface) !important;
+    padding: 1.25rem 1.25rem !important;
+    margin-bottom: 1.25rem;
+    transition: box-shadow .2s;
+}
+
+.ta-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,.12) !important;
+}
+
+/* ── Card Label (replaces section-header) ───────────────── */
+.card-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--mud-palette-text-secondary);
+    margin-bottom: .9rem;
+}
+
+/* ── Entity chip (customer info) ────────────────────────── */
+.entity-chip {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    background: var(--mud-palette-background-grey);
+    border: 1px solid var(--mud-palette-lines-default);
     border-radius: 8px;
+    padding: .65rem .9rem;
 }
 
-.btn-new-trans {
-    background-color: var(--mud-palette-primary);
-    color: var(--mud-palette-primary-text);
-    font-weight: 600;
-    border-radius: 8px;
+.entity-name {
+    font-weight: 700;
+    font-size: .88rem;
+    color: var(--mud-palette-text-primary);
 }
 
+.entity-meta {
+    font-size: .75rem;
+    color: var(--mud-palette-text-secondary);
+    margin-top: 2px;
+}
+
+/* ── Trade Ledger Grid ──────────────────────────────────── */
+.ledger-grid {
+    display: grid;
+    grid-template-columns: 2.6fr 0.9fr 0.9fr 1.05fr 1fr 40px;
+    gap: .5rem;
+    align-items: center;
+}
+
+.ledger-head {
+    padding-bottom: .45rem;
+    margin-bottom: .35rem;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+    font-size: .65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--mud-palette-text-secondary);
+}
+
+.ledger-row-item {
+    padding: .4rem 0;
+    border-bottom: 1px dashed var(--mud-palette-lines-default);
+    margin-bottom: .25rem;
+}
+
+.ledger-row-item:last-of-type {
+    border-bottom: none;
+}
+
+/* Right-aligned numeric fields */
+.field-right ::deep input {
+    text-align: right !important;
+}
+
+/* Total cell subtle tint */
+.total-cell ::deep .mud-input {
+    background: rgba(99, 102, 241, .06) !important;
+}
+
+/* ── Insert Line Button ──────────────────────────────────── */
+.insert-btn {
+    border: 1px dashed var(--mud-palette-lines-default) !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: .8rem !important;
+    letter-spacing: .04em;
+    color: var(--mud-palette-primary) !important;
+    background: transparent !important;
+    transition: all .2s;
+    height: 38px;
+}
+
+.insert-btn:hover {
+    border-color: var(--mud-palette-primary) !important;
+    background: rgba(99,102,241,.06) !important;
+}
+
+/* ── Action Buttons ─────────────────────────────────────── */
 .btn-commit {
-    background-color: var(--mud-palette-primary);
-    color: var(--mud-palette-primary-text);
-    border-radius: 8px;
-    font-weight: 600;
-    padding: 0.5rem 1.5rem;
+    border-radius: 8px !important;
+    font-weight: 800 !important;
+    font-size: .85rem !important;
+    letter-spacing: .06em;
+    padding: 0 2rem !important;
+    height: 44px;
 }
 
 .btn-archive {
-    border-color: var(--mud-palette-lines-default);
-    color: var(--mud-palette-text-primary);
-    border-radius: 8px;
-    font-weight: 600;
-    padding: 0.5rem 1.5rem;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: .85rem !important;
+    letter-spacing: .06em;
+    padding: 0 1.5rem !important;
+    height: 44px;
+    border: 1.5px solid var(--mud-palette-lines-default) !important;
+    color: var(--mud-palette-text-primary) !important;
 }
 
-/* Warehouse Pulse */
-.warehouse-pulse {
-    border: 1px solid var(--mud-palette-lines-default);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-top: 1rem;
-}
-
-.pulse-header {
+/* ── Audit Summary Rows ─────────────────────────────────── */
+.summary-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
-    font-weight: 600;
+    padding: .35rem 0;
+    font-size: .85rem;
+    color: var(--mud-palette-text-primary);
+}
+
+.summary-val {
+    font-weight: 700;
+    font-size: .85rem;
+}
+
+.gst-row {
+    color: var(--mud-palette-primary);
+}
+
+.final-val-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .5rem 0 .25rem;
+}
+
+.final-label {
+    font-size: .6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
     color: var(--mud-palette-text-secondary);
 }
 
-/* Collection Inputs */
-.collection-input {
-    width: 100%;
-    border: none;
-    outline: none;
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--mud-palette-text-primary);
-    background-color: transparent;
+.final-amount {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--mud-palette-primary);
+    line-height: 1.2;
 }
+
+/* ── Collection Breakdown ───────────────────────────────── */
+.coll-box {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    margin-bottom: .5rem;
+    background: var(--mud-palette-surface);
+}
+
+.coll-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.coll-icon-cash {
+    background: rgba(99, 102, 241, .15);
+    color: var(--mud-palette-primary);
+}
+
+.coll-icon-ac {
+    background: var(--mud-palette-background-grey);
+    border: 1px solid var(--mud-palette-lines-default);
+    color: var(--mud-palette-text-secondary);
+}
+
+.coll-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.coll-label {
+    font-size: .65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--mud-palette-text-secondary);
+    margin-bottom: 2px;
+}
+
+/* Make MudNumericField look like a flat inline input */
+.coll-input ::deep .mud-input-root {
+    padding: 0 !important;
+}
+.coll-input ::deep .mud-input {
+    font-weight: 700;
+    font-size: .95rem;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+.coll-input ::deep .mud-input::before,
+.coll-input ::deep .mud-input::after { border: none !important; }
+.coll-input ::deep .mud-input-adornment { color: var(--mud-palette-primary); font-weight: 700; }
+
+/* ── Dues Chip ──────────────────────────────────────────── */
+.dues-chip {
+    font-size: .7rem !important;
+    font-weight: 800 !important;
+    letter-spacing: .04em;
+    border-radius: 20px !important;
+}
+
+/* ── UPI QR Container ───────────────────────────────────── */
+.upi-box {
+    border: 1px dashed var(--mud-palette-lines-default);
+    border-radius: 10px;
+    background: var(--mud-palette-background-grey);
+    padding: .9rem;
+    text-align: center;
+    margin-top: .5rem;
+}
+
+.upi-label {
+    font-size: .65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--mud-palette-primary);
+    margin-bottom: .5rem;
+}
+
+.upi-qr {
+    width: 110px;
+    height: 110px;
+    margin: 0 auto;
+    display: block;
+    border-radius: 6px;
+}
+
+.upi-id {
+    font-weight: 700;
+    font-size: .82rem;
+    color: var(--mud-palette-text-primary);
+    margin-top: .45rem;
+}
+
+.upi-verified {
+    font-size: .72rem;
+    color: #22c55e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+/* ── Pending Drafts ─────────────────────────────────────── */
+.pending-card {
+    background: var(--mud-palette-background-grey) !important;
+}
+
+.pending-title {
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: var(--mud-palette-text-primary);
+}
+
+.pending-sub {
+    font-size: .78rem;
+    color: var(--mud-palette-text-secondary);
+    margin-top: 2px;
+}
+
+.drafts-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 2.8fr 1fr 1fr 1fr;
+    gap: .5rem;
+    align-items: center;
+}
+
+.drafts-head {
+    font-size: .65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--mud-palette-text-secondary);
+    padding-bottom: .5rem;
+    border-bottom: 1px dashed var(--mud-palette-lines-default);
+    margin-bottom: .5rem;
+}
+
+.drafts-row {
+    padding: .6rem 0;
+    font-size: .85rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.drafts-row:last-child { border-bottom: none; }
+
+.draft-id { color: var(--mud-palette-primary); }
+
+.drafts-empty {
+    text-align: center;
+    padding: 2.5rem 0;
+    color: var(--mud-palette-text-secondary);
+}
+
+/* ── Dark mode overrides ────────────────────────────────── */
+:global(.app-dark-mode) .ta-card {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+:global(.app-dark-mode) .ta-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,.35) !important;
+}
+
+:global(.app-dark-mode) .entity-chip {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+:global(.app-dark-mode) .ledger-head { border-color: #334155; }
+:global(.app-dark-mode) .ledger-row-item { border-color: #334155; }
+:global(.app-dark-mode) .insert-btn { border-color: #475569 !important; color: #818cf8 !important; }
+:global(.app-dark-mode) .insert-btn:hover { border-color: #818cf8 !important; background: rgba(129,140,248,.08) !important; }
+:global(.app-dark-mode) .coll-box { background: #0f172a; border-color: #334155; }
+:global(.app-dark-mode) .coll-icon-cash { background: rgba(129,140,248,.18); color: #818cf8; }
+:global(.app-dark-mode) .coll-icon-ac { background: #1e293b; border-color: #475569; }
+:global(.app-dark-mode) .upi-box { background: #0f172a; border-color: #334155; }
+:global(.app-dark-mode) .upi-qr { filter: invert(.85) hue-rotate(180deg); }
+:global(.app-dark-mode) .pending-card { background: #0f172a !important; border-color: #334155 !important; }
+:global(.app-dark-mode) .drafts-head { border-color: #334155; }
+:global(.app-dark-mode) .drafts-row { border-color: #1e293b; }
+:global(.app-dark-mode) .btn-khudra { border-color: #f59e0b !important; color: #f59e0b !important; }
+:global(.app-dark-mode) .btn-archive { border-color: #334155 !important; color: var(--mud-palette-text-primary) !important; }
+
+/* ── Utility ─────────────────────────────────────────────── */
+.text-end { text-align: right !important; }

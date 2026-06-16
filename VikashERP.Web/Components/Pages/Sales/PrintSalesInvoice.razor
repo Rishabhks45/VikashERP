@@ -64,7 +64,7 @@ else
                 </td>
                 <td class="col-quarter border-bottom" style="vertical-align: top; padding: 5px;">
                     <div class="small-text">Dated</div>
-                    <div class="bold-text">@_invoice.InvoiceDate.ToString("dd-MMM-yy")</div>
+                    <div class="bold-text">@_invoice.InvoiceDate.ToKolkataTime().ToString("dd-MMM-yy")</div>
                 </td>
             </tr>
             <tr>
@@ -94,7 +94,7 @@ else
                 </td>
                 <td class="col-quarter border-bottom" style="vertical-align: top; padding: 5px;">
                     <div class="small-text">Delivery Note Date</div>
-                    <div class="bold-text">@_invoice.InvoiceDate.ToString("dd-MMM-yy")</div>
+                    <div class="bold-text">@_invoice.InvoiceDate.ToKolkataTime().ToString("dd-MMM-yy")</div>
                 </td>
             </tr>
             <tr>

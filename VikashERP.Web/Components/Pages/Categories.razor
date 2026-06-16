@@ -83,7 +83,7 @@
                         </span>
                     </CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="MMM dd, yyyy" />
+                <PropertyColumn Property="x => x.CreatedAt.ToKolkataTime()" Title="Created" Format="MMM dd, yyyy" />
                 <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
                     <CellTemplate>
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" Class="action-btn" OnClick="@(() => OpenEditPopup(context.Item))" />

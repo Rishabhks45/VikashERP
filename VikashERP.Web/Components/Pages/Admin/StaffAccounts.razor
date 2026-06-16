@@ -130,7 +130,7 @@
                     </PropertyColumn>
                     <PropertyColumn Property="x => x.LastLoginAt" Title="Last Login">
                         <CellTemplate>
-                            @(context.Item.LastLoginAt.HasValue ? context.Item.LastLoginAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss") : "")
+                            @(context.Item.LastLoginAt.HasValue ? context.Item.LastLoginAt.Value.ToKolkataTime().ToString("dd/MM/yyyy HH:mm:ss") : "")
                         </CellTemplate>
                     </PropertyColumn>
                     <TemplateColumn Title="Status">

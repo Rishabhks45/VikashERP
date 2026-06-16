@@ -48,7 +48,7 @@ public class SalesCommandHandlers :
             PaymentMode = dto.PaymentMode,
             VehicleNumber = dto.VehicleNumber,
             Remarks = dto.Remarks,
-            InvoiceDate = dto.InvoiceDate.ToUniversalTime(),
+            InvoiceDate = DateTime.SpecifyKind(dto.InvoiceDate.Date, DateTimeKind.Utc),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -101,7 +101,7 @@ public class SalesCommandHandlers :
             PaymentMode = dto.PaymentMode,
             VehicleNumber = dto.VehicleNumber,
             Remarks = dto.Remarks,
-            InvoiceDate = dto.InvoiceDate.ToUniversalTime(),
+            InvoiceDate = DateTime.SpecifyKind(dto.InvoiceDate.Date, DateTimeKind.Utc),
             UpdatedAt = DateTime.UtcNow
         };
 

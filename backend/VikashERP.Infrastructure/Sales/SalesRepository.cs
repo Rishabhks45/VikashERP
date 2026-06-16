@@ -21,6 +21,7 @@ public class SalesRepository : Repository<Invoice>, ISalesRepository
     {
         return await _context.Invoices
             .Include(x => x.Customer)
+            .Include(x => x.Items)
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
     }
@@ -68,10 +69,29 @@ public class SalesRepository : Repository<Invoice>, ISalesRepository
                 Debit = invoice.TotalAmount, // They owe money
                 Credit = 0,
                 RunningBalance = newBalance,
-                Remarks = $"Sales Invoice {invoice.InvoiceNumber} - {invoice.Remarks}"
+                Remarks = $"Sales Invoice {invoice.InvoiceNumber} - {invoice.Remarks}",
+                CreatedAt = DateTime.UtcNow
             };
             _context.CustomerLedgers.Add(ledgerEntry);
             
+            // If the invoice has an upfront payment, credit it to the ledger and balance
+            if (invoice.PaidAmount > 0)
+            {
+                newBalance -= invoice.PaidAmount;
+                var paymentLedgerEntry = new CustomerLedger
+                {
+                    CustomerId = invoice.CustomerId,
+                    TransactionType = "Payment",
+                    ReferenceId = invoice.Id,
+                    Debit = 0,
+                    Credit = invoice.PaidAmount,
+                    RunningBalance = newBalance,
+                    Remarks = $"Payment for Invoice {invoice.InvoiceNumber} [Mode: {invoice.PaymentMode}]",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.CustomerLedgers.Add(paymentLedgerEntry);
+            }
+
             // Also update customer's current balance
             invoice.Customer.CurrentBalance = newBalance;
 

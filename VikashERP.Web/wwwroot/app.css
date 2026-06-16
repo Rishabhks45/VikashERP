@@ -1059,3 +1059,44 @@ h1:focus {
 .app-light-mode .bg-light-subtle {
     background: rgba(0, 0, 0, 0.025) !important;
 }
+
+/* Custom premium input styling for Auth pages */
+.auth-right .mud-input-control {
+    margin-top: 4px;
+}
+
+.auth-right .mud-input.mud-input-outlined {
+    border-radius: 10px !important;
+    background-color: var(--mud-palette-surface) !important;
+    border: 1px solid var(--mud-palette-lines-default) !important;
+    transition: all 0.2s ease;
+}
+
+.auth-right .mud-input.mud-input-outlined.mud-input-error {
+    border-color: var(--mud-palette-error) !important;
+}
+
+.auth-right .mud-input-outlined.mud-input-focused {
+    border-color: var(--org-primary, #6366f1) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.auth-right .mud-input-adornment {
+    color: var(--mud-palette-text-secondary) !important;
+    margin-inline-end: 8px;
+}
+
+.auth-right .mud-input-input-control {
+    font-size: 0.9rem !important;
+    color: var(--mud-palette-text-primary) !important;
+}
+
+/* Custom premium switch and checkbox styling in Auth pages */
+.auth-right .mud-checkbox .mud-icon-button {
+    border-radius: 6px !important;
+}
+
+.auth-right .mud-alert {
+    border-radius: 10px !important;
+}
+

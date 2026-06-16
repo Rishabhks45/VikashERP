@@ -146,8 +146,8 @@
                             </span>
                         </MudTd>
                         <MudTd DataLabel="Last updated" Class="et-td-updated">
-                            <span class="et-updated-date">@context.UpdatedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
-                            <span class="et-updated-time">@context.UpdatedAt.ToLocalTime().ToString("HH:mm")</span>
+                            <span class="et-updated-date">@context.UpdatedAt.ToKolkataTime().ToString("dd MMM yyyy")</span>
+                            <span class="et-updated-time">@context.UpdatedAt.ToKolkataTime().ToString("HH:mm")</span>
                         </MudTd>
                         <MudTd DataLabel="Actions" Class="et-td-actions">
                             <div class="et-action-group">

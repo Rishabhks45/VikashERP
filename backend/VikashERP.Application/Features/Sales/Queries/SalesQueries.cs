@@ -34,7 +34,11 @@ public class SalesQueryHandlers :
             TotalAmount = i.TotalAmount,
             InvoiceDate = i.InvoiceDate,
             Status = i.Status,
-            ItemCount = i.Items?.Count ?? 0
+            ItemCount = i.Items?.Count ?? 0,
+            TotalWeightKg = i.Items?.Sum(item => item.WeightKg) ?? 0,
+            CashAmount = i.CashAmount,
+            BankAmount = i.BankAmount,
+            DueAmount = i.DueAmount
         }).ToList();
     }
 

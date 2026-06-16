@@ -27,7 +27,7 @@
             @if (_lastUpdated.HasValue && !_isEditing)
             {
                 <span class="last-updated">
-                    <span class="pulse-dot"></span> Last saved: @_lastUpdated.Value.ToLocalTime().ToString("MMM dd, yyyy - hh:mm tt")
+                    <span class="pulse-dot"></span> Last saved: @_lastUpdated.Value.ToKolkataTime().ToString("MMM dd, yyyy - hh:mm tt")
                 </span>
             }
             

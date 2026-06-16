@@ -19,7 +19,9 @@
 
 <MudDataGrid Items="@_invoices" Loading="@_isLoading" T="InvoiceListDto">
     <Columns>
-        <PropertyColumn Property="x => x.InvoiceDate" Title="Date" Format="dd MMM yyyy" />
+        <TemplateColumn Title="Date" SortBy="x => x.InvoiceDate">
+            <CellTemplate>@context.Item.InvoiceDate.ToString("dd MMM yyyy")</CellTemplate>
+        </TemplateColumn>
         <PropertyColumn Property="x => x.InvoiceNumber" Title="Invoice No" />
         <PropertyColumn Property="x => x.CustomerName" Title="Customer" />
         <PropertyColumn Property="x => x.TotalAmount" Title="Amount" Format="C2" />

@@ -46,6 +46,8 @@ public class CategoriesController : ControllerBase
             }, cancellationToken);
             
             return Ok(category);
+
+
         }
         catch (InvalidOperationException ex)
         {

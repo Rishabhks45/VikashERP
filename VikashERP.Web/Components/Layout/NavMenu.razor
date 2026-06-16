@@ -1,24 +1,55 @@
 <MudNavMenu Class="app-nav-menu">
 
-    <!-- EXECUTIVE -->
+    <!-- DASHBOARD -->
     <div style="padding: 0 24px; margin-bottom: 8px;">
-        <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">EXECUTIVE</div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">DASHBOARD</div>
     </div>
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.GridView"
                 Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
         Executive Dashboard
     </MudNavLink>
-    <MudNavLink Href="/employee-dashboard" Icon="@Icons.Material.Filled.Badge"
+
+    <div style="height: 16px;"></div>
+
+    <!-- BILLING & COLLECTIONS -->
+    <div style="padding: 0 24px; margin-bottom: 8px;">
+        <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">BILLING & COLLECTIONS</div>
+    </div>
+    <MudNavLink Href="/sales" Icon="@Icons.Material.Filled.ReceiptLong"
                 Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-        Employee Dashboard
+        Sales Invoices
+    </MudNavLink>
+    <MudNavLink Href="/sales/create" Icon="@Icons.Material.Filled.AddCircle"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        New Invoice
+    </MudNavLink>
+    <MudNavLink Href="/quick-payments" Icon="@Icons.Material.Filled.FlashOn"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Quick Payments
+    </MudNavLink>
+    <MudNavLink Href="/audit" Icon="@Icons.Material.Filled.BarChart"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Daily Revenue Audit
+    </MudNavLink>
+    <MudNavLink Href="/expenses" Icon="@Icons.Material.Filled.Payments"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Daily Expenses
     </MudNavLink>
 
     <div style="height: 16px;"></div>
 
-    <!-- CUSTOMER AREA -->
+    <!-- CUSTOMERS -->
     <div style="padding: 0 24px; margin-bottom: 8px;">
-        <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">CUSTOMER AREA</div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">CUSTOMERS</div>
     </div>
+    <MudNavLink Href="/profiles" Icon="@Icons.Material.Filled.Groups"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Customer Profiles
+    </MudNavLink>
+    <MudNavLink Href="/ledger" Icon="@Icons.Material.Filled.MenuBook"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Customer Ledger
+    </MudNavLink>
     <MudNavLink Href="/customer-dashboard" Icon="@Icons.Material.Filled.DashboardCustomize"
                 Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
         Customer Portal
@@ -26,92 +57,56 @@
 
     <div style="height: 16px;"></div>
 
-    <!-- TRADE OPERATIONS -->
+    <!-- INVENTORY & STOCK -->
     <div style="padding: 0 24px; margin-bottom: 8px;">
-        <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">TRADE OPERATIONS</div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">INVENTORY & STOCK</div>
     </div>
-    <MudNavLink Href="/invoice" Icon="@Icons.Material.Filled.Description"
+    <MudNavLink Href="/godown-dashboard" Icon="@Icons.Material.Filled.Warehouse"
                 Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-        Generate Invoice
+        Godown Live Stock
     </MudNavLink>
-    <MudNavLink Href="/audit" Icon="@Icons.Material.Filled.BarChart"
+    <MudNavLink Href="/purchases" Icon="@Icons.Material.Filled.ShoppingCart"
                 Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-        Daily Revenue Audit
+        Purchases (Inward)
     </MudNavLink>
-    <MudNavLink Href="/ledger" Icon="@Icons.Material.Filled.MenuBook"
+    <MudNavLink Href="/inventory-pulse" Icon="@Icons.Material.Filled.Timeline"
                 Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-        Trade Ledger
+        Inventory Pulse
     </MudNavLink>
-    <MudNavLink Href="/expenses" Icon="@Icons.Material.Filled.ReceiptLong"
+    <MudNavLink Href="/material-catalog" Icon="@Icons.Material.Filled.Category"
                 Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-        Daily Expenses
+        Material Catalog
+    </MudNavLink>
+    <MudNavLink Href="/material-ingest" Icon="@Icons.Material.Filled.AddCircleOutline"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Material Ingest
     </MudNavLink>
 
     <div style="height: 16px;"></div>
 
-    <!-- CORE MODULES -->
+    <!-- MASTER DATA -->
     <div style="padding: 0 24px; margin-bottom: 8px;">
-        <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">CORE MODULES</div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">MASTER DATA</div>
     </div>
-    <MudNavGroup Title="Logistics Core" Icon="@Icons.Material.Filled.LocalShipping"
-                 Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1;" IconColor="Color.Default">
-        <MudNavLink Href="/material-catalog" Icon="@Icons.Material.Filled.Category"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Material Catalog
-        </MudNavLink>
-        <MudNavLink Href="/material-ingest" Icon="@Icons.Material.Filled.AddCircleOutline"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Material Ingest
-        </MudNavLink>
-        <MudNavLink Href="/purchases" Icon="@Icons.Material.Filled.ShoppingCart"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Purchases (Inward)
-        </MudNavLink>
-        <MudNavLink Href="/godown-dashboard" Icon="@Icons.Material.Filled.Warehouse"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Godown Live Stock
-        </MudNavLink>
-        <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Material Categories
-        </MudNavLink>
-        <MudNavLink Href="/products" Icon="@Icons.Material.Filled.Inventory"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Product Master
-        </MudNavLink>
-        <MudNavLink Href="/rate-master" Icon="@Icons.Material.Filled.AttachMoney"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Rate Master
-        </MudNavLink>
-        <MudNavLink Href="/suppliers" Icon="@Icons.Material.Filled.LocalShipping"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Suppliers
-        </MudNavLink>
-        <MudNavLink Href="/brokers" Icon="@Icons.Material.Filled.Handshake"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Brokers
-        </MudNavLink>
-        <MudNavLink Href="/sub-category" Icon="@Icons.Material.Filled.AccountTree"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Sub-Category Mapping
-        </MudNavLink>
-        <MudNavLink Href="/resource-groups" Icon="@Icons.Material.Filled.Workspaces"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Resource Groups
-        </MudNavLink>
-        <MudNavLink Href="/inventory-pulse" Icon="@Icons.Material.Filled.Inventory"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Inventory Pulse
-        </MudNavLink>
-        <MudNavLink Href="/profiles" Icon="@Icons.Material.Filled.Groups"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Entity Profiles
-        </MudNavLink>
-    </MudNavGroup>
-    
-    <MudNavLink Href="/fiscal" Icon="@Icons.Material.Filled.AccountBalance"
+    <MudNavLink Href="/products" Icon="@Icons.Material.Filled.Inventory"
                 Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-        Fiscal Overview
+        Product Master
+    </MudNavLink>
+    <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Category"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Material Categories
+    </MudNavLink>
+    <MudNavLink Href="/rate-master" Icon="@Icons.Material.Filled.AttachMoney"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Rate Master
+    </MudNavLink>
+    <MudNavLink Href="/suppliers" Icon="@Icons.Material.Filled.LocalShipping"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Suppliers
+    </MudNavLink>
+    <MudNavLink Href="/brokers" Icon="@Icons.Material.Filled.Handshake"
+                Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+        Brokers
     </MudNavLink>
 
     <div style="height: 16px;"></div>
@@ -120,34 +115,40 @@
     <div style="padding: 0 24px; margin-bottom: 8px;">
         <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">ADMINISTRATION</div>
     </div>
-    <MudNavGroup Title="Administrative Suite" Icon="@Icons.Material.Filled.AdminPanelSettings"
+    <MudNavGroup Title="Admin Suite" Icon="@Icons.Material.Filled.AdminPanelSettings"
                  Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1;" IconColor="Color.Default">
-        <MudNavLink Href="/admin/staff" Icon="@Icons.Material.Filled.Badge"
+        <MudNavLink Href="/employee-dashboard" Icon="@Icons.Material.Filled.Badge"
+                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+            Employee Dashboard
+        </MudNavLink>
+        <MudNavLink Href="/admin/staff" Icon="@Icons.Material.Filled.People"
                     Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
             Staff Accounts
-        </MudNavLink>
-        <MudNavLink Href="/admin/holidays" Icon="@Icons.Material.Filled.CalendarMonth"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Holiday Calendar
         </MudNavLink>
         <MudNavLink Href="/admin/salary" Icon="@Icons.Material.Filled.PriceChange"
                     Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
             Salary Pricing
         </MudNavLink>
+        <MudNavLink Href="/admin/holidays" Icon="@Icons.Material.Filled.CalendarMonth"
+                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+            Holiday Calendar
+        </MudNavLink>
+        <MudNavLink Href="/fiscal" Icon="@Icons.Material.Filled.AccountBalance"
+                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+            Fiscal Overview
+        </MudNavLink>
         <MudNavLink Href="/admin/privileges" Icon="@Icons.Material.Filled.Shield"
                     Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
             Privilege Control
-        </MudNavLink>
-        <MudNavLink Href="/admin/system" Icon="@Icons.Material.Filled.SettingsSuggest"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            System Dynamics
         </MudNavLink>
         <MudNavLink Href="/notification-templates" Icon="@Icons.Material.Filled.Email"
                     Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
             Email / SMS Templates
         </MudNavLink>
+        <MudNavLink Href="/admin/system" Icon="@Icons.Material.Filled.SettingsSuggest"
+                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
+            System Settings
+        </MudNavLink>
     </MudNavGroup>
- 
-
 
 </MudNavMenu>

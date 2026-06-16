@@ -7,6 +7,8 @@ public interface ICustomerWebService
 {
     Task<List<CustomerListDto>> GetCustomersAsync();
     Task<CustomerListDto?> CreateCustomerAsync(CreateCustomerDto dto);
+    Task<bool> RecordCustomerPaymentAsync(CreateCustomerPaymentDto request);
+    Task<List<RecentCustomerPaymentDto>> GetRecentPaymentsAsync();
 }
 
 public class CustomerWebService : ICustomerWebService
@@ -33,5 +35,41 @@ public class CustomerWebService : ICustomerWebService
         }
         var error = await response.Content.ReadAsStringAsync();
         throw new Exception($"Failed to create customer: {error}");
+    }
+
+    public async Task<bool> RecordCustomerPaymentAsync(CreateCustomerPaymentDto request)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/customers/payments", request);
+        if (response.IsSuccessStatusCode)
+            return true;
+
+        try
+        {
+            var errObj = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+            if (errObj != null && !string.IsNullOrEmpty(errObj.Message))
+            {
+                throw new Exception(errObj.Message);
+            }
+        }
+        catch (Exception ex) when (ex is not Exception) // Only catch parsing exceptions
+        {
+            // Fallback
+        }
+
+        var errorText = await response.Content.ReadAsStringAsync();
+        throw new Exception(string.IsNullOrWhiteSpace(errorText) ? $"HTTP {(int)response.StatusCode}" : errorText);
+    }
+
+    public async Task<List<RecentCustomerPaymentDto>> GetRecentPaymentsAsync()
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<List<RecentCustomerPaymentDto>>("api/customers/payments/recent")
+                ?? new List<RecentCustomerPaymentDto>();
+        }
+        catch
+        {
+            return new List<RecentCustomerPaymentDto>();
+        }
     }
 }

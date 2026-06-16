@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IExpenseRepository, Expenses.ExpenseRepository>();
         services.AddScoped<IExpenseService, Expenses.ExpenseService>();
         services.AddScoped<ISharedRepository, Repositories.SharedRepository>();
+        services.AddScoped<IHolidayService, Holidays.HolidayService>();
 
         return services;
     }

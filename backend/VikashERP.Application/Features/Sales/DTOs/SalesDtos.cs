@@ -51,6 +51,10 @@ public class InvoiceListDto
     public DateTime InvoiceDate { get; set; }
     public SalesInvoiceStatus Status { get; set; }
     public int ItemCount { get; set; }
+    public decimal TotalWeightKg { get; set; }
+    public decimal CashAmount { get; set; }
+    public decimal BankAmount { get; set; }
+    public decimal DueAmount { get; set; }
 }
 
 public class InvoiceDetailDto : InvoiceListDto
@@ -60,9 +64,6 @@ public class InvoiceDetailDto : InvoiceListDto
     public decimal IgstAmount { get; set; }
     public decimal RoundingAmount { get; set; }
     public decimal PaidAmount { get; set; }
-    public decimal CashAmount { get; set; }
-    public decimal BankAmount { get; set; }
-    public decimal DueAmount { get; set; }
     public string PaymentMode { get; set; } = string.Empty;
     public string? VehicleNumber { get; set; }
     public string? Remarks { get; set; }
@@ -84,4 +85,10 @@ public class InvoiceItemDetailDto
     public decimal CgstRate { get; set; }
     public decimal SgstRate { get; set; }
     public decimal TotalPrice { get; set; }
+}
+
+public class UpdateInvoicePaymentDto
+{
+    public decimal CashAmount { get; set; }
+    public decimal BankAmount { get; set; }
 }

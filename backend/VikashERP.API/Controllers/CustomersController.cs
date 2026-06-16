@@ -360,6 +360,105 @@ public class CustomersController : ControllerBase
 
         return await _sharedRepository.SendWelcomeEmailAsync(email, userName, plainPassword, cancellationToken);
     }
+
+    [HttpPost("payments")]
+    public async Task<IActionResult> RecordPayment([FromBody] CreateCustomerPaymentDto dto, CancellationToken cancellationToken)
+    {
+        if (dto.Amount <= 0)
+            return BadRequest(new { Message = "Amount must be greater than zero." });
+
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var customer = await _context.Customers.FindAsync(new object[] { dto.CustomerId }, cancellationToken);
+            if (customer is null)
+                return NotFound(new { Message = "Customer not found." });
+
+            // Create ledger entry
+            var ledgerEntry = new CustomerLedger
+            {
+                Id = Guid.NewGuid(),
+                CustomerId = dto.CustomerId,
+                TransactionDate = DateTime.SpecifyKind(dto.PaymentDate, DateTimeKind.Utc),
+                TransactionType = "Payment",
+                Debit = 0,
+                Credit = dto.Amount,
+                RunningBalance = customer.CurrentBalance - dto.Amount,
+                Remarks = $"[PaymentMode: {dto.PaymentMode}] {dto.Remarks}",
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = User.GetAuthenticatedUserId()
+            };
+
+            // Update customer balance (reducing outstanding dues)
+            customer.CurrentBalance -= dto.Amount;
+            customer.UpdatedAt = DateTime.UtcNow;
+            customer.UpdatedBy = User.GetAuthenticatedUserId();
+
+            _context.CustomerLedgers.Add(ledgerEntry);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            return Ok(new CustomerPaymentResponseDto
+            {
+                LedgerEntryId = ledgerEntry.Id,
+                CustomerId = customer.Id,
+                RemainingBalance = customer.CurrentBalance
+            });
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return StatusCode(500, new { Message = ex.Message });
+        }
+    }
+
+    [HttpGet("payments/recent")]
+    public async Task<ActionResult<IEnumerable<RecentCustomerPaymentDto>>> GetRecentPayments(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payments = await _context.CustomerLedgers
+                .Include(l => l.Customer)
+                .Where(l => !l.IsDeleted && l.TransactionType == "Payment")
+                .OrderByDescending(l => l.TransactionDate)
+                .Take(100)
+                .ToListAsync(cancellationToken);
+
+            var dtos = payments.Select(l =>
+            {
+                var remarks = l.Remarks ?? "";
+                var paymentMode = "N/A";
+                if (remarks.StartsWith("[PaymentMode: "))
+                {
+                    var idx = remarks.IndexOf("]");
+                    if (idx > 0)
+                    {
+                        paymentMode = remarks.Substring(14, idx - 14);
+                        remarks = remarks.Substring(idx + 1).Trim();
+                    }
+                }
+
+                return new RecentCustomerPaymentDto
+                {
+                    Id = l.Id,
+                    CustomerId = l.CustomerId,
+                    CustomerName = l.Customer != null
+                        ? (l.Customer.CompanyName ?? $"{l.Customer.FirstName} {l.Customer.LastName}".Trim())
+                        : "Unknown Customer",
+                    TransactionDate = l.TransactionDate,
+                    Amount = l.Credit,
+                    PaymentMode = paymentMode,
+                    Remarks = remarks
+                };
+            }).ToList();
+
+            return Ok(dtos);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Message = ex.Message });
+        }
+    }
 }
 
 

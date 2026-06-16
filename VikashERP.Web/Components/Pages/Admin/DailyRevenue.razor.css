@@ -1,0 +1,463 @@
+/* Daily Revenue Audit Stylesheet */
+
+.revenue-audit-container {
+    padding: 16px 20px 40px;
+    max-width: 1440px;
+    margin: 0 auto;
+    color: var(--mud-palette-text-primary);
+    font-family: var(--mud-typography-default-font-family);
+}
+
+/* Page Header */
+.page-title {
+    font-family: var(--mud-typography-h2-font-family);
+    font-weight: 950;
+    letter-spacing: -0.04em;
+    color: var(--mud-palette-text-primary);
+}
+
+.page-subtitle {
+    font-weight: 700;
+    color: var(--mud-palette-text-secondary);
+}
+
+.date-picker-wrapper {
+    width: 220px;
+}
+
+/* KPI Cards Layout */
+.kpi-grid {
+    margin-bottom: 24px;
+}
+
+.kpi-card {
+    background: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-divider);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px -8px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    border-radius: 5px 0 0 5px;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.08);
+}
+
+.kpi-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kpi-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--mud-palette-text-secondary);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.kpi-icon {
+    font-size: 1.25rem !important;
+    opacity: 0.6;
+}
+
+.kpi-value {
+    font-weight: 900;
+    font-size: 1.6rem !important;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.kpi-subtext {
+    font-weight: 700;
+    color: var(--mud-palette-text-secondary);
+    margin-top: 4px;
+    display: block;
+}
+
+/* Specific KPI Card Accents */
+.billing-card::after { background: var(--mud-palette-info); }
+.billing-card .kpi-icon { color: var(--mud-palette-info); }
+
+.cash-card::after { background: #f59e0b; }
+.cash-card .kpi-icon { color: #f59e0b; }
+.cash-card .kpi-value { color: #f59e0b; }
+
+.bank-card::after { background: var(--mud-palette-success); }
+.bank-card .kpi-icon { color: var(--mud-palette-success); }
+.bank-card .kpi-value { color: var(--mud-palette-success); }
+.bank-card .kpi-subtext { color: var(--mud-palette-success); }
+
+.due-card::after { background: var(--mud-palette-error); }
+.due-card .kpi-icon { color: var(--mud-palette-error); }
+.due-card .kpi-value { color: var(--mud-palette-error); }
+.due-card .kpi-subtext { color: var(--mud-palette-error); }
+
+/* Main Table Panel */
+.table-panel {
+    border: 1px solid var(--mud-palette-divider);
+    border-radius: 16px;
+    box-shadow: 0 4px 25px -10px rgba(0, 0, 0, 0.05);
+    background: var(--mud-palette-surface);
+}
+
+.table-panel-header {
+    border-bottom: 1px solid var(--mud-palette-divider);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--mud-palette-background-grey);
+}
+
+.table-title {
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: var(--mud-palette-text-primary);
+}
+
+.table-subtitle {
+    color: var(--mud-palette-text-secondary);
+}
+
+.action-btn {
+    text-transform: none !important;
+    font-weight: 800 !important;
+    border-radius: 8px !important;
+    padding: 6px 16px !important;
+}
+
+/* Datagrid / Table Cells */
+.audit-table {
+    background: transparent !important;
+}
+
+.table-header-cell {
+    font-size: 0.65rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.05em !important;
+    color: var(--mud-palette-text-secondary) !important;
+    text-transform: uppercase;
+    padding: 14px 12px !important;
+    border-bottom: 2px solid var(--mud-palette-divider) !important;
+    background: var(--mud-palette-surface) !important;
+}
+
+.table-header-cell.accent-amber { color: #f59e0b !important; }
+.table-header-cell.accent-green { color: var(--mud-palette-success) !important; }
+.table-header-cell.accent-red { color: var(--mud-palette-error) !important; }
+
+.table-data-cell {
+    padding: 10px 12px !important;
+    border-bottom: 1px solid var(--mud-palette-divider) !important;
+    vertical-align: middle !important;
+}
+
+.customer-info-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.customer-avatar {
+    font-weight: 800;
+    font-size: 0.75rem;
+}
+
+.customer-name {
+    font-weight: 700;
+    color: var(--mud-palette-text-primary);
+}
+
+.invoice-no {
+    color: var(--mud-palette-text-secondary);
+    display: block;
+}
+
+.numeric-font {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 0.88rem !important;
+}
+
+.bill-total {
+    font-weight: 800;
+    color: var(--mud-palette-primary);
+}
+
+.cash-paid {
+    font-weight: 800;
+    color: #f59e0b;
+}
+
+.bank-paid {
+    font-weight: 800;
+    color: var(--mud-palette-success);
+}
+
+.balance-due {
+    font-weight: 800;
+    color: var(--mud-palette-error);
+}
+
+.actions-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+/* Footer summary cells */
+.table-footer-cell {
+    padding: 16px 12px !important;
+    border-top: 2px solid var(--mud-palette-divider) !important;
+    font-size: 0.85rem !important;
+    background: #2c73d2 !important;
+    color: #ffffff !important;
+}
+
+.grand-total-label {
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.footer-value {
+    font-weight: 900;
+}
+
+/* Glassmorphism Dialog Panel */
+.audit-overlay-panel {
+    width: 90vw;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(30, 32, 32, 0.95);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    color: #ffffff;
+}
+
+.overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 16px;
+}
+
+.overlay-title {
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: #ffffff;
+}
+
+.overlay-subtitle {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.overlay-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding: 12px 4px;
+}
+
+.meta-label {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-weight: 800;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+}
+
+.meta-value {
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.meta-time {
+    color: rgba(255, 255, 255, 0.4) !important;
+    display: block;
+}
+
+/* Detail overlay items table */
+.overlay-table-wrapper {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.detail-items-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.detail-items-table th {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px 16px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-items-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Summary charges section */
+.overlay-summary-card {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 24px;
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.notes-text {
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+}
+
+.summary-charges {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.charge-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.charge-val {
+    font-weight: 700;
+    color: #ffffff !important;
+}
+
+.grand-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 2px solid var(--mud-palette-primary);
+    color: #ffffff;
+}
+
+.total-label {
+    font-weight: 900;
+}
+
+.total-value {
+    font-weight: 900;
+    color: var(--mud-palette-primary) !important;
+}
+
+.close-overlay-btn {
+    font-weight: 900 !important;
+    border-radius: 12px !important;
+    padding: 10px 32px !important;
+}
+
+.overlay-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Payment overlay dialog */
+.payment-overlay-panel {
+    width: 400px;
+    border-radius: 24px;
+    border: 1px solid var(--mud-palette-divider);
+    background: var(--mud-palette-surface);
+}
+
+.payment-overlay-title {
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.payment-overlay-subtitle {
+    color: var(--mud-palette-text-secondary);
+}
+
+.cash-field ::deep .mud-input-slot {
+    color: #f59e0b !important;
+    font-weight: 800;
+    font-family: monospace;
+}
+
+.bank-field ::deep .mud-input-slot {
+    color: var(--mud-palette-success) !important;
+    font-weight: 800;
+    font-family: monospace;
+}
+
+.payment-summary-box {
+    background: var(--mud-palette-background-grey);
+    border: 1px dashed var(--mud-palette-divider);
+    border-radius: 12px;
+}
+
+.due-label {
+    color: var(--mud-palette-error);
+}
+
+.due-value {
+    color: var(--mud-palette-error);
+}
+
+.payment-actions-wrapper {
+    display: flex;
+    gap: 12px;
+}
+
+.commit-btn {
+    font-weight: 800 !important;
+}
+
+/* Custom transitions and scrollbar */
+.revenue-audit-container ::deep .mud-table-container::-webkit-scrollbar {
+    height: 6px;
+}
+.revenue-audit-container ::deep .mud-table-container::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
+}
+
+/* Dark mode configurations */
+:global(.app-dark-mode) .table-panel-header {
+    background: rgba(255, 255, 255, 0.02);
+}
+:global(.app-dark-mode) .table-header-cell {
+    background: #1e293b !important;
+}
+:global(.app-dark-mode) .payment-summary-box {
+    background: rgba(255, 255, 255, 0.02);
+}
