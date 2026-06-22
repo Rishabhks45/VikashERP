@@ -1,10 +1,18 @@
 @page "/employee-dashboard"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @using VikashERP.Web.Models
-<PageTitle>Employee Dashboard</PageTitle>
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@rendermode InteractiveServer
+
+<PageTitle>Employee Dashboard - The Iron Ledger</PageTitle>
 
 <MudStack Class="dashboard-page" Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-header">
         <MudStack Spacing="0">
+            <div class="dashboard-eyebrow">Staff Portal</div>
             <MudText Typo="Typo.h5" HtmlTag="h1">My Dashboard</MudText>
             <MudText Typo="Typo.body2" Class="dashboard-subtitle">
                 Daily shift view for attendance, assigned work, pending approvals, and personal payroll updates.
@@ -12,20 +20,27 @@
         </MudStack>
 
         <MudStack Row="true" AlignItems="AlignItems.Center" Class="dashboard-header-actions">
-            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.EventAvailable" Class="dashboard-action-secondary">
+            <MudButton Variant="Variant.Outlined" 
+                       StartIcon="@Icons.Material.Filled.EventAvailable" 
+                       Class="dashboard-action-secondary"
+                       OnClick="OpenLeaveDialog">
                 Apply Leave
             </MudButton>
-            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Fingerprint" Class="dashboard-action-primary">
-                Check In
+            <MudButton Variant="Variant.Filled" 
+                       StartIcon="@(_checkedIn ? Icons.Material.Filled.Logout : Icons.Material.Filled.Fingerprint)" 
+                       Class="@(_checkedIn ? "dashboard-action-secondary" : "dashboard-action-primary")"
+                       Style="@(_checkedIn ? "background-color: var(--mud-palette-error) !important; color: white !important; border-radius: 8px !important;" : "")"
+                       OnClick="ToggleCheckIn">
+                @(_checkedIn ? "Check Out" : "Check In")
             </MudButton>
         </MudStack>
     </MudStack>
 
     <MudGrid Spacing="2" Class="dashboard-kpis">
-        @foreach (var metric in Metrics)
+        @foreach (var metric in _metrics)
         {
             <MudItem xs="12" sm="6" lg="3">
-                <MudPaper Elevation="0" Class="dashboard-kpi">
+                <MudPaper Elevation="0" Class="dashboard-kpi" Style="transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: default;">
                     <MudPaper Elevation="0" Class="@($"dashboard-kpi-icon {metric.IconClass}")">
                         <MudIcon Icon="@metric.Icon" />
                     </MudPaper>
@@ -40,6 +55,7 @@
     </MudGrid>
 
     <MudGrid Spacing="2" Class="dashboard-grid">
+        <!-- Weekly Work Progress Chart -->
         <MudItem xs="12" lg="8">
             <MudPaper Elevation="0" Class="dashboard-panel dashboard-panel-wide">
                 <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
@@ -50,29 +66,30 @@
                     <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">Current week</MudChip>
                 </MudStack>
 
-                <MudStack Row="true" Class="revenue-bars">
-                    @foreach (var item in WorkProgress)
+                <MudStack Row="true" Class="revenue-bars" Style="min-height: 220px; align-items: flex-end;">
+                    @foreach (var item in _workProgress)
                     {
                         <MudStack AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Spacing="1" Class="revenue-day">
                             <div class="revenue-track">
-                                <div class="revenue-bar sales" style="height:@($"{item.Planned}%")"></div>
-                                <div class="revenue-bar collected" style="height:@($"{item.Completed}%")"></div>
+                                <div class="revenue-bar sales" style="height:@($"{item.Planned}%")" title="Planned: @item.Planned%"></div>
+                                <div class="revenue-bar collected" style="height:@($"{item.Completed}%")" title="Completed: @item.Completed%"></div>
                             </div>
                             <MudText Typo="Typo.caption">@item.Day</MudText>
                         </MudStack>
                     }
                 </MudStack>
 
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="dashboard-legend">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="dashboard-legend" Style="margin-top: 16px;">
                     <MudText Typo="Typo.caption"><i class="legend-dot sales"></i>Planned</MudText>
                     <MudText Typo="Typo.caption"><i class="legend-dot collected"></i>Completed</MudText>
                 </MudStack>
             </MudPaper>
         </MudItem>
 
+        <!-- Today's Assignments -->
         <MudItem xs="12" lg="4">
-            <MudPaper Elevation="0" Class="dashboard-panel">
-                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
+            <MudPaper Elevation="0" Class="dashboard-panel" Style="display: flex; flex-direction: column; height: 100%;">
+                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header" Style="margin-bottom: 12px;">
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.h6" HtmlTag="h2">Today&apos;s Assignments</MudText>
                         <MudText Typo="Typo.caption">Work queued for your shift</MudText>
@@ -80,21 +97,36 @@
                     <MudIcon Icon="@Icons.Material.Filled.AssignmentTurnedIn" Class="dashboard-panel-icon" />
                 </MudStack>
 
-                <MudStack Spacing="2" Class="dispatch-list">
-                    @foreach (var assignment in Assignments)
+                <MudStack Spacing="2" Class="dispatch-list" Style="flex: 1; max-height: 340px; overflow-y: auto;">
+                    @foreach (var assignment in _assignments)
                     {
-                        <MudPaper Elevation="0" Class="dispatch-item">
-                            <MudStack Spacing="0">
-                                <MudText Typo="Typo.subtitle2">@assignment.Title</MudText>
-                                <MudText Typo="Typo.caption">@assignment.Detail</MudText>
+                        <MudPaper Elevation="0" Class="dispatch-item" Style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+                            <MudStack Spacing="0" Style="flex: 1; min-width: 0;">
+                                <MudText Typo="Typo.subtitle2" Style="@(assignment.Status == "Completed" ? "text-decoration: line-through; color: var(--mud-palette-text-disabled);" : "font-weight: 600;")">
+                                    @assignment.Title
+                                </MudText>
+                                <MudText Typo="Typo.caption" Style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    @assignment.Detail
+                                </MudText>
                             </MudStack>
-                            <MudChip T="string" Size="Size.Small" Class="@assignment.StatusClass">@assignment.Status</MudChip>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="flex-shrink: 0;">
+                                <MudChip T="string" Size="Size.Small" Class="@assignment.StatusClass">@assignment.Status</MudChip>
+                                @if (assignment.Status != "Completed")
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircleOutline" 
+                                                   Color="Color.Success" 
+                                                   Size="Size.Small" 
+                                                   OnClick="() => CompleteAssignment(assignment.Title)" 
+                                                   Title="Mark Completed" />
+                                }
+                            </MudStack>
                         </MudPaper>
                     }
                 </MudStack>
             </MudPaper>
         </MudItem>
 
+        <!-- Shift Timeline -->
         <MudItem xs="12" lg="4">
             <MudPaper Elevation="0" Class="dashboard-panel">
                 <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
@@ -106,7 +138,7 @@
                 </MudStack>
 
                 <MudStack Spacing="0" Class="stock-list">
-                    @foreach (var shift in ShiftTimeline)
+                    @foreach (var shift in _shiftTimeline)
                     {
                         <div class="stock-row">
                             <MudStack Spacing="0">
@@ -116,7 +148,8 @@
                             <MudProgressLinear Value="@shift.Progress"
                                                Rounded="true"
                                                Size="Size.Small"
-                                               Class="stock-progress" />
+                                               Class="stock-progress"
+                                               Color="@(shift.Status == "Done" ? Color.Success : shift.Status == "Active" ? Color.Info : Color.Default)" />
                             <MudText Typo="Typo.caption" Class="stock-count">@shift.Status</MudText>
                         </div>
                     }
@@ -124,6 +157,7 @@
             </MudPaper>
         </MudItem>
 
+        <!-- My Requests Table -->
         <MudItem xs="12" lg="8">
             <MudPaper Elevation="0" Class="dashboard-panel dashboard-panel-wide">
                 <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
@@ -134,9 +168,9 @@
                     <MudButton Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward" Size="Size.Small">View all</MudButton>
                 </MudStack>
 
-                <MudTable Items="@Requests" Dense="true" Hover="true" Elevation="0" Class="invoice-table" Breakpoint="Breakpoint.Sm">
+                <MudTable Items="@_requests" Dense="true" Hover="true" Elevation="0" Class="invoice-table" Breakpoint="Breakpoint.Sm" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
                     <HeaderContent>
-                        <MudTh>Request</MudTh>
+                        <MudTh>Request Description</MudTh>
                         <MudTh>Category</MudTh>
                         <MudTh>Date</MudTh>
                         <MudTh>Status</MudTh>
@@ -157,19 +191,58 @@
     </MudGrid>
 </MudStack>
 
+<!-- Inline Dialog for Leave Request -->
+<MudDialog @bind-Visible="_leaveDialogOpen" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Class="mr-3" Color="Color.Primary" /> Apply for Leave
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3" Class="pt-2">
+            <MudSelect T="string" Label="Leave Type" @bind-Value="_leaveType" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense">
+                <MudSelectItem Value="@("Casual Leave")" />
+                <MudSelectItem Value="@("Sick Leave")" />
+                <MudSelectItem Value="@("Earned Leave")" />
+                <MudSelectItem Value="@("Maternity/Paternity Leave")" />
+            </MudSelect>
+            <MudDatePicker Label="Start Date" @bind-Date="_leaveStartDate" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudDatePicker Label="End Date" @bind-Date="_leaveEndDate" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField T="string" Label="Reason for Leave" @bind-Value="_leaveReason" Variant="Variant.Outlined" Lines="3" Placeholder="Please describe the reason..." Margin="Margin.Dense" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" Color="Color.Secondary" OnClick="CloseLeaveDialog">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Style="border-radius: 6px;" OnClick="SubmitLeaveRequest">Submit Request</MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
+    private bool _checkedIn = true;
+    private bool _leaveDialogOpen;
+    private string _leaveType = "Casual Leave";
+    private DateTime? _leaveStartDate = DateTime.Today;
+    private DateTime? _leaveEndDate = DateTime.Today.AddDays(1);
+    private string _leaveReason = "";
 
+    private readonly DialogOptions _dialogOptions = new() 
+    { 
+        CloseButton = true, 
+        MaxWidth = MaxWidth.Small, 
+        FullWidth = true,
+        BackdropClick = false
+    };
 
-    private static readonly Metric[] Metrics =
-    [
+    private List<Metric> _metrics = new()
+    {
         new("Attendance", "Present", "Checked in at 09:12 AM", Icons.Material.Filled.FactCheck, "accent-green", "trend-up"),
         new("Shift Time", "8h 30m", "General shift: 9:00 AM - 6:00 PM", Icons.Material.Filled.Schedule, "accent-blue", "trend-neutral"),
-        new("Open Tasks", "6", "2 high priority today", Icons.Material.Filled.TaskAlt, "accent-amber", "trend-alert"),
+        new("Open Tasks", "4", "1 high priority today", Icons.Material.Filled.TaskAlt, "accent-amber", "trend-alert"),
         new("Leave Balance", "12 Days", "1 request pending approval", Icons.Material.Filled.EventAvailable, "accent-red", "trend-down")
-    ];
+    };
 
-    private static readonly WorkProgressPoint[] WorkProgress =
-    [
+    private List<WorkProgressPoint> _workProgress = new()
+    {
         new("Mon", 80, 74),
         new("Tue", 72, 68),
         new("Wed", 84, 76),
@@ -177,29 +250,158 @@
         new("Fri", 78, 58),
         new("Sat", 54, 38),
         new("Sun", 24, 18)
-    ];
+    };
 
-    private static readonly AssignmentItem[] Assignments =
-    [
+    private List<AssignmentItem> _assignments = new()
+    {
         new("Verify stock issue slips", "Main Godown, 18 pending entries", "In progress", "chip-info"),
         new("Load dispatch check", "Vehicle JH 05 CK 2841", "Priority", "chip-warning"),
         new("Customer invoice handover", "Sinha Steel Works", "Ready", "chip-success"),
         new("Update material count", "GI Pipe rack inspection", "Pending", "chip-danger")
-    ];
+    };
 
-    private static readonly ShiftItem[] ShiftTimeline =
-    [
+    private List<ShiftItem> _shiftTimeline = new()
+    {
         new("Check-in", "09:12 AM", 100, "Done"),
-        new("First half", "09:00 AM - 01:00 PM", 88, "Active"),
-        new("Lunch break", "01:00 PM - 01:30 PM", 35, "Next"),
-        new("Check-out", "Expected 06:00 PM", 12, "Later")
-    ];
+        new("First half", "09:00 AM - 01:00 PM", 100, "Done"),
+        new("Lunch break", "01:00 PM - 01:30 PM", 100, "Done"),
+        new("Check-out", "Expected 06:00 PM", 35, "Active")
+    };
 
-    private static readonly RequestItem[] Requests =
-    [
+    private List<RequestItem> _requests = new()
+    {
         new("Casual leave", "Leave", "12 Jun 2026", "Pending", "chip-warning"),
         new("May salary slip", "Payroll", "31 May 2026", "Ready", "chip-success"),
         new("Address proof update", "Profile", "28 May 2026", "Approved", "chip-success"),
         new("Overtime correction", "Attendance", "24 May 2026", "Review", "chip-info")
-    ];
+    };
+
+    protected override void OnInitialized()
+    {
+        // Update metric open tasks count to match initial items list count
+        UpdateTasksKpi();
+    }
+
+    private void ToggleCheckIn()
+    {
+        if (_checkedIn)
+        {
+            _checkedIn = false;
+            _metrics[0] = new Metric("Attendance", "Checked Out", $"Checked out at {DateTime.Now.ToString("hh:mm tt")}", Icons.Material.Filled.FactCheck, "accent-red", "trend-down");
+            _metrics[1] = new Metric("Shift Time", "8h 30m", "Shift completed for today", Icons.Material.Filled.Schedule, "accent-grey", "trend-neutral");
+
+            // Update shift timeline check out
+            var idx = _shiftTimeline.FindIndex(x => x.Label == "Check-out");
+            if (idx != -1)
+            {
+                _shiftTimeline[idx] = new ShiftItem("Check-out", DateTime.Now.ToString("hh:mm tt"), 100, "Done");
+            }
+
+            Snackbar.Add("Check-out recorded successfully.", Severity.Info);
+        }
+        else
+        {
+            _checkedIn = true;
+            _metrics[0] = new Metric("Attendance", "Present", $"Checked in at {DateTime.Now.ToString("hh:mm tt")}", Icons.Material.Filled.FactCheck, "accent-green", "trend-up");
+            _metrics[1] = new Metric("Shift Time", "8h 30m", "Active shift", Icons.Material.Filled.Schedule, "accent-blue", "trend-neutral");
+
+            // Update shift timeline check in
+            var idx = _shiftTimeline.FindIndex(x => x.Label == "Check-in");
+            if (idx != -1)
+            {
+                _shiftTimeline[idx] = new ShiftItem("Check-in", DateTime.Now.ToString("hh:mm tt"), 100, "Done");
+            }
+
+            // Reset checkout timeline state
+            var checkoutIdx = _shiftTimeline.FindIndex(x => x.Label == "Check-out");
+            if (checkoutIdx != -1)
+            {
+                _shiftTimeline[checkoutIdx] = new ShiftItem("Check-out", "Expected 06:00 PM", 35, "Active");
+            }
+
+            Snackbar.Add("Check-in recorded successfully.", Severity.Success);
+        }
+    }
+
+    private void OpenLeaveDialog()
+    {
+        _leaveType = "Casual Leave";
+        _leaveStartDate = DateTime.Today;
+        _leaveEndDate = DateTime.Today.AddDays(1);
+        _leaveReason = "";
+        _leaveDialogOpen = true;
+    }
+
+    private void CloseLeaveDialog()
+    {
+        _leaveDialogOpen = false;
+    }
+
+    private void SubmitLeaveRequest()
+    {
+        if (string.IsNullOrWhiteSpace(_leaveReason))
+        {
+            Snackbar.Add("Please specify a reason for leave.", Severity.Warning);
+            return;
+        }
+
+        if (!_leaveStartDate.HasValue || !_leaveEndDate.HasValue)
+        {
+            Snackbar.Add("Please specify start and end dates.", Severity.Warning);
+            return;
+        }
+
+        if (_leaveEndDate < _leaveStartDate)
+        {
+            Snackbar.Add("End date cannot be before start date.", Severity.Warning);
+            return;
+        }
+
+        // Insert new request to the top of the table
+        _requests.Insert(0, new RequestItem(_leaveReason, _leaveType, _leaveStartDate.Value.ToString("dd MMM yyyy"), "Pending", "chip-warning"));
+
+        // Update Leave balance status trend
+        _metrics[3] = new Metric("Leave Balance", "12 Days", "New leave request submitted", Icons.Material.Filled.EventAvailable, "accent-red", "trend-down");
+
+        _leaveDialogOpen = false;
+        Snackbar.Add("Leave request submitted successfully.", Severity.Success);
+    }
+
+    private void CompleteAssignment(string title)
+    {
+        var task = _assignments.FirstOrDefault(x => x.Title == title);
+        if (task != null)
+        {
+            var idx = _assignments.IndexOf(task);
+            _assignments[idx] = new AssignmentItem(task.Title, task.Detail, "Completed", "chip-success");
+
+            // Update KPI count and trend
+            UpdateTasksKpi();
+
+            // Update weekly chart completed tasks for Thursday (today)
+            var progressIndex = _workProgress.FindIndex(x => x.Day == "Thu");
+            if (progressIndex != -1)
+            {
+                var progressPoint = _workProgress[progressIndex];
+                _workProgress[progressIndex] = new WorkProgressPoint(progressPoint.Day, progressPoint.Planned, Math.Min(progressPoint.Planned, progressPoint.Completed + 15));
+            }
+
+            Snackbar.Add($"Task completed: {title}", Severity.Success);
+        }
+    }
+
+    private void UpdateTasksKpi()
+    {
+        var openCount = _assignments.Count(x => x.Status != "Completed");
+        var priorityCount = _assignments.Count(x => x.Status == "Priority");
+
+        _metrics[2] = new Metric(
+            "Open Tasks", 
+            openCount.ToString(), 
+            openCount > 0 ? $"{priorityCount} priority tasks pending" : "All tasks completed!", 
+            Icons.Material.Filled.TaskAlt, 
+            openCount > 0 ? "accent-amber" : "accent-green", 
+            openCount > 0 ? "trend-alert" : "trend-up"
+        );
+    }
 }

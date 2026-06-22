@@ -51,7 +51,7 @@ public static class VikashTheme
                 Divider = "#334155",
                 LinesDefault = "#334155",
                 TableLines = "#334155",
-                DrawerBackground = "#0b1220",
+                DrawerBackground = secondary,
                 DrawerText = "#e2e8f0",
                 DrawerIcon = "#94a3b8",
                 ActionDefault = "#cbd5e1"

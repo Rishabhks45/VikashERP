@@ -1,6 +1,7 @@
 @page "/purchases/view/{Id:guid}"
 @using VikashERP.Web.Models;
 @using VikashERP.Web.Services.Interfaces
+@using VikashERP.SharedKernel.Enums
 @inject IPurchaseWebService PurchaseService
 @inject NavigationManager NavigationManager
 @inject INotificationService NotificationService
@@ -147,10 +148,24 @@
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">@item.VariantSize</MudText>
                                 </MudTd>
                                 <MudTd DataLabel="Qty (Pcs)" Style="text-align: right;">
-                                    <MudText Typo="Typo.body2">@item.QuantityPcs</MudText>
+                                    @if (item.RateOn == RateOn.Pcs)
+                                    {
+                                        <MudText Typo="Typo.body2">@item.QuantityPcs</MudText>
+                                    }
+                                    else
+                                    {
+                                        <span style="opacity: 0.5;">-</span>
+                                    }
                                 </MudTd>
                                 <MudTd DataLabel="Weight (Kg)" Style="text-align: right;">
-                                    <MudText Typo="Typo.body2">@item.WeightKg</MudText>
+                                    @if (item.RateOn == RateOn.Kg)
+                                    {
+                                        <MudText Typo="Typo.body2">@item.WeightKg</MudText>
+                                    }
+                                    else
+                                    {
+                                        <span style="opacity: 0.5;">-</span>
+                                    }
                                 </MudTd>
                                 <MudTd DataLabel="Rate" Style="text-align: right;">
                                     <MudText Typo="Typo.body2">₹@item.Rate.ToString("N2") / @item.RateOn.ToString()</MudText>

@@ -10,56 +10,216 @@
 
 <PageTitle>Sales & Billing</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Sales Invoices</h2>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => NavManager.NavigateTo("/sales/create"))">
-        New Invoice
-    </MudButton>
-</div>
+<MudStack Class="sales-list-page" Spacing="4">
+    <!-- Header Hero -->
+    <div class="org-hero">
+        <div class="org-hero-copy">
+            <h1>Sales Invoices</h1>
+            <p class="org-subtitle">Create, track, and manage customer invoices, sales pipelines, and transactional ledgers.</p>
+        </div>
+        <MudButton Variant="Variant.Filled"
+                   Class="dashboard-action-primary org-save-btn"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="@(() => NavManager.NavigateTo("/sales/create"))">
+            New Invoice
+        </MudButton>
+    </div>
 
-<MudDataGrid Items="@_invoices" Loading="@_isLoading" T="InvoiceListDto">
-    <Columns>
-        <TemplateColumn Title="Date" SortBy="x => x.InvoiceDate">
-            <CellTemplate>@context.Item.InvoiceDate.ToString("dd MMM yyyy")</CellTemplate>
-        </TemplateColumn>
-        <PropertyColumn Property="x => x.InvoiceNumber" Title="Invoice No" />
-        <PropertyColumn Property="x => x.CustomerName" Title="Customer" />
-        <PropertyColumn Property="x => x.TotalAmount" Title="Amount" Format="C2" />
-        <TemplateColumn Title="Status">
-            <CellTemplate>
-                @if (context.Item.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Approved)
-                {
-                    <MudChip Size="Size.Small" Color="Color.Success">Approved</MudChip>
-                }
-                else if (context.Item.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft)
-                {
-                    <MudChip Size="Size.Small" Color="Color.Warning">Draft</MudChip>
-                }
-                else
-                {
-                    <MudChip Size="Size.Small" Color="Color.Error">Cancelled</MudChip>
-                }
-            </CellTemplate>
-        </TemplateColumn>
-        <TemplateColumn Title="Actions">
-            <CellTemplate>
-                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" Title="View" />
-                <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Small" Color="Color.Dark" Title="Print" Href="@($"/sales/print/{context.Item.Id}")" Target="_blank" />
-                @if (context.Item.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft)
-                {
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Warning" Title="Edit" OnClick="@(() => EditDraft(context.Item.Id))" />
-                }
-            </CellTemplate>
-        </TemplateColumn>
-    </Columns>
-    <PagerContent>
-        <MudDataGridPager T="InvoiceListDto" />
-    </PagerContent>
-</MudDataGrid>
+    @if (!_isLoading)
+    {
+        <!-- KPI Cards -->
+        <MudGrid Spacing="2" Class="dashboard-kpis">
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-blue">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Sales (Monthly)</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@TotalMonthlySales.ToString("N0")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Current month</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-green">
+                        <MudIcon Icon="@Icons.Material.Filled.Today" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Today's Sales</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@TodaySales.ToString("N0")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-up">Today's sum</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-amber">
+                        <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Invoices</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@TotalInvoicesCount</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">All recorded</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-purple">
+                        <MudIcon Icon="@Icons.Material.Filled.FactCheck" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Pipeline Split</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong" Style="font-size: 0.95rem; line-height: 1.8;">@ApprovedVsDraft</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Status ratios</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Main Datagrid Panel -->
+        <MudPaper Elevation="0" Class="org-tab-panel pa-6">
+            <MudGrid Class="mb-4 d-flex align-center">
+                <MudItem xs="12" md="5">
+                    <MudTextField @bind-Value="_searchQuery"
+                                   Placeholder="Search by customer name or invoice number..."
+                                   Adornment="Adornment.Start"
+                                   AdornmentIcon="@Icons.Material.Filled.Search"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Class="search-bar-full"
+                                   Immediate="true" />
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudSelect T="string" @bind-Value="_statusFilter" Label="Status Filter" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                        <MudSelectItem Value="@("")">All Invoices</MudSelectItem>
+                        <MudSelectItem Value="@("Approved")">Approved</MudSelectItem>
+                        <MudSelectItem Value="@("Draft")">Draft</MudSelectItem>
+                        <MudSelectItem Value="@("Cancelled")">Cancelled</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" md="4">
+                    <MudDateRangePicker @ref="_dateRangePicker" Label="Date Range Filter" @bind-DateRange="_dateRange" AutoClose="true" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
+                </MudItem>
+            </MudGrid>
+
+            <MudDataGrid Items="@FilteredInvoices" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Filterable="true" Loading="@_isLoading" Class="invoice-table">
+                <Columns>
+                    <TemplateColumn Title="Date" SortBy="x => x.InvoiceDate">
+                        <CellTemplate>
+                            <div style="font-weight: 500;">@context.Item.InvoiceDate.ToString("dd MMM yyyy")</div>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.InvoiceNumber" Title="Invoice No">
+                        <CellTemplate>
+                            <span style="font-family: monospace; font-weight: 600;">@context.Item.InvoiceNumber</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.CustomerName" Title="Customer">
+                        <CellTemplate>
+                            <div style="font-weight: 500;">@context.Item.CustomerName</div>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.TotalAmount" Title="Amount">
+                        <CellTemplate>
+                            <span style="font-weight: 700; color: var(--mud-palette-primary);">₹@context.Item.TotalAmount.ToString("N2")</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <TemplateColumn Title="Status">
+                        <CellTemplate>
+                            @if (context.Item.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Approved)
+                            {
+                                <span class="status-chip chip-approved">Approved</span>
+                            }
+                            else if (context.Item.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft)
+                            {
+                                <span class="status-chip chip-draft">Draft</span>
+                            }
+                            else
+                            {
+                                <span class="status-chip chip-cancelled">Cancelled</span>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" Title="View" OnClick="@(() => ViewInvoice(context.Item.Id))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Small" Color="Color.Dark" Title="Print" Href="@($"/sales/print/{context.Item.Id}")" Target="_blank" />
+                            @if (context.Item.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Warning" Title="Edit" OnClick="@(() => EditDraft(context.Item.Id))" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="InvoiceListDto" />
+                </PagerContent>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudStack>
 
 @code {
     private List<InvoiceListDto> _invoices = new();
+    private string _searchQuery = string.Empty;
+    private string _statusFilter = string.Empty;
+    private DateRange _dateRange = new DateRange(DateTime.Today, DateTime.Today);
+    private MudDateRangePicker? _dateRangePicker;
     private bool _isLoading = true;
+
+    private decimal TotalMonthlySales => _invoices
+        .Where(i => i.InvoiceDate.Year == DateTime.Today.Year && i.InvoiceDate.Month == DateTime.Today.Month)
+        .Sum(i => i.TotalAmount);
+
+    private decimal TodaySales => _invoices
+        .Where(i => i.InvoiceDate.Date == DateTime.Today.Date)
+        .Sum(i => i.TotalAmount);
+
+    private int TotalInvoicesCount => _invoices.Count;
+
+    private string ApprovedVsDraft => 
+        $"Approved: {_invoices.Count(i => i.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Approved)} | Draft: {_invoices.Count(i => i.Status == VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft)}";
+
+    private IEnumerable<InvoiceListDto> FilteredInvoices
+    {
+        get
+        {
+            var query = _invoices.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                query = query.Where(i => 
+                    i.InvoiceNumber.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                    (i.CustomerName != null && i.CustomerName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_statusFilter))
+            {
+                if (Enum.TryParse<VikashERP.SharedKernel.Enums.SalesInvoiceStatus>(_statusFilter, out var status))
+                {
+                    query = query.Where(i => i.Status == status);
+                }
+            }
+
+            if (_dateRange?.Start.HasValue == true)
+            {
+                query = query.Where(i => i.InvoiceDate.Date >= _dateRange.Start.Value.Date);
+            }
+
+            if (_dateRange?.End.HasValue == true)
+            {
+                query = query.Where(i => i.InvoiceDate.Date <= _dateRange.End.Value.Date);
+            }
+
+            return query;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -69,6 +229,11 @@
     private void EditDraft(Guid invoiceId)
     {
         NavManager.NavigateTo($"/sales/create?draftId={invoiceId}");
+    }
+
+    private void ViewInvoice(Guid invoiceId)
+    {
+        NavManager.NavigateTo($"/sales/print/{invoiceId}");
     }
 
     private async Task LoadDataAsync()

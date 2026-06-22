@@ -4,6 +4,15 @@ body {
     padding: 0;
     font-family: 'Roboto', sans-serif;
     -webkit-font-smoothing: antialiased;
+    background-color: var(--mud-palette-background, #f8fafc);
+}
+
+/* Fallback for dark mode before theme variables load or for general safety */
+html.mud-theme-dark,
+html.mud-theme-dark body,
+html:has(.app-dark-mode),
+body:has(.app-dark-mode) {
+    background-color: var(--mud-palette-background, #0b1220) !important;
 }
 
 html.email-panel-open,
@@ -1098,5 +1107,277 @@ h1:focus {
 
 .auth-right .mud-alert {
     border-radius: 10px !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   GLOBAL BUTTON DESIGN SYSTEM  —  VikashERP
+   Single source of truth for all button colors across the app.
+   Use class="g-btn-*" on any MudButton globally.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── CSS Custom Properties ──────────────────────────────── */
+:root {
+    /* COMMIT / NEW TRANSACTION */
+    --clr-commit:          #6366F1;
+    --clr-commit-hover:    #4F46E5;
+    --clr-commit-text:     #FFFFFF;
+
+    /* EXPORT */
+    --clr-export:          #8B5CF6;
+    --clr-export-hover:    #7C3AED;
+
+    /* RETAIL SALE (KHUDRA) */
+    --clr-khudra:          #F59E0B;
+    --clr-khudra-hover:    rgba(245,158,11,0.08);
+
+    /* ARCHIVE */
+    --clr-archive-border:  #374151;
+    --clr-archive-text:    #E5E7EB;
+    --clr-archive-hover:   #111827;
+    --clr-archive-hover-border: #4B5563;
+
+    /* DOWNLOAD LEDGER */
+    --clr-dl-border:       #1E3A8A;
+    --clr-dl-text:         #93C5FD;
+    --clr-dl-hover:        rgba(59,130,246,0.08);
+    --clr-dl-hover-border: #3B82F6;
+
+    /* PRINT */
+    --clr-print-border:    #3730A3;
+    --clr-print-text:      #A5B4FC;
+    --clr-print-hover:     rgba(99,102,241,0.08);
+    --clr-print-hover-border: #6366F1;
+
+    /* INSPECT INVOICE */
+    --clr-inspect-border:  #6D28D9;
+    --clr-inspect-text:    #A78BFA;
+    --clr-inspect-hover:   rgba(109,40,217,0.08);
+    --clr-inspect-hover-border: #7C3AED;
+
+    /* STATUS */
+    --clr-cash:            #F59E0B;
+    --clr-cash-hover:      #D97706;
+    --clr-ac:              #3B82F6;
+    --clr-ac-hover:        #2563EB;
+    --clr-verified:        #10B981;
+    --clr-verified-hover:  #059669;
+    --clr-overdue:         #EF4444;
+    --clr-overdue-hover:   #DC2626;
+}
+
+/* ── PRIMARY ACTIONS ─────────────────────────────────────── */
+
+/* COMMIT — indigo filled */
+.g-btn-commit {
+    background:    var(--clr-commit)       !important;
+    color:         var(--clr-commit-text)  !important;
+    border:        2px solid var(--clr-commit) !important;
+    border-radius: 10px !important;
+    font-weight:   800 !important;
+    font-size:     .85rem !important;
+    letter-spacing:.06em;
+    height:        46px;
+    padding:       0 1.75rem !important;
+    text-transform:uppercase;
+    transition:    background .18s, border-color .18s;
+}
+.g-btn-commit:hover {
+    background:   var(--clr-commit-hover) !important;
+    border-color: var(--clr-commit-hover) !important;
+}
+
+/* NEW TRANSACTION — indigo filled */
+.g-btn-new {
+    background:    var(--clr-commit)       !important;
+    color:         var(--clr-commit-text)  !important;
+    border:        2px solid var(--clr-commit) !important;
+    border-radius: 10px !important;
+    font-weight:   800 !important;
+    font-size:     .80rem !important;
+    letter-spacing:.05em;
+    height:        42px;
+    padding:       0 1.25rem !important;
+    text-transform:uppercase;
+    transition:    background .18s, border-color .18s;
+}
+.g-btn-new:hover {
+    background:   var(--clr-commit-hover) !important;
+    border-color: var(--clr-commit-hover) !important;
+}
+
+/* EXPORT — violet filled */
+.g-btn-export {
+    background:    var(--clr-export)      !important;
+    color:         #FFFFFF                !important;
+    border:        2px solid var(--clr-export) !important;
+    border-radius: 10px !important;
+    font-weight:   800 !important;
+    font-size:     .80rem !important;
+    letter-spacing:.05em;
+    height:        42px;
+    padding:       0 1.25rem !important;
+    text-transform:uppercase;
+    transition:    background .18s;
+}
+.g-btn-export:hover { background: var(--clr-export-hover) !important; border-color: var(--clr-export-hover) !important; }
+
+/* RETAIL SALE (KHUDRA) — amber outlined */
+.g-btn-khudra {
+    background:    transparent            !important;
+    color:         var(--clr-khudra)      !important;
+    border:        2px solid var(--clr-khudra) !important;
+    border-radius: 10px !important;
+    font-weight:   800 !important;
+    font-size:     .80rem !important;
+    letter-spacing:.05em;
+    height:        42px;
+    padding:       0 1.25rem !important;
+    text-transform:uppercase;
+    transition:    background .18s;
+}
+.g-btn-khudra:hover { background: var(--clr-khudra-hover) !important; border-color: var(--clr-khudra) !important; }
+
+/* ARCHIVE — dark outlined */
+.g-btn-archive {
+    background:    transparent                  !important;
+    color:         var(--clr-archive-text)      !important;
+    border:        2px solid var(--clr-archive-border) !important;
+    border-radius: 10px !important;
+    font-weight:   700 !important;
+    font-size:     .85rem !important;
+    letter-spacing:.06em;
+    height:        46px;
+    padding:       0 1.5rem !important;
+    text-transform:uppercase;
+    transition:    background .18s, border-color .18s;
+}
+.g-btn-archive:hover {
+    background:   var(--clr-archive-hover)       !important;
+    border-color: var(--clr-archive-hover-border) !important;
+}
+
+/* ── SECONDARY ACTIONS ───────────────────────────────────── */
+
+/* DOWNLOAD LEDGER — blue outlined */
+.g-btn-download {
+    background:    transparent              !important;
+    color:         var(--clr-dl-text)       !important;
+    border:        1.5px solid var(--clr-dl-border) !important;
+    border-radius: 8px !important;
+    font-weight:   700 !important;
+    font-size:     .78rem !important;
+    letter-spacing:.04em;
+    height:        38px;
+    padding:       0 1rem !important;
+    transition:    background .18s, border-color .18s;
+}
+.g-btn-download:hover { background: var(--clr-dl-hover) !important; border-color: var(--clr-dl-hover-border) !important; }
+
+/* PRINT — indigo outlined */
+.g-btn-print {
+    background:    transparent               !important;
+    color:         var(--clr-print-text)     !important;
+    border:        1.5px solid var(--clr-print-border) !important;
+    border-radius: 8px !important;
+    font-weight:   700 !important;
+    font-size:     .78rem !important;
+    letter-spacing:.04em;
+    height:        38px;
+    padding:       0 1rem !important;
+    transition:    background .18s, border-color .18s;
+}
+.g-btn-print:hover { background: var(--clr-print-hover) !important; border-color: var(--clr-print-hover-border) !important; }
+
+/* INSPECT INVOICE — purple outlined */
+.g-btn-inspect {
+    background:    transparent                 !important;
+    color:         var(--clr-inspect-text)     !important;
+    border:        1.5px solid var(--clr-inspect-border) !important;
+    border-radius: 8px !important;
+    font-weight:   700 !important;
+    font-size:     .78rem !important;
+    letter-spacing:.04em;
+    height:        38px;
+    padding:       0 1rem !important;
+    transition:    background .18s, border-color .18s;
+}
+.g-btn-inspect:hover { background: var(--clr-inspect-hover) !important; border-color: var(--clr-inspect-hover-border) !important; }
+
+/* ── STATUS / INFO BUTTONS ───────────────────────────────── */
+
+/* CASH — amber filled */
+.g-btn-cash {
+    background: var(--clr-cash) !important; color: #FFF !important;
+    border: none !important; border-radius: 8px !important;
+    font-weight: 800 !important; font-size: .78rem !important;
+    letter-spacing: .04em; height: 36px; padding: 0 1rem !important;
+    transition: background .18s;
+}
+.g-btn-cash:hover { background: var(--clr-cash-hover) !important; }
+
+/* A/C PAYMENT — blue filled */
+.g-btn-ac {
+    background: var(--clr-ac) !important; color: #FFF !important;
+    border: none !important; border-radius: 8px !important;
+    font-weight: 800 !important; font-size: .78rem !important;
+    letter-spacing: .04em; height: 36px; padding: 0 1rem !important;
+    transition: background .18s;
+}
+.g-btn-ac:hover { background: var(--clr-ac-hover) !important; }
+
+/* VERIFIED — green filled */
+.g-btn-verified {
+    background: var(--clr-verified) !important; color: #FFF !important;
+    border: none !important; border-radius: 8px !important;
+    font-weight: 800 !important; font-size: .78rem !important;
+    letter-spacing: .04em; height: 36px; padding: 0 1rem !important;
+    transition: background .18s;
+}
+.g-btn-verified:hover { background: var(--clr-verified-hover) !important; }
+
+/* OVERDUE — red filled */
+.g-btn-overdue {
+    background: var(--clr-overdue) !important; color: #FFF !important;
+    border: none !important; border-radius: 8px !important;
+    font-weight: 800 !important; font-size: .78rem !important;
+    letter-spacing: .04em; height: 36px; padding: 0 1rem !important;
+    transition: background .18s;
+}
+.g-btn-overdue:hover { background: var(--clr-overdue-hover) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Global layout overrides for specific pages/components
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Full-width page inside MainLayout container for Daily Revenue Page */
+.app-page:has(.drv3-container) {
+    padding-top: 0;
+}
+
+.app-main-container:has(.drv3-container) {
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Global customer portal layout overrides to remove the topbar space */
+.customer-portal-main.mud-main-content {
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+}
+
+.customer-portal-layout-container.mud-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Global styles for components/popovers rendered outside standard hierarchy */
+.appbar-profile-popover {
+    margin-top: 6px;
+    z-index: 1400 !important;
 }
 

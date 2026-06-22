@@ -34,8 +34,11 @@ public class InventoryService : IInventoryService
             var weight = latestStock?.RunningWeightKg ?? 0;
 
             string status = "In Stock";
-            if (pcs == 0) status = "Out of Stock";
-            else if (pcs <= v.AlertQtyPcs) status = "Low Stock";
+            bool isOut = v.Product?.SellingUnit == VikashERP.SharedKernel.Enums.RateOn.Kg ? weight <= 0 : pcs <= 0;
+            bool isLow = v.Product?.SellingUnit == VikashERP.SharedKernel.Enums.RateOn.Kg ? weight <= v.AlertQtyPcs : pcs <= v.AlertQtyPcs;
+
+            if (isOut) status = "Out of Stock";
+            else if (isLow) status = "Low Stock";
 
             stockList.Add(new GodownStockDto
             {

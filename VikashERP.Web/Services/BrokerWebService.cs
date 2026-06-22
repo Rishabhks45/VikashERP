@@ -46,4 +46,21 @@ public class BrokerWebService : IBrokerWebService
         var response = await _httpClient.DeleteAsync($"api/Brokers/{id}");
         return response.IsSuccessStatusCode;
     }
+
+    public async Task<List<BrokerLedgerEntryDto>> GetBrokerLedgerAsync(Guid brokerId)
+    {
+        return await _httpClient.GetFromJsonAsync<List<BrokerLedgerEntryDto>>($"api/Brokers/{brokerId}/ledger") ?? new List<BrokerLedgerEntryDto>();
+    }
+
+    public async Task<bool> RecordBrokerTransactionAsync(CreateBrokerTransactionDto dto)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/Brokers/transactions", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<RecentBrokerTransactionDto>> GetRecentBrokerTransactionsAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<RecentBrokerTransactionDto>>("api/Brokers/transactions/recent") ?? new List<RecentBrokerTransactionDto>();
+    }
 }
+

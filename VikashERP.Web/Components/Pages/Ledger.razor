@@ -1,0 +1,360 @@
+@page "/ledger"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using MudBlazor
+@using VikashERP.Web.Models
+@using VikashERP.Web.Services
+@using VikashERP.Web.Utils
+@inject ICustomerWebService CustomerService
+@inject IOrganizationBrandingService BrandingService
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Customer Ledger Statement</PageTitle>
+
+<MudStack Class="ledger-page" Spacing="4">
+    <!-- Header Hero -->
+    <div class="org-hero">
+        <div class="org-hero-copy">
+            <h1>Customer Ledger</h1>
+            <p class="org-subtitle">Generate transaction statements, track outstanding balances, and export PDF statements.</p>
+        </div>
+    </div>
+
+    <!-- Filters & Actions Panel -->
+    <MudPaper Class="selector-panel pa-6" Elevation="0">
+        <MudGrid Spacing="3" Class="align-end">
+            <MudItem xs="12" md="5">
+                <MudAutocomplete T="CustomerListDto"
+                                 Label="Select Customer"
+                                 @bind-Value="_selectedCustomer"
+                                 SearchFunc="@SearchCustomersAsync"
+                                 ToStringFunc="@(c => c == null ? "" : (c.CompanyName != null ? $"{c.CompanyName} ({c.FirstName} {c.LastName})" : $"{c.FirstName} {c.LastName}"))"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="true"
+                                 CoerceValue="true"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 AdornmentIcon="@Icons.Material.Filled.PersonSearch"
+                                 AdornmentColor="Color.Primary" />
+            </MudItem>
+            <MudItem xs="12" sm="8" md="4">
+                <MudDateRangePicker @ref="_dateRangePicker"
+                                    Label="Statement Period"
+                                    @bind-DateRange="_dateRange"
+                                    AutoClose="true"
+                                    Variant="Variant.Outlined"
+                                    Margin="Margin.Dense"
+                                    Clearable="false" />
+            </MudItem>
+            <MudItem xs="12" sm="4" md="3" Class="d-flex gap-2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Search"
+                           OnClick="FetchLedgerDataAsync"
+                           FullWidth="true"
+                           Class="py-2"
+                           Disabled="@(_selectedCustomer == null || _isLoadingData)">
+                    Generate
+                </MudButton>
+                @if (_ledgerEntries.Count > 0)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.Download"
+                               OnClick="DownloadStatementPdf"
+                               FullWidth="true"
+                               Class="py-2"
+                               Disabled="@_isLoadingData">
+                        PDF
+                    </MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @if (_isLoadingData)
+    {
+        <div class="d-flex justify-center my-8">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        </div>
+    }
+    else if (_selectedCustomer == null)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="rounded-lg">
+            Please select a customer and click "Generate" to view the ledger statement.
+        </MudAlert>
+    }
+    else if (_hasGenerated)
+    {
+        <!-- KPI Cards -->
+        <MudGrid Spacing="2" Class="dashboard-kpis">
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-blue">
+                        <MudIcon Icon="@Icons.Material.Filled.Input" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Opening Balance</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@FormatBalance(_openingBalance)</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">At start of period</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-red">
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Debits (Sales)</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@_totalPeriodDebit.ToString("N2")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Invoice totals</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-green">
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Credits (Receipts)</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@_totalPeriodCredit.ToString("N2")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Payments received</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-purple">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Closing Balance</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@FormatBalance(_closingBalance)</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Dues status</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Printable Statement Card -->
+        <MudPaper Class="statement-card overflow-hidden" Elevation="0">
+            <div class="printable-statement">
+                <!-- Statement Header -->
+                <div class="statement-header d-flex justify-between align-center">
+                    <div class="d-flex align-center gap-4">
+                        @if (!string.IsNullOrEmpty(BrandingService.Current.LogoUrl))
+                        {
+                            <img src="@BrandingService.Current.LogoUrl" class="company-logo" alt="Logo" />
+                        }
+                        <div>
+                            <div style="font-size: 1.3rem; font-weight: 900; letter-spacing: -0.5px;">
+                                @(!string.IsNullOrEmpty(BrandingService.Current.DisplayName) ? BrandingService.Current.DisplayName : "VIKASH IRON & STEEL")
+                            </div>
+                            <div style="font-size: 0.75rem; color: #475569;">
+                                @BrandingService.Current.AddressLine1, @BrandingService.Current.City, @BrandingService.Current.State - @BrandingService.Current.PinCode
+                            </div>
+                            <div style="font-size: 0.75rem; color: #475569;">
+                                Email: @BrandingService.Current.Email | GSTIN: 10CTHPS4609D2ZY
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="statement-title">Ledger Statement</div>
+                        <div style="font-size: 0.8rem; text-align: right; color: #475569; margin-top: 4px;">
+                            Period: @_dateRange.Start?.ToString("dd MMM yyyy") to @_dateRange.End?.ToString("dd MMM yyyy")
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="info-grid">
+                    <div class="info-block">
+                        <h3>Statement For</h3>
+                        <p class="bold-value" style="font-size: 0.95rem;">
+                            @(_selectedCustomer.CompanyName ?? $"{_selectedCustomer.FirstName} {_selectedCustomer.LastName}")
+                        </p>
+                        @if (_selectedCustomer.CompanyName != null)
+                        {
+                            <p>Contact: @_selectedCustomer.FirstName @_selectedCustomer.LastName</p>
+                        }
+                        <p>Address: @(_selectedCustomer.Address ?? "N/A")</p>
+                        <p>Phone: @_selectedCustomer.Phone</p>
+                        <p>GSTIN: @(_selectedCustomer.Gstin ?? "N/A")</p>
+                    </div>
+                    <div class="info-block" style="text-align: right;">
+                        <h3>Account Summary</h3>
+                        <p>Account Number: <span class="bold-value">@_selectedCustomer.AccountNumber</span></p>
+                        <p>Opening Balance: <span class="bold-value">@FormatBalance(_openingBalance)</span></p>
+                        <p>Total Debits (Sales): <span class="bold-value">₹@_totalPeriodDebit.ToString("N2")</span></p>
+                        <p>Total Credits (Receipts): <span class="bold-value">₹@_totalPeriodCredit.ToString("N2")</span></p>
+                        <p style="font-size: 0.95rem; border-top: 1px solid #cbd5e1; padding-top: 4px; margin-top: 4px;">
+                            Closing Balance: <span class="bold-value">@FormatBalance(_closingBalance)</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <table class="statement-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Date</th>
+                            <th style="width: 45%;">Particulars / Remarks</th>
+                            <th style="width: 13%;" class="text-right">Debit (Dr)</th>
+                            <th style="width: 13%;" class="text-right">Credit (Cr)</th>
+                            <th style="width: 14%;" class="text-right">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Opening Balance Row -->
+                        <tr>
+                            <td>@_dateRange.Start?.ToString("dd MMM yyyy")</td>
+                            <td><i>Opening Balance B/F</i></td>
+                            <td class="text-right">-</td>
+                            <td class="text-right">-</td>
+                            <td class="text-right balance-amount">@FormatBalance(_openingBalance)</td>
+                        </tr>
+
+                        @foreach (var entry in _ledgerEntries)
+                        {
+                            <tr>
+                                <td>@entry.TransactionDate.ToKolkataTime().ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <strong>@entry.TransactionType</strong>
+                                    @if (!string.IsNullOrEmpty(entry.Remarks))
+                                    {
+                                        <span style="color: #64748b; font-size: 0.75rem; margin-left: 8px;">@entry.Remarks</span>
+                                    }
+                                </td>
+                                <td class="text-right debit-amount">
+                                    @(entry.Debit > 0 ? $"₹{entry.Debit:N2}" : "-")
+                                </td>
+                                <td class="text-right credit-amount">
+                                    @(entry.Credit > 0 ? $"₹{entry.Credit:N2}" : "-")
+                                </td>
+                                <td class="text-right balance-amount">
+                                    @FormatBalance(entry.RunningBalance)
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="d-flex justify-between align-end mt-12">
+                    <div style="font-size: 0.75rem; color: #64748b;">
+                        Generated on: @DateTime.Now.ToString("dd MMM yyyy HH:mm")<br />
+                        This is a computer generated ledger statement.
+                    </div>
+                    <div style="text-align: right; width: 240px; border-top: 1px solid #0f172a; padding-top: 8px;">
+                        <div style="font-size: 0.8rem; font-weight: 700;">Authorised Signatory</div>
+                        <div style="font-size: 0.72rem; color: #475569; margin-top: 2px;">
+                            for @(!string.IsNullOrEmpty(BrandingService.Current.DisplayName) ? BrandingService.Current.DisplayName : "VIKASH IRON & STEEL")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </MudPaper>
+    }
+</MudStack>
+
+@code {
+    private List<CustomerListDto> _customers = new();
+    private CustomerListDto? _selectedCustomer;
+    private DateRange _dateRange = new DateRange(DateTime.Today.AddDays(-30), DateTime.Today);
+    private MudDateRangePicker? _dateRangePicker;
+
+    private List<CustomerLedgerEntryDto> _ledgerEntries = new();
+    private bool _isLoadingData = false;
+    private bool _hasGenerated = false;
+
+    private decimal _openingBalance = 0;
+    private decimal _totalPeriodDebit = 0;
+    private decimal _totalPeriodCredit = 0;
+    private decimal _closingBalance = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _customers = await CustomerService.GetCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading customers: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task<IEnumerable<CustomerListDto>> SearchCustomersAsync(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return _customers;
+
+        return _customers.Where(c => 
+            c.FirstName.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+            c.LastName.Contains(value, StringComparison.OrdinalIgnoreCase) ||
+            (c.CompanyName != null && c.CompanyName.Contains(value, StringComparison.OrdinalIgnoreCase)) ||
+            c.Phone.Contains(value, StringComparison.OrdinalIgnoreCase)
+        );
+    }
+
+    private async Task FetchLedgerDataAsync()
+    {
+        if (_selectedCustomer == null) return;
+
+        _isLoadingData = true;
+        _hasGenerated = false;
+        try
+        {
+            var allEntries = await CustomerService.GetCustomerLedgerAsync(_selectedCustomer.Id);
+
+            var start = _dateRange.Start ?? DateTime.Today.AddDays(-30);
+            var end = _dateRange.End ?? DateTime.Today;
+
+            // In Blazor DateRange, start and end are nullable local times. We match their date parts in local time.
+            var entriesBefore = allEntries
+                .Where(e => e.TransactionDate.ToKolkataTime().Date < start.Date)
+                .OrderBy(e => e.TransactionDate)
+                .ToList();
+
+            _ledgerEntries = allEntries
+                .Where(e => e.TransactionDate.ToKolkataTime().Date >= start.Date && e.TransactionDate.ToKolkataTime().Date <= end.Date)
+                .OrderBy(e => e.TransactionDate)
+                .ToList();
+
+            _openingBalance = entriesBefore.LastOrDefault()?.RunningBalance ?? 0;
+            _totalPeriodDebit = _ledgerEntries.Sum(e => e.Debit);
+            _totalPeriodCredit = _ledgerEntries.Sum(e => e.Credit);
+            _closingBalance = _ledgerEntries.LastOrDefault()?.RunningBalance ?? _openingBalance;
+
+            _hasGenerated = true;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error fetching ledger data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoadingData = false;
+        }
+    }
+
+    private string FormatBalance(decimal amount)
+    {
+        if (amount == 0) return "₹0.00";
+        return amount > 0 ? $"₹{amount:N2} (Cr)" : $"₹{Math.Abs(amount):N2} (Dr)";
+    }
+
+    private async Task DownloadStatementPdf()
+    {
+        if (_selectedCustomer == null) return;
+        var name = _selectedCustomer.CompanyName ?? $"{_selectedCustomer.FirstName}_{_selectedCustomer.LastName}";
+        var cleanName = name.Replace(" ", "_").Replace("/", "_").Replace("\\", "_");
+        var filename = $"Ledger_Statement_{cleanName}_{DateTime.Today:ddMMyyyy}.pdf";
+        await JSRuntime.InvokeVoidAsync("downloadInvoicePdf", "printable-statement", filename);
+    }
+}

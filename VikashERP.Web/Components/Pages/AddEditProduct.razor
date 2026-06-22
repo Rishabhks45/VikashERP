@@ -105,6 +105,53 @@
                     </div>
                 </div>
 
+                <!-- Right Column: Variants -->
+                <div class="glass-panel p-4 flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="section-title mb-0">Product Variants</h3>
+                        <button type="button" class="btn-primary btn-sm" @onclick="AddVariant">
+                            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-1" /> Add Variant
+                        </button>
+                    </div>
+
+                    @if (_productModel.Variants.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <MudIcon Icon="@Icons.Material.Filled.LayersClear" Size="Size.Large" Color="Color.Default" />
+                            <p>No variants added yet. Click "Add Variant" to configure sizes and weights.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="variants-table">
+                            <div class="vt-header">
+                                <div class="vt-cell">Size</div>
+                                <div class="vt-cell">Thickness</div>
+                                <div class="vt-cell">@(_productModel.SellingUnit == VikashERP.SharedKernel.Enums.RateOn.Kg ? "Alert Qty (Kg)" : "Alert Qty (Pcs)")</div>
+                                <div class="vt-cell" style="width: 50px;"></div>
+                            </div>
+                            @foreach (var variant in _productModel.Variants)
+                            {
+                                <div class="vt-row">
+                                    <div class="vt-cell">
+                                        <MudTextField @bind-Value="variant.Size" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="e.g. 12mm" Required="true" />
+                                    </div>
+                                    <div class="vt-cell">
+                                        <MudTextField @bind-Value="variant.Thickness" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="e.g. 2.5mm" Required="true" />
+                                    </div>
+                                    <div class="vt-cell">
+                                        <MudNumericField @bind-Value="variant.AlertQtyPcs" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Required="true" />
+                                    </div>
+                                    <div class="vt-cell text-center">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveVariant(variant))" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <ValidationMessage For="@(() => _productModel.Variants)" />
+                    }
+                </div>
+
                 <!-- Left Column (Bottom): Product Gallery -->
                 <div class="glass-panel p-4 flex-col gap-4 mt-4">
                     <div class="flex justify-between items-center">
@@ -143,57 +190,6 @@
                                 </div>
                             }
                         </div>
-                    }
-                </div>
-
-                <!-- Right Column: Variants -->
-                <div class="glass-panel p-4 flex-col gap-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="section-title mb-0">Product Variants</h3>
-                        <button type="button" class="btn-primary btn-sm" @onclick="AddVariant">
-                            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-1" /> Add Variant
-                        </button>
-                    </div>
-
-                    @if (_productModel.Variants.Count == 0)
-                    {
-                        <div class="empty-state">
-                            <MudIcon Icon="@Icons.Material.Filled.LayersClear" Size="Size.Large" Color="Color.Default" />
-                            <p>No variants added yet. Click "Add Variant" to configure sizes and weights.</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="variants-table">
-                            <div class="vt-header">
-                                <div class="vt-cell">Size</div>
-                                <div class="vt-cell">Thickness</div>
-                                <div class="vt-cell">Unit (Pcs to Kg)</div>
-                                <div class="vt-cell">Alert Qty (Pcs)</div>
-                                <div class="vt-cell" style="width: 50px;"></div>
-                            </div>
-                            @foreach (var variant in _productModel.Variants)
-                            {
-                                <div class="vt-row">
-                                    <div class="vt-cell">
-                                        <MudTextField @bind-Value="variant.Size" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="e.g. 12mm" Required="true" />
-                                    </div>
-                                    <div class="vt-cell">
-                                        <MudTextField @bind-Value="variant.Thickness" Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="e.g. 2.5mm" Required="true" />
-                                    </div>
-                                    <div class="vt-cell">
-                                        <MudNumericField @bind-Value="variant.UnitPcsToKg" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0.0001m" Required="true" />
-                                    </div>
-                                    <div class="vt-cell">
-                                        <MudNumericField @bind-Value="variant.AlertQtyPcs" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Required="true" />
-                                    </div>
-                                    <div class="vt-cell text-center">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoveVariant(variant))" />
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <ValidationMessage For="@(() => _productModel.Variants)" />
                     }
                 </div>
             </div>

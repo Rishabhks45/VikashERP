@@ -17,13 +17,13 @@
     <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">@ErrorMessage</MudAlert>
 }
 
-<EditForm Model="@Model" OnValidSubmit="HandleLogin" novalidate>
+<EditForm Model="@Model" OnValidSubmit="HandleLogin" FormName="login-form" novalidate>
     <FluentValidationValidator />
 
     <div style="margin-bottom: 20px;">
         <span class="field-label">Email or Username</span>
         <MudTextField @bind-Value="Model.Email"
-                      Placeholder="superadmin@vikashironix.com"
+                      Placeholder="xyz@vikashironix.com"
                       Variant="Variant.Outlined"
                       Adornment="Adornment.Start"
                       AdornmentIcon="@Icons.Material.Outlined.AlternateEmail"

@@ -22,7 +22,7 @@ public class BrokerLedgerConfiguration : IEntityTypeConfiguration<BrokerLedger>
         builder.Property(e => e.RunningBalance).HasPrecision(12, 2).IsRequired();
 
         builder.HasOne(e => e.Broker)
-            .WithMany()
+            .WithMany(b => b.LedgerEntries)
             .HasForeignKey(e => e.BrokerId)
             .OnDelete(DeleteBehavior.Cascade);
     }

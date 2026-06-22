@@ -459,6 +459,54 @@ public class CustomersController : ControllerBase
             return StatusCode(500, new { Message = ex.Message });
         }
     }
+
+    [HttpGet("{id:guid}/ledger")]
+    public async Task<IActionResult> GetCustomerLedger(
+        Guid id,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var query = _context.CustomerLedgers
+                .Where(l => l.CustomerId == id && !l.IsDeleted)
+                .OrderBy(l => l.TransactionDate)
+                .AsQueryable();
+
+            if (fromDate.HasValue)
+            {
+                var utcFrom = DateTime.SpecifyKind(fromDate.Value.Date, DateTimeKind.Utc);
+                query = query.Where(l => l.TransactionDate >= utcFrom);
+            }
+
+            if (toDate.HasValue)
+            {
+                var utcTo = DateTime.SpecifyKind(toDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+                query = query.Where(l => l.TransactionDate <= utcTo);
+            }
+
+            var entries = await query.ToListAsync(cancellationToken);
+
+            var result = entries.Select(l => new
+            {
+                l.Id,
+                l.CustomerId,
+                l.TransactionDate,
+                l.TransactionType,
+                l.Debit,
+                l.Credit,
+                l.RunningBalance,
+                l.Remarks
+            }).ToList();
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Message = ex.Message });
+        }
+    }
 }
 
 

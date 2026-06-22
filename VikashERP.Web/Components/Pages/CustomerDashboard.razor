@@ -1,134 +1,1000 @@
 @page "/customer-dashboard"
+@attribute [Authorize]
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using VikashERP.Web.Models
+@using VikashERP.Web.Services.Interfaces
+@inject IDarkModeService DarkModeService
+@inject IProductWebService ProductService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
-<PageTitle>Customer Portal - The Iron Ledger</PageTitle>
+<PageTitle>Customer Storefront & Portal - Vikash Iron & Steel</PageTitle>
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Justify="Justify.SpaceBetween" Style="padding: 0 0 12px 0; border-bottom: 1px solid var(--mud-palette-divider);">
-    <div>
-        <MudText Typo="Typo.h6" Style="font-family: var(--mud-typography-h6-font-family); font-weight: 800; letter-spacing: -0.5px; margin: 0;">My Account Overview</MudText>
-        <MudText Typo="Typo.caption" Color="Color.Secondary" Style="margin-top: 2px;">Welcome back, @_userName</MudText>
-    </div>
-</MudStack>
+<div class="customer-portal-container">
 
-<MudGrid Spacing="3" Class="mb-4">
-    <!-- Credit Limit KPI -->
-    <MudItem xs="12" sm="6" md="4">
-        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px; background: linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(33, 150, 243, 0.02) 100%); position: relative; overflow: hidden;" Class="pa-4">
-            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--mud-palette-info), transparent);"></div>
-            <MudStack Spacing="1">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                    <MudText Style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); letter-spacing: 0.05em; text-transform: uppercase;">Total Credit Limit</MudText>
-                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Info" Size="Size.Small" />
-                </MudStack>
-                <MudText Typo="Typo.h5" Color="Color.Info" Style="font-family: 'Courier New', monospace; font-weight: 900; letter-spacing: -0.5px;">₹5,00,000</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">Standard Tier</MudText>
-            </MudStack>
-        </MudPaper>
-    </MudItem>
-
-    <!-- Outstanding Balance KPI -->
-    <MudItem xs="12" sm="6" md="4">
-        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px; background: linear-gradient(135deg, rgba(244, 67, 54, 0.08) 0%, rgba(244, 67, 54, 0.02) 100%); position: relative; overflow: hidden;" Class="pa-4">
-            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--mud-palette-error), transparent);"></div>
-            <MudStack Spacing="1">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                    <MudText Style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); letter-spacing: 0.05em; text-transform: uppercase;">Outstanding Dues</MudText>
-                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Size="Size.Small" />
-                </MudStack>
-                <MudText Typo="Typo.h5" Color="Color.Error" Style="font-family: 'Courier New', monospace; font-weight: 900; letter-spacing: -0.5px;">₹1,24,500</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Error" Style="font-weight: 700;">Please clear dues to avoid late fees.</MudText>
-            </MudStack>
-        </MudPaper>
-    </MudItem>
-
-    <!-- Available Credit KPI -->
-    <MudItem xs="12" sm="12" md="4">
-        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.02) 100%); position: relative; overflow: hidden;" Class="pa-4">
-            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--mud-palette-success), transparent);"></div>
-            <MudStack Spacing="1">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                    <MudText Style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); letter-spacing: 0.05em; text-transform: uppercase;">Available Credit</MudText>
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
-                </MudStack>
-                <MudText Typo="Typo.h5" Color="Color.Success" Style="font-family: 'Courier New', monospace; font-weight: 900; letter-spacing: -0.5px;">₹3,75,500</MudText>
-                <MudProgressLinear Color="Color.Success" Value="75" Class="mt-2" />
-            </MudStack>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
-
-<MudGrid Spacing="3">
-    <!-- Active Orders -->
-    <MudItem xs="12" md="8">
-        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px;" Class="pa-4">
-            <MudText Typo="Typo.subtitle1" Style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;" Class="mb-3">Recent Orders</MudText>
-            
-            <div style="overflow-x: auto;">
-                <MudTable Items="@RecentOrders" Hover="true" Elevation="0" Dense="true" Style="background: transparent;" Breakpoint="Breakpoint.Sm">
-                    <HeaderContent>
-                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Order No</MudTh>
-                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Date</MudTh>
-                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Material</MudTh>
-                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Amount</MudTh>
-                        <MudTh Style="font-weight: 700; font-size: 0.75rem;">Status</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd Style="font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.8rem; color: var(--mud-palette-primary);">@context.OrderNo</MudTd>
-                        <MudTd Style="font-size: 0.85rem;">@context.Date.ToShortDateString()</MudTd>
-                        <MudTd Style="font-size: 0.85rem; color: var(--mud-palette-text-secondary);">@context.Material</MudTd>
-                        <MudTd Style="font-family: 'Courier New', monospace; font-weight: 800; font-size: 0.85rem;">@context.Amount.ToString("C0", new System.Globalization.CultureInfo("hi-IN"))</MudTd>
-                        <MudTd>
-                            <MudChip T="string" Size="Size.Small" Color="@context.StatusColor" Variant="Variant.Text" Style="font-weight: 700; font-size: 0.7rem; text-transform: uppercase;">
-                                @context.Status
-                            </MudChip>
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </div>
-        </MudPaper>
-    </MudItem>
-
-    <!-- Quick Actions -->
-    <MudItem xs="12" md="4">
-        <MudPaper Elevation="0" Style="border: 1px solid var(--mud-palette-divider); border-radius: 8px;" Class="pa-4">
-            <MudText Typo="Typo.subtitle1" Style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;" Class="mb-3">Quick Actions</MudText>
-            
-            <MudStack Spacing="3">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Payment" Style="border-radius: 8px; font-weight: 700; padding: 10px; justify-content: flex-start; text-transform: none;">
-                    Make a Payment
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.Description" Style="border-radius: 8px; font-weight: 700; padding: 10px; justify-content: flex-start; text-transform: none;">
-                    View Detailed Ledger
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.LocalShipping" Style="border-radius: 8px; font-weight: 700; padding: 10px; justify-content: flex-start; text-transform: none;">
-                    Request New Quote
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" StartIcon="@Icons.Material.Filled.SupportAgent" Style="border-radius: 8px; font-weight: 700; padding: 10px; justify-content: flex-start; text-transform: none;">
-                    Contact Account Manager
-                </MudButton>
-            </MudStack>
-            
-            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--mud-palette-divider);">
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600; text-transform: uppercase;">Your Account Manager</MudText>
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-2">
-                    <MudAvatar Color="Color.Primary" Size="Size.Medium" Style="font-weight: 800;">VS</MudAvatar>
-                    <div>
-                        <MudText Typo="Typo.body2" Style="font-weight: 700;">Vikash Sharma</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">+91 98765 43210</MudText>
+    @if (_currentTab == "home")
+    {
+        <!-- ── HERO BANNER ── -->
+        <section class="portal-hero">
+            <img src="uploads/images/steel_pipes_banner.jpg" class="hero-bg-img" alt="Vikash Iron &amp; Steel Products" />
+            <div class="hero-overlay-gradient"></div>
+            <div class="hero-glow-bg"></div>
+            <div class="hero-left-content">
+                <span class="hero-trusted-badge">🛡️ Trusted Steel Partner</span>
+                <h1 class="hero-title-main">Premium Steel Products<br />Direct From <span>Vikash Iron &amp; Steel</span></h1>
+                <p class="hero-sub-text">High Quality • Best Prices • On Time Delivery</p>
+                
+                <div class="hero-badge-grid">
+                    <div class="hero-badge-item">
+                        <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Class="icon" />
+                        <div class="txt">
+                            <span class="main-lbl">Genuine Material</span>
+                            <span class="sub-lbl">100% Certified</span>
+                        </div>
                     </div>
-                </MudStack>
+                    <div class="hero-badge-item">
+                        <MudIcon Icon="@Icons.Material.Filled.CurrencyExchange" Class="icon" />
+                        <div class="txt">
+                            <span class="main-lbl">Best Market Rates</span>
+                            <span class="sub-lbl">Competitive Pricing</span>
+                        </div>
+                    </div>
+                    <div class="hero-badge-item">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Class="icon" />
+                        <div class="txt">
+                            <span class="main-lbl">Fast Delivery</span>
+                            <span class="sub-lbl">Pan India Delivery</span>
+                        </div>
+                    </div>
+                    <div class="hero-badge-item">
+                        <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="icon" />
+                        <div class="txt">
+                            <span class="main-lbl">GST Billing</span>
+                            <span class="sub-lbl">Invoice on Every Order</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-actions-row">
+                    <button class="btn-hero-primary" @onclick="ScrollToProducts">
+                        Explore Products <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
+                    </button>
+                    <button class="btn-hero-secondary" @onclick='() => ToggleTab("rfq")'>
+                        <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" /> Get Quotation
+                    </button>
+                </div>
             </div>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+        </section>
+
+        <!-- ── STATS COUNTER ROW ── -->
+        <section class="stats-counter-row">
+            <div class="stat-card-item">
+                <div class="stat-icon-wrap">
+                    <MudIcon Icon="@Icons.Material.Filled.Layers" Size="Size.Small" />
+                </div>
+                <div class="stat-text-wrap">
+                    <span class="stat-value">1200+</span>
+                    <span class="stat-lbl">Products</span>
+                </div>
+            </div>
+            <div class="stat-card-item">
+                <div class="stat-icon-wrap">
+                    <MudIcon Icon="@Icons.Material.Filled.WorkspacePremium" Size="Size.Small" />
+                </div>
+                <div class="stat-text-wrap">
+                    <span class="stat-value">50+</span>
+                    <span class="stat-lbl">Brands</span>
+                </div>
+            </div>
+            <div class="stat-card-item">
+                <div class="stat-icon-wrap">
+                    <MudIcon Icon="@Icons.Material.Filled.Groups" Size="Size.Small" />
+                </div>
+                <div class="stat-text-wrap">
+                    <span class="stat-value">5000+</span>
+                    <span class="stat-lbl">Happy Clients</span>
+                </div>
+            </div>
+            <div class="stat-card-item">
+                <div class="stat-icon-wrap">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+                </div>
+                <div class="stat-text-wrap">
+                    <span class="stat-value">Same Day</span>
+                    <span class="stat-lbl">Dispatch</span>
+                </div>
+            </div>
+            <div class="stat-card-item">
+                <div class="stat-icon-wrap">
+                    <MudIcon Icon="@Icons.Material.Filled.FactCheck" Size="Size.Small" />
+                </div>
+                <div class="stat-text-wrap">
+                    <span class="stat-value">Quality</span>
+                    <span class="stat-lbl">Assured</span>
+                </div>
+            </div>
+            <div class="stat-card-item">
+                <div class="stat-icon-wrap">
+                    <MudIcon Icon="@Icons.Material.Filled.HeadsetMic" Size="Size.Small" />
+                </div>
+                <div class="stat-text-wrap">
+                    <span class="stat-value">24x7</span>
+                    <span class="stat-lbl">Support</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── CATEGORY TAB SLIDER ── -->
+        <section class="category-slider-row" id="product-listing-section">
+            <button class="slider-tab-btn @(string.IsNullOrEmpty(_selectedCategorySlider) ? "active" : "")" @onclick="() => FilterByCategorySlider(string.Empty)">
+                <span class="tab-icon">📋</span> All Products
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "TMT Bars" ? "active" : "")" @onclick='() => FilterByCategorySlider("TMT Bars")'>
+                <span class="tab-icon">⛓️</span> TMT Bars
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "MS Pipes" ? "active" : "")" @onclick='() => FilterByCategorySlider("MS Pipes")'>
+                <span class="tab-icon">🛢️</span> MS Pipes
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "MS Angles" ? "active" : "")" @onclick='() => FilterByCategorySlider("MS Angles")'>
+                <span class="tab-icon">📐</span> MS Angles
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "MS Channels" ? "active" : "")" @onclick='() => FilterByCategorySlider("MS Channels")'>
+                <span class="tab-icon">🧱</span> MS Channels
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "MS Flats" ? "active" : "")" @onclick='() => FilterByCategorySlider("MS Flats")'>
+                <span class="tab-icon">📏</span> MS Flats
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "MS Plates" ? "active" : "")" @onclick='() => FilterByCategorySlider("MS Plates")'>
+                <span class="tab-icon">🎴</span> MS Plates
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "GP Sheets" ? "active" : "")" @onclick='() => FilterByCategorySlider("GP Sheets")'>
+                <span class="tab-icon">🗺️</span> GP Sheets
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "CRC Sheets" ? "active" : "")" @onclick='() => FilterByCategorySlider("CRC Sheets")'>
+                <span class="tab-icon">💿</span> CRC Sheets
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "GI Pipes" ? "active" : "")" @onclick='() => FilterByCategorySlider("GI Pipes")'>
+                <span class="tab-icon">🚰</span> GI Pipes
+            </button>
+            <button class="slider-tab-btn @(_selectedCategorySlider == "Wire & Rod" ? "active" : "")" @onclick='() => FilterByCategorySlider("Wire & Rod")'>
+                <span class="tab-icon">🌀</span> Wire &amp; Rod
+            </button>
+        </section>
+
+        <!-- ── MAIN CATALOG WORKSPACE ── -->
+        <section class="catalog-workspace">
+            <!-- Left Sidebar Filters -->
+            <aside class="filter-sidebar">
+                <div class="filter-title-row">
+                    <span class="filter-title">Filters</span>
+                    <button class="btn-clear-filters" @onclick="ResetFilters">Clear All</button>
+                </div>
+
+                <div class="filter-field-group">
+                    <label>Category</label>
+                    <select class="filter-input-select" @bind="_selectedCategory">
+                        <option value="">All Categories</option>
+                        <option value="TMT Bars">TMT Bars</option>
+                        <option value="MS Pipes">MS Pipes</option>
+                        <option value="MS Angles">MS Angles</option>
+                        <option value="CRC Sheets">CRC Sheets</option>
+                        <option value="GI Pipes">GI Pipes</option>
+                        <option value="Wire & Rod">Wire &amp; Rod</option>
+                    </select>
+                </div>
+
+                <div class="filter-field-group">
+                    <label>Grade</label>
+                    <select class="filter-input-select" @bind="_selectedGrade">
+                        <option value="">All Grades</option>
+                        <option value="Fe 500D">Fe 500D</option>
+                        <option value="IS 4923 • YST 310">IS 4923 • YST 310</option>
+                        <option value="IS 2062 • E250">IS 2062 • E250</option>
+                        <option value="IS 513 • CRCA">IS 513 • CRCA</option>
+                        <option value="IS 1239 • Grade E">IS 1239 • Grade E</option>
+                        <option value="0.50mm • Zinc Coated">0.50mm • Zinc Coated</option>
+                    </select>
+                </div>
+
+                <div class="filter-field-group">
+                    <label>Size / Thickness</label>
+                    <select class="filter-input-select" @bind="_selectedSize">
+                        <option value="">All Sizes</option>
+                        <option value="12mm">12mm</option>
+                        <option value="40x40">40x40</option>
+                        <option value="50x50x6">50x50x6</option>
+                        <option value="1.2mm">1.2mm</option>
+                        <option value="1 inch">1 inch</option>
+                        <option value="Standard">Standard</option>
+                    </select>
+                </div>
+
+                <div class="filter-field-group">
+                    <label>Brand</label>
+                    <select class="filter-input-select" @bind="_selectedBrand">
+                        <option value="">All Brands</option>
+                        <option value="Vikash Premium">Vikash Premium</option>
+                        <option value="Tata Steel">Tata Steel</option>
+                        <option value="SAIL">SAIL</option>
+                        <option value="Jindal Star">Jindal Star</option>
+                    </select>
+                </div>
+
+                <div class="filter-field-group">
+                    <label>Price Range (₹/Ton)</label>
+                    <input type="range" min="10000" max="120000" step="5000" @bind-value="_maxPrice" @bind-value:event="oninput" style="width: 100%; cursor: pointer;" />
+                    <div class="price-range-text">
+                        <span>₹ 10k</span>
+                        <span>₹ @_maxPrice.ToString("N0")</span>
+                    </div>
+                </div>
+
+                <div class="filter-field-group wishlist-filter-group">
+                    <label class="wishlist-checkbox-label">
+                        <input type="checkbox" @bind="_showWishlistOnly" class="wishlist-checkbox-input" />
+                        <span>Show Wishlist Only</span>
+                        <MudIcon Icon="@Icons.Material.Filled.Favorite" Size="Size.Small" Color="Color.Error" />
+                    </label>
+                </div>
+
+                <button class="btn-apply-filters" @onclick="ApplyFiltersTrigger">Apply Filters</button>
+            </aside>
+
+            <!-- Right Content Area -->
+            <main class="catalog-content-area">
+                <div class="catalog-results-header">
+                    <span class="results-count">All Products <span class="text-slate-500" style="font-weight: 500;">(@FilteredCatalogProducts.Count Products Found)</span></span>
+                    
+                    <div class="catalog-sort-wrap">
+                        <span>Sort By</span>
+                        <select class="sort-select" @bind="_sortOrder">
+                            <option value="popular">Popularity</option>
+                            <option value="price-asc">Price: Low to High</option>
+                            <option value="price-desc">Price: High to Low</option>
+                        </select>
+                    </div>
+                </div>
+
+                @if (FilteredCatalogProducts.Count == 0)
+                {
+                    <div class="portal-empty-state">
+                        <MudIcon Icon="@Icons.Material.Filled.Inventory" Class="icon" />
+                        <h3>No Products Found</h3>
+                        <p>Try clearing or adjusting filters to discover premium steel products.</p>
+                        <button class="btn-hero-secondary mt-2" @onclick="ResetFilters">Reset Filters</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="product-cards-grid">
+                        @foreach (var prod in FilteredCatalogProducts)
+                        {
+                            <div class="product-display-card">
+                                <!-- Image wrapper -->
+                                <div class="card-image-wrap">
+                                    @if (!string.IsNullOrEmpty(prod.Badge))
+                                    {
+                                        <span class="card-badge @prod.Badge.Replace(" ", "").ToLower()">@prod.Badge</span>
+                                    }
+                                    <button class="btn-wishlist @(_wishlistedProductNames.Contains(prod.Name) ? "active" : "")" @onclick="() => ToggleWishlist(prod.Name)">
+                                        <MudIcon Icon="@(_wishlistedProductNames.Contains(prod.Name) ? Icons.Material.Filled.Favorite : Icons.Material.Filled.FavoriteBorder)" Size="Size.Small" />
+                                    </button>
+                                    
+                                    @if (!string.IsNullOrEmpty(prod.ImageUrl))
+                                    {
+                                        <img src="@prod.ImageUrl" alt="@prod.Name" class="card-product-img" />
+                                    }
+                                    else
+                                    {
+                                        <div class="card-placeholder-bg">
+                                            <MudIcon Icon="@Icons.Material.Filled.Hardware" Class="icon" />
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Body -->
+                                <div class="card-details-body">
+                                    <h3 class="card-prod-title">@prod.Name</h3>
+                                    <span class="card-prod-grade">@prod.Grade</span>
+
+                                    <div class="card-price-row">
+                                        <span class="card-price-value">₹ @prod.Price.ToString("N0")</span>
+                                        <span class="card-price-unit">/ @prod.Unit</span>
+                                    </div>
+
+                                    <div class="card-stock-row">
+                                        <span class="stock-dot @prod.StockStatus.Replace(" ", "").ToLower()"></span>
+                                        <span class="stock-label @(prod.StockStatus == "Low Stock" ? "orange-text" : prod.StockStatus == "Out of Stock" ? "red-text" : "text-success")">@prod.StockStatus</span>
+                                        <span class="stock-qty">(@prod.StockQtyText)</span>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="card-actions-row">
+                                    <button class="btn-card-details" @onclick="() => OpenProductDetails(prod)">View Details</button>
+                                    <button class="btn-card-cart" @onclick="() => AddToCart(prod.Name)">
+                                        <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Size="Size.Small" />
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </main>
+        </section>
+
+        <!-- ── BOTTOM MARKETING ROW ── -->
+        <section class="bottom-marketing-row">
+            <div class="marketing-item">
+                <MudIcon Icon="@Icons.Material.Filled.CurrencyExchange" Class="marketing-icon" />
+                <div class="marketing-text">
+                    <span class="marketing-title">Best Market Price</span>
+                    <span class="marketing-desc">Always Competitive</span>
+                </div>
+            </div>
+            <div class="marketing-item">
+                <MudIcon Icon="@Icons.Material.Filled.Verified" Class="marketing-icon" />
+                <div class="marketing-text">
+                    <span class="marketing-title">Genuine Quality</span>
+                    <span class="marketing-desc">100% Certified Material</span>
+                </div>
+            </div>
+            <div class="marketing-item">
+                <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Class="marketing-icon" />
+                <div class="marketing-text">
+                    <span class="marketing-title">Timely Delivery</span>
+                    <span class="marketing-desc">Pan India Network</span>
+                </div>
+            </div>
+            <div class="marketing-item">
+                <MudIcon Icon="@Icons.Material.Filled.Security" Class="marketing-icon" />
+                <div class="marketing-text">
+                    <span class="marketing-title">Secure Payments</span>
+                    <span class="marketing-desc">100% Safe Transactions</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── BULK QUOTE BANNER ── -->
+        <section class="bulk-quote-banner">
+            <div class="bulk-text-side">
+                <span class="bulk-title">Need Bulk Quantity?</span>
+                <span class="bulk-desc">Get special discounts for contractors &amp; bulk orders</span>
+            </div>
+            <button class="btn-bulk-quote" @onclick='() => ToggleTab("rfq")'>
+                Request Bulk Quote <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
+            </button>
+        </section>
+    }
+    else if (_currentTab == "account")
+    {
+        <!-- ── MY ACCOUNT / LEDGER TAB ── -->
+        <div class="portal-account-view">
+            <div class="account-section-header">
+                <h2 class="account-section-title">My Account &amp; Credit Ledger</h2>
+                <p class="text-slate-500" style="margin-top: 2px;">Real-time overview of your financial statements &amp; orders</p>
+            </div>
+
+            <!-- KPI Cards Grid -->
+            <div class="kpi-cards-grid">
+                <div class="kpi-panel-card">
+                    <div class="kpi-top-glow blue"></div>
+                    <div class="kpi-header-row">
+                        <span class="kpi-lbl-title">Total Credit Limit</span>
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Info" Size="Size.Small" />
+                    </div>
+                    <span class="kpi-val-display blue">₹ 5,00,000</span>
+                    <span class="kpi-sub-text text-slate-500">Premium Account Tier</span>
+                </div>
+
+                <div class="kpi-panel-card">
+                    <div class="kpi-top-glow red"></div>
+                    <div class="kpi-header-row">
+                        <span class="kpi-lbl-title">Outstanding Dues</span>
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Size="Size.Small" />
+                    </div>
+                    <span class="kpi-val-display red">₹ 1,24,500</span>
+                    <span class="kpi-sub-text text-danger">Please clear pending dues.</span>
+                </div>
+
+                <div class="kpi-panel-card">
+                    <div class="kpi-top-glow green"></div>
+                    <div class="kpi-header-row">
+                        <span class="kpi-lbl-title">Available Credit</span>
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                    </div>
+                    <span class="kpi-val-display green">₹ 3,75,500</span>
+                    <span class="kpi-sub-text text-success">75% Credit Limit Available</span>
+                </div>
+            </div>
+
+            <!-- Split Grid -->
+            <div class="account-split-grid">
+                <!-- Left Column (Tables) -->
+                <div class="account-left-column" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <!-- Recent Orders Table -->
+                    <div class="account-table-card">
+                        <h3 class="table-title">Recent Orders History</h3>
+                        <div class="erp-table-responsive">
+                            <table class="erp-data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order No</th>
+                                        <th>Date</th>
+                                        <th>Material Details</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in RecentOrders)
+                                    {
+                                        <tr>
+                                            <td class="font-mono-bold text-color-primary">@order.OrderNo</td>
+                                            <td>@order.Date.ToString("dd MMM yyyy")</td>
+                                            <td class="text-slate-500">@order.Material</td>
+                                            <td class="font-mono-bold">₹ @order.Amount.ToString("N0")</td>
+                                            <td>
+                                                <span class="status-badge" style="background: rgba(37,99,235,0.08); color: #2563eb; font-weight:800; font-size:0.68rem; padding: 2px 6px; border-radius:4px; text-transform:uppercase;">
+                                                    @order.Status
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- My Wishlist Table -->
+                    <div class="account-table-card">
+                        <h3 class="table-title" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 10px; margin-bottom: 12px;">
+                            <span>My Wishlist</span>
+                            <span class="badge badge-info" style="font-size: 0.75rem; background: rgba(37,99,235,0.08); color: #2563eb; padding: 2px 6px; border-radius: 4px;">@_wishlistedProductNames.Count Items</span>
+                        </h3>
+                        @if (_wishlistedProductNames.Count == 0)
+                        {
+                            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                <MudIcon Icon="@Icons.Material.Filled.FavoriteBorder" Style="font-size: 40px; margin-bottom: 8px; opacity: 0.5;" />
+                                <p style="font-size: 0.85rem; margin: 0;">Your wishlist is empty. Start adding steel products from the storefront!</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="erp-table-responsive">
+                                <table class="erp-data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Grade</th>
+                                            <th>Price</th>
+                                            <th>Stock</th>
+                                            <th style="text-align: right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var prodName in _wishlistedProductNames)
+                                        {
+                                            var prod = CatalogProducts.FirstOrDefault(p => p.Name == prodName);
+                                            if (prod != null)
+                                            {
+                                                <tr>
+                                                    <td class="font-bold text-color-primary">
+                                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                                            @if (!string.IsNullOrEmpty(prod.ImageUrl))
+                                                            {
+                                                                <img src="@prod.ImageUrl" alt="@prod.Name" style="width: 28px; height: 28px; border-radius: 4px; object-fit: cover; border: 1px solid var(--card-border-color);" />
+                                                            }
+                                                            <span>@prod.Name</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>@prod.Grade</td>
+                                                    <td class="font-mono-bold">₹ @prod.Price.ToString("N0") / @prod.Unit</td>
+                                                    <td>
+                                                        <span class="status-badge" style="background: @(prod.StockStatus == "In Stock" ? "rgba(16,185,129,0.08)" : prod.StockStatus == "Low Stock" ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)"); color: @(prod.StockStatus == "In Stock" ? "#10b981" : prod.StockStatus == "Low Stock" ? "#f59e0b" : "#ef4444"); font-weight:800; font-size:0.68rem; padding: 2px 6px; border-radius:4px; text-transform:none;">
+                                                            @prod.StockStatus
+                                                        </span>
+                                                    </td>
+                                                    <td style="text-align: right;">
+                                                        <div style="display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                                                            <button class="btn-card-cart" style="padding: 4px 8px; border-radius: 4px; background: #2563eb; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Add to Cart" @onclick="() => AddToCart(prod.Name)">
+                                                                <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Size="Size.Small" />
+                                                            </button>
+                                                            <button class="btn-wishlist-delete-table" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 4px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; cursor: pointer; transition: all 0.2s;" title="Remove from Wishlist" @onclick="() => ToggleWishlist(prod.Name)">
+                                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Right: Quick Actions & Manager -->
+                <div class="actions-sidebar-panel">
+                    <h3 class="table-title">Account Actions</h3>
+                    <div class="actions-list">
+                        <button class="btn-quick-action primary-btn" @onclick="MakePaymentSim">
+                            <MudIcon Icon="@Icons.Material.Filled.Payment" Size="Size.Small" /> Make a Payment
+                        </button>
+                        <button class="btn-quick-action" @onclick="DownloadLedgerSim">
+                            <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" /> View Full Ledger
+                        </button>
+                        <button class="btn-quick-action" @onclick='() => ToggleTab("rfq")'>
+                            <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Size="Size.Small" /> Request New Quote
+                        </button>
+                    </div>
+
+                    <div class="manager-contact-section">
+                        <span class="manager-title">Your Dedicated Manager</span>
+                        <div class="manager-card-box">
+                            <div class="manager-avatar">VS</div>
+                            <div class="manager-info">
+                                <span class="manager-name">Vikash Sharma</span>
+                                <span class="manager-phone">+91 98765 43210</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (_currentTab == "rfq")
+    {
+        <!-- ── RFQ / BULK QUOTATION FORM ── -->
+        <div class="portal-account-view">
+            <div class="account-section-header">
+                <h2 class="account-section-title">Request B2B Commercial Quotation</h2>
+                <p class="text-slate-500" style="margin-top: 2px;">Submit your bulk volume specifications for custom pricing</p>
+            </div>
+
+            <div class="account-table-card" style="max-width: 600px; margin: 0 auto; width: 100%;">
+                @if (_quoteSubmitted)
+                {
+                    <div class="quote-success-state">
+                        <div class="success-icon-wrap">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Style="font-size: 64px;" />
+                        </div>
+                        <h4 class="success-title">Commercial RFQ Submitted!</h4>
+                        <p class="success-desc">We have successfully registered your request. Our account manager will analyze the current market rates and send you a custom invoice quote via email shortly.</p>
+                        
+                        <div class="success-details mt-4">
+                            <div class="success-details-row">
+                                <span class="label">Reference ID:</span>
+                                <span class="val font-mono-bold">RFQ-2026-@_randomRfqId</span>
+                            </div>
+                            <div class="success-details-row">
+                                <span class="label">Material Selected:</span>
+                                <span class="val">@_quoteSpec</span>
+                            </div>
+                            <div class="success-details-row">
+                                <span class="label">Volume Target:</span>
+                                <span class="val">@_quoteQty Metric Tons</span>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-primary-block mt-6" @onclick='() => ToggleTab("home")'>Back to Home</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="dialog-form" style="display: flex; flex-direction: column; gap: 14px;">
+                        <div class="form-row">
+                            <label class="form-label">1. Select Material Category</label>
+                            <select class="filter-input-select" value="@_quoteCategory" @onchange="OnQuoteCategoryChanged">
+                                <option value="TMT Bars">TMT Bars</option>
+                                <option value="MS Pipes">MS Pipes</option>
+                                <option value="MS Angles">MS Angles</option>
+                                <option value="CRC Sheets">CRC Sheets</option>
+                                <option value="GI Pipes">GI Pipes</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <label class="form-label">2. Select Specification/Grade</label>
+                            <select class="filter-input-select" @bind="_quoteSpec">
+                                @if (_quoteCategory == "TMT Bars")
+                                {
+                                    <option value="12mm TMT Bar (Fe 500D)">12mm TMT Bar (Fe 500D)</option>
+                                    <option value="10mm TMT Bar (Fe 500D)">10mm TMT Bar (Fe 500D)</option>
+                                    <option value="16mm TMT Bar (Fe 500D)">16mm TMT Bar (Fe 500D)</option>
+                                }
+                                else if (_quoteCategory == "MS Pipes")
+                                {
+                                    <option value="MS Square Pipe 40x40 (IS 4923)">MS Square Pipe 40x40 (IS 4923)</option>
+                                    <option value="MS Round Pipe 1 inch (IS 1239)">MS Round Pipe 1 inch (IS 1239)</option>
+                                }
+                                else if (_quoteCategory == "MS Angles")
+                                {
+                                    <option value="MS Angle 50x50x6 (IS 2062)">MS Angle 50x50x6 (IS 2062)</option>
+                                }
+                                else if (_quoteCategory == "CRC Sheets")
+                                {
+                                    <option value="CRC Sheet 1.2mm (IS 513)">CRC Sheet 1.2mm (IS 513)</option>
+                                }
+                                else
+                                {
+                                    <option value="GI Corrugated Sheet (0.50mm)">GI Corrugated Sheet (0.50mm)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="form-row-grid">
+                            <div class="form-field">
+                                <label class="form-label">3. Volume Target (Metric Tons)</label>
+                                <input type="number" min="1" step="0.5" class="form-input" @bind-value="_quoteQty" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">4. Offloading Site</label>
+                                <select class="filter-input-select" @bind="_deliverySite">
+                                    <option value="Customer Warehouse Location">Customer Warehouse Location</option>
+                                    <option value="Direct Project Site">Direct Project Site</option>
+                                    <option value="Main Godown A (Pickup)">Main Godown A (Pickup)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <label class="form-label">5. Custom Tolerances &amp; Tolerable Lengths</label>
+                            <textarea class="form-textarea" placeholder="Specify any custom sizing, length, chemical properties, or certificate requirements..." rows="4" @bind="_quoteInstructions"></textarea>
+                        </div>
+
+                        <div class="info-alert">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2 text-primary" />
+                            <span>B2B quotes are calculated dynamically based on bulk tonnage. Expect a proposal response in under 2 hours.</span>
+                        </div>
+
+                        <div class="dialog-footer" style="margin-top: 10px;">
+                            <button class="btn-secondary-block" @onclick='() => ToggleTab("home")'>Cancel</button>
+                            <button class="btn-primary-block" @onclick="SubmitBulkQuote">Submit RFQ</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (_currentTab == "about")
+    {
+        <!-- ABOUT US TAB -->
+        <div class="portal-account-view">
+            <div class="account-section-header">
+                <h2 class="account-section-title">About Vikash Iron &amp; Steel</h2>
+                <p class="text-slate-500" style="margin-top: 2px;">Your trusted industrial steel supplier since 1998</p>
+            </div>
+            
+            <div class="account-table-card" style="padding: 2rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center;">
+                    <div>
+                        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 12px;">Who We Are</h3>
+                        <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted); margin-bottom: 1rem;">
+                            Vikash Iron &amp; Steel has been a premier distributor of structural steel, pipes, sheets, and TMT bars for over two decades. We serve thousands of infrastructure developers, contractors, and retail dealers across the nation with high-grade steel direct from major manufacturers like Tata, SAIL, and Jindal.
+                        </p>
+                        <p style="font-size: 0.88rem; line-height: 1.6; color: var(--text-muted);">
+                            Our state-of-the-art warehouses and integrated logistics ensure that your materials are cut to precision, loaded securely, and dispatched on-schedule.
+                        </p>
+                    </div>
+                    <div style="background: var(--input-bg); border: var(--card-border); border-radius: 8px; padding: 1.5rem;">
+                        <h4 style="font-size: 0.9rem; font-weight: 800; text-transform: uppercase; color: var(--primary-blue); margin-bottom: 1rem; letter-spacing: 0.05em;">Our Certifications</h4>
+                        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
+                            <li style="display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--text-main);">
+                                🛡️ <strong>ISO 9001:2015 Certified</strong> — Quality Management System
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--text-main);">
+                                ⚙️ <strong>IS 1786 Standard</strong> — TMT Rebars quality assurance
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--text-main);">
+                                🏷️ <strong>100% MTC Available</strong> — Mill Test Certificate on every dispatch
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (_currentTab == "services")
+    {
+        <!-- SERVICES TAB -->
+        <div class="portal-account-view">
+            <div class="account-section-header">
+                <h2 class="account-section-title">Value Added Services</h2>
+                <p class="text-slate-500" style="margin-top: 2px;">End-to-end solutions for all your construction steel requirements</p>
+            </div>
+            
+            <div class="kpi-cards-grid">
+                <div class="kpi-panel-card">
+                    <div class="kpi-top-glow blue"></div>
+                    <div class="kpi-header-row">
+                        <span class="kpi-lbl-title">Custom Sizing</span>
+                        <MudIcon Icon="@Icons.Material.Filled.ContentCut" Color="Color.Info" Size="Size.Small" />
+                    </div>
+                    <span class="kpi-val-display blue" style="font-size: 1.4rem;">Precision Cutting</span>
+                    <span class="kpi-sub-text text-slate-500">Shearing, slitting &amp; custom length options</span>
+                </div>
+                <div class="kpi-panel-card">
+                    <div class="kpi-top-glow green"></div>
+                    <div class="kpi-header-row">
+                        <span class="kpi-lbl-title">Express Dispatch</span>
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Success" Size="Size.Small" />
+                    </div>
+                    <span class="kpi-val-display green" style="font-size: 1.4rem;">Same Day Delivery</span>
+                    <span class="kpi-sub-text text-success">Integrated fleet for instant dispatch</span>
+                </div>
+                <div class="kpi-panel-card">
+                    <div class="kpi-top-glow red"></div>
+                    <div class="kpi-header-row">
+                        <span class="kpi-lbl-title">Quality Lab</span>
+                        <MudIcon Icon="@Icons.Material.Filled.Science" Color="Color.Error" Size="Size.Small" />
+                    </div>
+                    <span class="kpi-val-display red" style="font-size: 1.4rem;">Material Testing</span>
+                    <span class="kpi-sub-text text-danger">Chemical &amp; Tensile test verification</span>
+                </div>
+            </div>
+        </div>
+    }
+    else if (_currentTab == "projects")
+    {
+        <!-- PROJECTS TAB -->
+        <div class="portal-account-view">
+            <div class="account-section-header">
+                <h2 class="account-section-title">Project Portfolio</h2>
+                <p class="text-slate-500" style="margin-top: 2px;">A showcase of prestigious projects built with Vikash Steel</p>
+            </div>
+            
+            <div class="product-cards-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+                <div class="product-display-card" style="padding: 1rem;">
+                    <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Metropolitan Highway Flyovers</h3>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Supplied over 15,000 Metric Tons of Fe 500D TMT Rebars and MS Angles for elevated corridor foundations.</p>
+                </div>
+                <div class="product-display-card" style="padding: 1rem;">
+                    <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Global Logistics Warehouses</h3>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Delivered pre-engineered building structural components, GP Sheets, and MS Square Pipes for a 500,000 sq.ft facility.</p>
+                </div>
+                <div class="product-display-card" style="padding: 1rem;">
+                    <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">Industrial Pipeline Network</h3>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Provided certified high-pressure GI Pipes and ERW MS Pipes conforming to IS 1239 for chemical transmission systems.</p>
+                </div>
+            </div>
+        </div>
+    }
+    else if (_currentTab == "contact")
+    {
+        <!-- CONTACT US TAB -->
+        <div class="portal-account-view">
+            <div class="account-section-header">
+                <h2 class="account-section-title">Contact Our Sales Desk</h2>
+                <p class="text-slate-500" style="margin-top: 2px;">Reach out directly for specialized commercial orders or inquiries</p>
+            </div>
+            
+            <div class="account-split-grid">
+                <div class="account-table-card" style="padding: 1.5rem;">
+                    <h3 class="table-title">Get In Touch</h3>
+                    <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+                        <div>
+                            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Head Office Address</span>
+                            <p style="font-size: 0.82rem; margin: 4px 0 0; color: var(--text-main);">12, Industrial Area Phase II, Steel Yard Complex, New Delhi - 110020</p>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Contact Numbers</span>
+                            <p style="font-size: 0.82rem; margin: 4px 0 0; color: var(--text-main);">+91 98765 43210 / +91 11 4321 0987</p>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Email Correspondence</span>
+                            <p style="font-size: 0.82rem; margin: 4px 0 0; color: var(--text-main);">sales@vikashsteel.com / support@vikashsteel.com</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="actions-sidebar-panel">
+                    <h3 class="table-title font-bold">Dedicated Helpline</h3>
+                    <div style="background: var(--input-bg); border: var(--card-border); padding: 1.25rem; border-radius: 8px; margin-top: 14px; text-align: center;">
+                        <MudIcon Icon="@Icons.Material.Filled.HeadsetMic" Style="font-size: 40px; color: var(--primary-blue);" />
+                        <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--text-main); margin-top: 10px;">B2B Account Helpline</h4>
+                        <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 4px;">Available Mon-Sat (9:00 AM - 7:00 PM)</span>
+                        <a href="tel:+919876543210" style="display: block; font-size: 1.15rem; font-weight: 900; color: var(--primary-blue); margin-top: 8px; text-decoration: none;">+91 98765 43210</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ── PRODUCT DETAILS DRAWER MODAL ── -->
+<MudDrawer @bind-Open="_detailsDrawerOpen" Anchor="Anchor.Right" Width="440px" Elevation="16" Variant="DrawerVariant.Temporary" Class="spec-detail-drawer">
+    @if (_selectedProduct != null)
+    {
+        <div class="drawer-header">
+            <div>
+                <span class="drawer-category">@_selectedProduct.Category</span>
+                <h3 class="drawer-title">@_selectedProduct.Name</h3>
+            </div>
+            <button class="drawer-close-btn" @onclick="CloseDetailsDrawer">
+                <MudIcon Icon="@Icons.Material.Filled.Close" />
+            </button>
+        </div>
+
+        <div class="drawer-content">
+            <div class="drawer-meta-section">
+                <div class="meta-box">
+                    <span class="meta-box-lbl">Grade</span>
+                    <span class="meta-box-val" style="font-size:0.75rem;">@_selectedProduct.Grade</span>
+                </div>
+                <div class="meta-box">
+                    <span class="meta-box-lbl">Base Price</span>
+                    <span class="meta-box-val" style="font-size:0.75rem; color:#2563eb;">₹ @_selectedProduct.Price.ToString("N0")</span>
+                </div>
+                <div class="meta-box">
+                    <span class="meta-box-lbl">Status</span>
+                    <span class="status-badge active">In Stock</span>
+                </div>
+            </div>
+
+            <!-- Specs Table details -->
+            <h4 class="table-title" style="border:none; margin-bottom:8px;">Standard Tolerances &amp; Weights</h4>
+            <div class="drawer-specs-table-container">
+                <div class="table-header-row">
+                    <span>Dimension</span>
+                    <span>Std. Length</span>
+                    <span>Est. Weight</span>
+                </div>
+                <div class="table-body">
+                    <div class="table-body-row">
+                        <span class="val-bold">@_selectedProduct.Name</span>
+                        <span>12 Meters</span>
+                        <span class="font-mono">1.25 Tons/bundle</span>
+                    </div>
+                    <div class="table-body-row">
+                        <span class="val-bold">Grade standard</span>
+                        <span>Custom Cut Available</span>
+                        <span class="font-mono">Certified IS Standard</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional info -->
+            <p class="drawer-desc" style="font-size:0.8rem; line-height:1.5; color:var(--text-muted); margin-top:14px;">
+                All materials conform to Indian Standards (BIS) and come with standard mill test certifications. Customized sizing and chemical composition reports are available upon commercial request.
+            </p>
+            
+            <button class="btn-primary-block mt-6" style="display:flex; align-items:center; justify-content:center; gap:8px;" @onclick="() => BuyProductDirect(_selectedProduct.Name)">
+                <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Size="Size.Small" /> Add to Inquiry Cart
+            </button>
+        </div>
+    }
+</MudDrawer>
 
 @code {
-    [CascadingParameter] private Task<AuthenticationState> authStateTask { get; set; } = default!;
+    [CascadingParameter]
+    private Task<AuthenticationState> authStateTask { get; set; } = default!;
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? TabQuery { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "search")]
+    public string? SearchQuery { get; set; }
 
     private string _userName = "Customer";
+    private string _currentTab = "home";
+    private string _searchQuery = string.Empty;
+    private int _cartCount = 12;
+
+    // Wishlist state
+    private HashSet<string> _wishlistedProductNames = new();
+    private bool _showWishlistOnly = false;
+
+    // Filters state
+    private string _selectedCategorySlider = string.Empty;
+    private string _selectedCategory = string.Empty;
+    private string _selectedGrade = string.Empty;
+    private string _selectedSize = string.Empty;
+    private string _selectedBrand = string.Empty;
+    private int _maxPrice = 100000;
+    private string _sortOrder = "popular";
+
+    // Quote Inquiry state
+    private bool _quoteSubmitted = false;
+    private string _quoteCategory = "TMT Bars";
+    private string _quoteSpec = "12mm TMT Bar (Fe 500D)";
+    private double _quoteQty = 5.0;
+    private string _deliverySite = "Customer Warehouse Location";
+    private string _quoteInstructions = string.Empty;
+    private int _randomRfqId = 1845;
+
+    // Product Details Drawer
+    private bool _detailsDrawerOpen = false;
+    private CustomerProduct? _selectedProduct;
+
+    public class CustomerProduct
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Grade { get; set; } = string.Empty;
+        public int Price { get; set; }
+        public string Unit { get; set; } = "Ton";
+        public string StockStatus { get; set; } = "In Stock";
+        public string StockQtyText { get; set; } = string.Empty;
+        public string Badge { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+    }
+
+    private List<CustomerProduct> CatalogProducts = new()
+    {
+        new() {
+            Name = "TMT Bar 12mm",
+            Category = "TMT Bars",
+            Grade = "Fe 500D",
+            Price = 56200,
+            StockStatus = "In Stock",
+            StockQtyText = "2,450 KG Available",
+            Badge = "Best Seller",
+            ImageUrl = "uploads/images/TMT Bar/b0c78b19-789b-46a6-9c29-d56b6cd26813.png"
+        },
+        new() {
+            Name = "MS Square Pipe 40x40",
+            Category = "MS Pipes",
+            Grade = "IS 4923 • YST 310",
+            Price = 54800,
+            StockStatus = "In Stock",
+            StockQtyText = "1,860 KG Available",
+            Badge = "Popular",
+            ImageUrl = "uploads/images/Square Pipe/0604df66-c876-4b4a-ae1b-5c58c04a83f2.png"
+        },
+        new() {
+            Name = "MS Angle 50x50x6",
+            Category = "MS Angles",
+            Grade = "IS 2062 • E250",
+            Price = 53600,
+            StockStatus = "Low Stock",
+            StockQtyText = "420 KG Available",
+            Badge = "",
+            ImageUrl = "uploads/images/a98475d8-1c68-4497-b670-1b7bd549f2b0.png"
+        },
+        new() {
+            Name = "CRC Sheet 1.2mm",
+            Category = "CRC Sheets",
+            Grade = "IS 513 • CRCA",
+            Price = 61500,
+            StockStatus = "Out of Stock",
+            StockQtyText = "0 KG Available",
+            Badge = "",
+            ImageUrl = "uploads/images/c69a5bd6-399e-4e55-9ff8-78717aff2c07.png"
+        },
+        new() {
+            Name = "MS Round Pipe 1 inch",
+            Category = "MS Pipes",
+            Grade = "IS 1239 • Grade E",
+            Price = 75400,
+            StockStatus = "In Stock",
+            StockQtyText = "1,120 KG Available",
+            Badge = "",
+            ImageUrl = "uploads/images/d7507015-c8c4-466c-8b38-8f9003711868.png"
+        },
+        new() {
+            Name = "GI Corrugated Sheet",
+            Category = "GI Pipes",
+            Grade = "0.50mm • Zinc Coated",
+            Price = 92300,
+            StockStatus = "In Stock",
+            StockQtyText = "780 KG Available",
+            Badge = "",
+            ImageUrl = "uploads/images/cd7aefb6-4921-4909-9b79-45a06a0e9b6f.png"
+        }
+    };
+
+    private List<OrderRecord> RecentOrders = new()
+    {
+        new("ORD-2026-892", DateTime.Now.AddDays(-2), "12mm TMT Bars (Fe500D) x 40 MT", 240000, "Processing", Color.Warning),
+        new("ORD-2026-881", DateTime.Now.AddDays(-5), "8mm HR Sheets (SS304) x 15 MT", 125000, "In Transit", Color.Info),
+        new("ORD-2026-845", DateTime.Now.AddDays(-14), "Galvanized Wire (20 Gauge) x 5 MT", 35000, "Delivered", Color.Success),
+        new("ORD-2026-802", DateTime.Now.AddDays(-25), "Scrap Iron HMS-1 x 50 MT", 150000, "Delivered", Color.Success)
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -141,13 +1007,200 @@
         }
     }
 
-
-
-    private List<OrderRecord> RecentOrders = new()
+    protected override void OnParametersSet()
     {
-        new("ORD-2026-892", DateTime.Now.AddDays(-2), "12mm TMT Bars (Fe500D) x 40 MT", 240000, "Processing", Color.Warning),
-        new("ORD-2026-881", DateTime.Now.AddDays(-5), "8mm HR Sheets (SS304) x 15 MT", 125000, "In Transit", Color.Info),
-        new("ORD-2026-845", DateTime.Now.AddDays(-14), "Galvanized Wire (20 Gauge) x 5 MT", 35000, "Delivered", Color.Success),
-        new("ORD-2026-802", DateTime.Now.AddDays(-25), "Scrap Iron HMS-1 x 50 MT", 150000, "Delivered", Color.Success)
-    };
+        if (!string.IsNullOrEmpty(TabQuery))
+        {
+            _currentTab = TabQuery;
+        }
+        else
+        {
+            _currentTab = "home";
+        }
+
+        if (SearchQuery != null)
+        {
+            _searchQuery = SearchQuery;
+        }
+    }
+
+    private void ToggleTab(string tab)
+    {
+        _currentTab = tab;
+        _quoteSubmitted = false;
+    }
+
+    private void ToggleTheme()
+    {
+        DarkModeService.ToggleAsync();
+    }
+
+    private void FilterByCategorySlider(string category)
+    {
+        _selectedCategorySlider = category;
+        _selectedCategory = category;
+    }
+
+    private void ApplyFiltersTrigger()
+    {
+        Snackbar.Add("Filters Applied Successfully.", Severity.Success);
+    }
+
+    private void ResetFilters()
+    {
+        _selectedCategorySlider = string.Empty;
+        _selectedCategory = string.Empty;
+        _selectedGrade = string.Empty;
+        _selectedSize = string.Empty;
+        _selectedBrand = string.Empty;
+        _maxPrice = 100000;
+        _searchQuery = string.Empty;
+        _showWishlistOnly = false;
+        Snackbar.Add("All Filters Reset.", Severity.Info);
+    }
+
+    private List<CustomerProduct> FilteredCatalogProducts
+    {
+        get
+        {
+            var query = CatalogProducts.AsEnumerable();
+
+            // Filter category
+            if (!string.IsNullOrEmpty(_selectedCategory))
+            {
+                query = query.Where(p => p.Category.Equals(_selectedCategory, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filter search query
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                query = query.Where(p => 
+                    p.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    p.Category.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    p.Grade.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+                );
+            }
+
+            // Filter grade
+            if (!string.IsNullOrEmpty(_selectedGrade))
+            {
+                query = query.Where(p => p.Grade.Contains(_selectedGrade, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filter size
+            if (!string.IsNullOrEmpty(_selectedSize))
+            {
+                query = query.Where(p => p.Name.Contains(_selectedSize, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filter price
+            query = query.Where(p => p.Price <= _maxPrice);
+
+            // Filter wishlist
+            if (_showWishlistOnly)
+            {
+                query = query.Where(p => _wishlistedProductNames.Contains(p.Name));
+            }
+
+            // Sorting
+            if (_sortOrder == "price-asc")
+            {
+                query = query.OrderBy(p => p.Price);
+            }
+            else if (_sortOrder == "price-desc")
+            {
+                query = query.OrderByDescending(p => p.Price);
+            }
+
+            return query.ToList();
+        }
+    }
+
+    private void ToggleWishlist(string name)
+    {
+        if (_wishlistedProductNames.Contains(name))
+        {
+            _wishlistedProductNames.Remove(name);
+            Snackbar.Add($"{name} removed from your wishlist.", Severity.Info);
+        }
+        else
+        {
+            _wishlistedProductNames.Add(name);
+            Snackbar.Add($"{name} added to your wishlist.", Severity.Success);
+        }
+    }
+
+    private void AddToCart(string name)
+    {
+        _cartCount++;
+        Snackbar.Add($"{name} added to your inquiry cart.", Severity.Success);
+    }
+
+    private void OpenCartInfo()
+    {
+        Snackbar.Add($"Your cart has {_cartCount} inquiry items. Proceeding to Request Quote.", Severity.Info);
+        ToggleTab("rfq");
+    }
+
+    private void OpenProductDetails(CustomerProduct prod)
+    {
+        _selectedProduct = prod;
+        _detailsDrawerOpen = true;
+    }
+
+    private void CloseDetailsDrawer()
+    {
+        _detailsDrawerOpen = false;
+    }
+
+    private void BuyProductDirect(string name)
+    {
+        _detailsDrawerOpen = false;
+        AddToCart(name);
+        ToggleTab("rfq");
+    }
+
+    private void OnQuoteCategoryChanged(ChangeEventArgs e)
+    {
+        var category = e.Value?.ToString() ?? "TMT Bars";
+        _quoteCategory = category;
+        if (category == "TMT Bars")
+            _quoteSpec = "12mm TMT Bar (Fe 500D)";
+        else if (category == "MS Pipes")
+            _quoteSpec = "MS Square Pipe 40x40 (IS 4923)";
+        else if (category == "MS Angles")
+            _quoteSpec = "MS Angle 50x50x6 (IS 2062)";
+        else if (category == "CRC Sheets")
+            _quoteSpec = "CRC Sheet 1.2mm (IS 513)";
+        else
+            _quoteSpec = "GI Corrugated Sheet (0.50mm)";
+    }
+
+    private void SubmitBulkQuote()
+    {
+        _quoteSubmitted = true;
+        _randomRfqId = Random.Shared.Next(1000, 9999);
+        Snackbar.Add("Bulk Quotation RFQ Generated Successfully.", Severity.Success);
+    }
+
+    private void MakePaymentSim()
+    {
+        Snackbar.Add("Redirecting to secured gateway for payment of ₹1,24,500...", Severity.Info);
+    }
+
+    private void DownloadLedgerSim()
+    {
+        Snackbar.Add("Downloading credit statement ledger PDF...", Severity.Success);
+    }
+
+    private void ScrollToProducts()
+    {
+        // Smooth scroll fallback via dialog alert or state change
+        Snackbar.Add("Browsing steel products catalog below.", Severity.Info);
+    }
+
+    private void Logout()
+    {
+        NavigationManager.NavigateTo("/account/logout", forceLoad: true);
+    }
 }

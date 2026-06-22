@@ -11,14 +11,33 @@
 
 @if (_isLoading)
 {
-    <MudText>Loading Invoice for Printing...</MudText>
+    <div class="loading-state">
+        <MudText>Loading Invoice for Printing...</MudText>
+    </div>
 }
 else if (_invoice == null)
 {
-    <MudText Color="Color.Error">Invoice not found.</MudText>
+    <div class="error-state">
+        <MudText Color="Color.Error">Invoice not found.</MudText>
+    </div>
 }
 else
 {
+    <div class="control-bar no-print">
+        <div class="control-bar-content">
+            <div class="control-actions">
+                <button class="btn-control btn-print" @onclick="PrintInvoice">
+                    <MudIcon Icon="@Icons.Material.Filled.Print" Size="Size.Small" />
+                    <span>Print Invoice</span>
+                </button>
+                <button class="btn-control btn-download" @onclick="DownloadPdf">
+                    <MudIcon Icon="@Icons.Material.Filled.Download" Size="Size.Small" />
+                    <span>Download PDF</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="print-container">
         <!-- Header Section -->
         <div class="header-section">
@@ -353,25 +372,113 @@ else
         </div>
 
     </div>
-
     <!-- Print styling injected via CSS -->
     <style>
-        @@media print {
-            body { margin: 0; padding: 0; background: #fff; }
-            @@page { size: A4; margin: 10mm; }
-            nav, header, aside, .mud-appbar, .sidebar, .no-print { display: none !important; }
-            .mud-main-content { margin: 0 !important; padding: 0 !important; }
+        .no-print {
+            display: flex;
         }
         
+        .control-bar {
+            background: #0f172a;
+            color: white;
+            padding: 14px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            font-family: 'Roboto', sans-serif;
+            width: 100%;
+        }
+
+        .control-bar-content {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-control {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            color: white;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: translateX(-2px);
+        }
+
+        .btn-print {
+            background: #4f46e5;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-print:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.45);
+        }
+
+        .btn-download {
+            background: #0ea5e9;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-download:hover {
+            background: #0284c7;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.45);
+        }
+
+        .loading-state, .error-state {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            font-family: Arial, sans-serif;
+        }
+
         .print-container {
             width: 100%;
             max-width: 800px;
-            margin: 0 auto;
+            margin: 30px auto 50px auto;
+            padding: 35px;
             font-family: Arial, sans-serif;
             font-size: 12px;
             color: black;
             background: white;
             line-height: 1.2;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+
+        .print-container * {
+            box-sizing: border-box;
         }
 
         .header-section {
@@ -455,6 +562,22 @@ else
         .tax-breakdown-table td {
             padding: 3px;
         }
+
+        @@media print {
+            body { margin: 0; padding: 0; background: #fff; }
+            @@page { size: A4; margin: 10mm; }
+            nav, header, aside, .mud-appbar, .sidebar, .no-print { display: none !important; }
+            .mud-main-content { margin: 0 !important; padding: 0 !important; }
+            .print-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+            }
+        }
     </style>
 }
 
@@ -485,18 +608,15 @@ else
         }
     }
 
-    private bool _hasPrinted = false;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private async Task PrintInvoice()
     {
-        // We shouldn't print on firstRender because data is still loading
-        // We should print once data is loaded and rendered
-        if (!_isLoading && _invoice != null && !_hasPrinted)
-        {
-            _hasPrinted = true;
-            // Give Blazor a tiny moment to finish updating the DOM with the invoice data
-            await Task.Delay(500);
-            await JSRuntime.InvokeVoidAsync("window.print");
-        }
+        await JSRuntime.InvokeVoidAsync("window.print");
     }
+
+    private async Task DownloadPdf()
+    {
+        var filename = $"Invoice_{_invoice?.InvoiceNumber ?? "Bill"}.pdf";
+        await JSRuntime.InvokeVoidAsync("downloadInvoicePdf", "print-container", filename);
+    }
+}
 }

@@ -230,7 +230,7 @@
 @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes slideOutRight { from { transform: translateX(0); } to { transform: translateX(100%); } }
 
-:global(.app-dark-mode) .org-tab-panel {
+.app-dark-mode .org-tab-panel {
     background-color: #1e293b;
     border-color: #334155;
 }

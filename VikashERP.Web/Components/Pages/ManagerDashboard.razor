@@ -1,22 +1,21 @@
-@page "/"
 @using VikashERP.Web.Models
-<PageTitle>Executive Dashboard</PageTitle>
+@inject ISnackbar Snackbar
 
 <MudStack Class="dashboard-page" Spacing="3">
     <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-header">
         <MudStack Spacing="0">
-            <MudText Typo="Typo.h5" HtmlTag="h1">Executive Dashboard</MudText>
+            <MudText Typo="Typo.h5" HtmlTag="h1">Manager Dashboard</MudText>
             <MudText Typo="Typo.body2" Class="dashboard-subtitle">
-                Live operating view for sales, receivables, stock movement, and dispatch priorities.
+                Operations monitoring, material dispatches, stock alerts, and team approvals.
             </MudText>
         </MudStack>
 
         <MudStack Row="true" AlignItems="AlignItems.Center" Class="dashboard-header-actions">
-            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FileDownload" Class="dashboard-action-secondary">
-                Export
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.LocalShipping" Class="dashboard-action-secondary">
+                Dispatch Status
             </MudButton>
-            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ReceiptLong" Class="dashboard-action-primary">
-                New Invoice
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.AddTask" Class="dashboard-action-primary">
+                Assign Task
             </MudButton>
         </MudStack>
     </MudStack>
@@ -40,36 +39,56 @@
     </MudGrid>
 
     <MudGrid Spacing="2" Class="dashboard-grid">
+        <!-- Pending Approvals & Tasks (Interactive) -->
         <MudItem xs="12" lg="8">
             <MudPaper Elevation="0" Class="dashboard-panel dashboard-panel-wide">
                 <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
                     <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6" HtmlTag="h2">Revenue Flow</MudText>
-                        <MudText Typo="Typo.caption">Daily sales against payment collection</MudText>
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Pending Team Approvals</MudText>
+                        <MudText Typo="Typo.caption">Requests requiring your action</MudText>
                     </MudStack>
-                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">This week</MudChip>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled">Action Required</MudChip>
                 </MudStack>
 
-                <MudStack Row="true" Class="revenue-bars">
-                    @foreach (var item in Revenue)
+                <MudStack Spacing="2" Class="mt-2" Style="max-height: 340px; overflow-y: auto;">
+                    @if (Approvals.Count == 0)
                     {
-                        <MudStack AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Spacing="1" Class="revenue-day">
-                            <div class="revenue-track">
-                                <div class="revenue-bar sales" style="height:@($"{item.Sales}%")"></div>
-                                <div class="revenue-bar collected" style="height:@($"{item.Collected}%")"></div>
-                            </div>
-                            <MudText Typo="Typo.caption">@item.Day</MudText>
+                        <MudStack AlignItems="AlignItems.Center" Class="py-6">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" Size="Size.Large" />
+                            <MudText Typo="Typo.body1" Class="mt-2">All caught up! No pending approvals.</MudText>
                         </MudStack>
                     }
-                </MudStack>
-
-                <MudStack Row="true" AlignItems="AlignItems.Center" Class="dashboard-legend">
-                    <MudText Typo="Typo.caption"><i class="legend-dot sales"></i>Sales</MudText>
-                    <MudText Typo="Typo.caption"><i class="legend-dot collected"></i>Collected</MudText>
+                    else
+                    {
+                        @foreach (var req in Approvals)
+                        {
+                            <MudPaper Elevation="0" Outlined="true" Class="pa-3 mb-2" Style="border-radius: 8px; border: 1px solid var(--mud-palette-divider);">
+                                <MudGrid Spacing="1" AlignItems="AlignItems.Center">
+                                    <MudItem xs="12" sm="8">
+                                        <MudStack Spacing="0">
+                                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                                <MudText Typo="Typo.subtitle2" Color="Color.Primary">@req.Id</MudText>
+                                                <MudChip T="string" Size="Size.Small" Color="@req.CategoryColor" Variant="Variant.Text" Style="font-weight: 700;">@req.Category</MudChip>
+                                            </MudStack>
+                                            <MudText Typo="Typo.body2" Class="mt-1" Style="font-weight: 600;">@req.Title</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Requested by @req.RequestedBy on @req.Date.ToShortDateString()</MudText>
+                                        </MudStack>
+                                    </MudItem>
+                                    <MudItem xs="12" sm="4">
+                                        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
+                                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => HandleApproval(req.Id, false))">Reject</MudButton>
+                                            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => HandleApproval(req.Id, true))">Approve</MudButton>
+                                        </MudStack>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudPaper>
+                        }
+                    }
                 </MudStack>
             </MudPaper>
         </MudItem>
 
+        <!-- Dispatch Queue -->
         <MudItem xs="12" lg="4">
             <MudPaper Elevation="0" Class="dashboard-panel">
                 <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
@@ -95,6 +114,7 @@
             </MudPaper>
         </MudItem>
 
+        <!-- Low Stock Alerts -->
         <MudItem xs="12" lg="4">
             <MudPaper Elevation="0" Class="dashboard-panel">
                 <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
@@ -124,12 +144,13 @@
             </MudPaper>
         </MudItem>
 
+        <!-- Recent Billing / Invoice overview -->
         <MudItem xs="12" lg="8">
             <MudPaper Elevation="0" Class="dashboard-panel dashboard-panel-wide">
                 <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
                     <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6" HtmlTag="h2">Recent Invoices</MudText>
-                        <MudText Typo="Typo.caption">Latest billing activity</MudText>
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Recent Billing</MudText>
+                        <MudText Typo="Typo.caption">Latest invoices generated</MudText>
                     </MudStack>
                     <MudButton Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward" Size="Size.Small">View all</MudButton>
                 </MudStack>
@@ -158,25 +179,12 @@
 </MudStack>
 
 @code {
-
-
     private static readonly Metric[] Metrics =
     [
-        new("Today Sale", "Rs 4.82L", "+18.4% from yesterday", Icons.Material.Filled.Payments, "accent-green", "trend-up"),
-        new("Pending Amount", "Rs 12.7L", "8 customers over due", Icons.Material.Filled.AccountBalanceWallet, "accent-red", "trend-down"),
+        new("Today's Sale", "Rs 3.12L", "+8.4% from yesterday", Icons.Material.Filled.Payments, "accent-green", "trend-up"),
+        new("Pending Loads", "9 Vehicles", "5 ready for dispatch", Icons.Material.Filled.LocalShipping, "accent-blue", "trend-neutral"),
         new("Low Stock", "14 Items", "3 critical materials", Icons.Material.Filled.Inventory2, "accent-amber", "trend-alert"),
-        new("Delivery Pending", "9 Loads", "5 ready for dispatch", Icons.Material.Filled.LocalShipping, "accent-blue", "trend-neutral")
-    ];
-
-    private static readonly RevenuePoint[] Revenue =
-    [
-        new("Mon", 58, 44),
-        new("Tue", 72, 52),
-        new("Wed", 64, 61),
-        new("Thu", 85, 69),
-        new("Fri", 78, 74),
-        new("Sat", 92, 63),
-        new("Sun", 48, 42)
+        new("Pending Approvals", "4 Requests", "Requires your attention", Icons.Material.Filled.RateReview, "accent-red", "trend-down")
     ];
 
     private static readonly DispatchItem[] Dispatches =
@@ -202,4 +210,43 @@
         new("INV-2026-0140", "Om Construction", "Rs 2,18,300", "Due", "chip-danger"),
         new("INV-2026-0139", "Eastern Fabricators", "Rs 64,920", "Paid", "chip-success")
     ];
+
+    private List<ApprovalRequest> Approvals = new()
+    {
+        new("REQ-8012", "Leave Request", "Rajesh Kumar (Employee) - Casual Leave for 2 Days (19-20 Jun)", "Rajesh Kumar", DateTime.Now, Color.Info),
+        new("REQ-8013", "Credit Limit", "Increase Credit Limit for Sinha Steel Works to ₹6,00,000", "Sinha Steel", DateTime.Now.AddDays(-1), Color.Warning),
+        new("REQ-8014", "Attendance Correction", "Amit Singh (Driver) - Overtime correction (4 Hours, 15 Jun)", "Amit Singh", DateTime.Now.AddDays(-1), Color.Default),
+        new("REQ-8015", "Expense Reimbursement", "Reimbursement request for Godown fuel: ₹3,200", "Godown Staff", DateTime.Now.AddDays(-2), Color.Success)
+    };
+
+    private void HandleApproval(string id, bool approved)
+    {
+        var req = Approvals.FirstOrDefault(x => x.Id == id);
+        if (req != null)
+        {
+            Approvals.Remove(req);
+            string action = approved ? "Approved" : "Rejected";
+            Snackbar.Add($"Request {id} has been {action} successfully.", approved ? Severity.Success : Severity.Warning);
+        }
+    }
+
+    private class ApprovalRequest
+    {
+        public string Id { get; }
+        public string Category { get; }
+        public string Title { get; }
+        public string RequestedBy { get; }
+        public DateTime Date { get; }
+        public Color CategoryColor { get; }
+
+        public ApprovalRequest(string id, string category, string title, string requestedBy, DateTime date, Color categoryColor)
+        {
+            Id = id;
+            Category = category;
+            Title = title;
+            RequestedBy = requestedBy;
+            Date = date;
+            CategoryColor = categoryColor;
+        }
+    }
 }

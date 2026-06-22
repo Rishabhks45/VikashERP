@@ -11,119 +11,136 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @using OfficeOpenXml
 @using OfficeOpenXml.Style
+@using System.Globalization
 
-<PageTitle>Daily Revenue Audit - The Iron Ledger</PageTitle>
+<PageTitle>Daily Revenue Audit - Vikash Iron &amp; Steel</PageTitle>
 
-<div class="revenue-audit-container">
-    
-    <!-- Title & Date Selector -->
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-6 title-section">
-        <div>
-            <MudText Typo="Typo.h5" Class="page-title">Daily Revenue Audit</MudText>
-            <MudText Typo="Typo.caption" Class="page-subtitle">Fiscal tracking for @(SelectedDate?.ToString("dd MMMM yyyy") ?? "all time")</MudText>
+<div class="drv3-container">
+
+    <!-- ═══════════════════════════════════════════════ HEADER TOOLBAR ═══ -->
+    <div class="drv3-header">
+        <div class="drv3-header-left">
+            <h1 class="drv3-title">Daily Revenue Audit</h1>
+            <p class="drv3-subtitle">Fiscal tracking for @(SelectedDate?.ToString("dd MMMM yyyy") ?? "all time")</p>
         </div>
-        <div class="date-picker-wrapper">
-            <MudDatePicker Label="Select Audit Date" @bind-Date="SelectedDate" Variant="Variant.Outlined" Margin="Margin.Dense" Rounded="true" Color="Color.Primary" />
+        <div class="drv3-header-right">
+            <div class="drv3-toolbar-controls">
+                <div class="drv3-search-wrap">
+                    <MudTextField T="string" Value="@_searchQuery" ValueChanged="OnSearchChanged"
+                                   Placeholder="Search customer, invoice..."
+                                   Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Search"
+                                   Class="drv3-search" Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </div>
+                <div class="drv3-date-wrap">
+                    <MudDatePicker @bind-Date="SelectedDate" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   Color="Color.Primary" DateFormat="dd/MM/yyyy" Culture="@InCulture"
+                                   Class="drv3-date" />
+                </div>
+                <MudMenu StartIcon="@Icons.Material.Filled.FileDownload" Label="Export" Variant="Variant.Filled"
+                         Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowDropDown"
+                         Size="Size.Small" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight"
+                         Class="drv3-export-btn">
+                    <MudMenuItem OnClick="DownloadLedger" Icon="@Icons.Material.Filled.TableChart">Export Excel</MudMenuItem>
+                    <MudMenuItem OnClick="PrintLedger" Icon="@Icons.Material.Filled.Print">Print Ledger</MudMenuItem>
+                </MudMenu>
+            </div>
         </div>
-    </MudStack>
+    </div>
 
     @if (Loading)
     {
-        <div class="d-flex flex-column align-center justify-center pa-10" style="min-height: 400px;">
+        <div class="drv3-loader">
             <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-            <MudText Typo="Typo.body2" Class="mt-4 text-secondary">Loading financial audit records...</MudText>
+            <p>Loading financial records...</p>
         </div>
     }
     else
     {
-        <!-- KPI Cards -->
-        <MudGrid Spacing="3" Class="mb-6 kpi-grid">
-            <MudItem xs="12" sm="6" md="2">
-                <MudPaper Elevation="0" Class="kpi-card billing-card pa-5">
-                    <div class="kpi-card-header">
-                        <MudText Class="kpi-label">TOTAL BILLING</MudText>
-                        <MudIcon Icon="@Icons.Material.Filled.Receipt" Class="kpi-icon" />
-                    </div>
-                    <MudText Typo="Typo.h5" Class="kpi-value mt-2">₹@FilteredInvoices.Sum(b => b.TotalAmount).ToString("N0")</MudText>
-                    <MudText Typo="Typo.caption" Class="kpi-subtext">@FilteredInvoices.Count invoices</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="2">
-                <MudPaper Elevation="0" Class="kpi-card cash-card pa-5">
-                    <div class="kpi-card-header">
-                        <MudText Class="kpi-label">INVOICE (CASH)</MudText>
-                        <MudIcon Icon="@Icons.Material.Filled.Payments" Class="kpi-icon" />
-                    </div>
-                    <MudText Typo="Typo.h5" Class="kpi-value mt-2">₹@FilteredInvoices.Sum(b => b.CashAmount).ToString("N0")</MudText>
-                    <MudText Typo="Typo.caption" Class="kpi-subtext">At billing time</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="2">
-                <MudPaper Elevation="0" Class="kpi-card bank-card pa-5">
-                    <div class="kpi-card-header">
-                        <MudText Class="kpi-label">INVOICE (A/C)</MudText>
-                        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Class="kpi-icon" />
-                    </div>
-                    <MudText Typo="Typo.h5" Class="kpi-value mt-2">₹@FilteredInvoices.Sum(b => b.BankAmount).ToString("N0")</MudText>
-                    <MudText Typo="Typo.caption" Class="kpi-subtext">@GetCollectionEfficiency() efficiency</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="2">
-                <MudPaper Elevation="0" Class="kpi-card due-card pa-5">
-                    <div class="kpi-card-header">
-                        <MudText Class="kpi-label">OUTSTANDING (DUE)</MudText>
-                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Class="kpi-icon" />
-                    </div>
-                    <MudText Typo="Typo.h5" Class="kpi-value mt-2">₹@FilteredInvoices.Sum(b => b.DueAmount).ToString("N0")</MudText>
-                    <MudText Typo="Typo.caption" Class="kpi-subtext">Total receivables</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="2">
-                <MudPaper Elevation="0" Class="kpi-card pa-5" Style="background: linear-gradient(135deg, hsl(280,70%,20%) 0%, hsl(280,60%,15%) 100%); border: 1px solid hsl(280,60%,35%);">
-                    <div class="kpi-card-header">
-                        <MudText Class="kpi-label" Style="color: hsl(280,80%,85%);">QUICK COLLECTIONS</MudText>
-                        <MudIcon Icon="@Icons.Material.Filled.FlashOn" Class="kpi-icon" Style="color: hsl(280,80%,75%);" />
-                    </div>
-                    <MudText Typo="Typo.h5" Class="kpi-value mt-2" Style="color: hsl(280,80%,85%);">₹@FilteredPayments.Sum(p => p.Amount).ToString("N0")</MudText>
-                    <MudText Typo="Typo.caption" Style="color: hsl(280,60%,65%);">@FilteredPayments.Count due payments</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="12" sm="6" md="2">
-                <MudPaper Elevation="0" Class="kpi-card pa-5" Style="background: linear-gradient(135deg, hsl(150,60%,15%) 0%, hsl(150,50%,10%) 100%); border: 1px solid hsl(150,60%,30%);">
-                    <div class="kpi-card-header">
-                        <MudText Class="kpi-label" Style="color: hsl(150,80%,75%);">TOTAL COLLECTED</MudText>
-                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="kpi-icon" Style="color: hsl(150,80%,65%);" />
-                    </div>
-                    <MudText Typo="Typo.h5" Class="kpi-value mt-2" Style="color: hsl(150,80%,75%);">₹@(FilteredInvoices.Sum(b => b.CashAmount + b.BankAmount) + FilteredPayments.Sum(p => p.Amount)).ToString("N0")</MudText>
-                    <MudText Typo="Typo.caption" Style="color: hsl(150,60%,55%);">Invoice + Quick</MudText>
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
+        <!-- ══════════════════════════════════════════════════ KPI CARDS ═══ -->
+        <div class="drv3-kpi-grid">
 
-        <!-- Main Grid Snapshot -->
-        <MudPaper Elevation="0" Class="table-panel pa-0 overflow-hidden">
-            <div class="table-panel-header px-6 py-4">
-                <div>
-                    <MudText Typo="Typo.subtitle2" Class="table-title">Trade Ledger Snapshot</MudText>
-                    <MudText Typo="Typo.caption" Class="table-subtitle">Realtime fiscal synchronization</MudText>
+            <!-- Total Daily Revenue -->
+            <div class="drv3-kpi drv3-kpi-revenue">
+                <div class="drv3-kpi-body">
+                    <div class="drv3-kpi-badge drv3-badge-revenue">
+                        <MudIcon Icon="@Icons.Material.Filled.ShowChart" Class="drv3-kpi-icon" />
+                    </div>
+                    <div class="drv3-kpi-info">
+                        <span class="drv3-kpi-label">TOTAL DAILY REVENUE</span>
+                        <span class="drv3-kpi-value">₹@Fmt(FilteredInvoices.Sum(b => b.TotalAmount) + FilteredPayments.Sum(p => p.Amount), "N0")</span>
+                        <span class="drv3-kpi-sub">Billing + Quick Collections</span>
+                    </div>
                 </div>
-                <MudStack Row="true" Spacing="2">
-                    <MudButton StartIcon="@Icons.Material.Filled.Download" 
-                               OnClick="DownloadLedger" 
-                               Variant="Variant.Filled" 
-                               Color="Color.Primary" 
-                               Size="Size.Small"
-                               Class="action-btn download-btn">Download Ledger</MudButton>
-                    <MudButton StartIcon="@Icons.Material.Filled.Print" 
-                               OnClick="PrintLedger" 
-                               Variant="Variant.Outlined" 
-                               Color="Color.Secondary" 
-                               Size="Size.Small" 
-                               Class="action-btn print-btn">Print</MudButton>
-                </MudStack>
+            </div>
+
+            <!-- Total Bill -->
+            <div class="drv3-kpi drv3-kpi-billing">
+                <div class="drv3-kpi-body">
+                    <div class="drv3-kpi-badge drv3-badge-billing">
+                        <MudIcon Icon="@Icons.Material.Filled.Description" Class="drv3-kpi-icon" />
+                    </div>
+                    <div class="drv3-kpi-info">
+                        <span class="drv3-kpi-label">TOTAL BILL</span>
+                        <span class="drv3-kpi-value">₹@Fmt(FilteredInvoices.Sum(b => b.TotalAmount), "N0")</span>
+                        <span class="drv3-kpi-sub">@FilteredInvoices.Count @(FilteredInvoices.Count == 1 ? "Invoice" : "Invoices")</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Due -->
+            <div class="drv3-kpi drv3-kpi-due">
+                <div class="drv3-kpi-body">
+                    <div class="drv3-kpi-badge drv3-badge-due">
+                        <MudIcon Icon="@Icons.Material.Filled.AccessTime" Class="drv3-kpi-icon" />
+                    </div>
+                    <div class="drv3-kpi-info">
+                        <span class="drv3-kpi-label">TOTAL DUE</span>
+                        <span class="drv3-kpi-value">₹@Fmt(FilteredInvoices.Sum(b => b.DueAmount), "N0")</span>
+                        <span class="drv3-kpi-sub">Total receivables</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Collections -->
+            <div class="drv3-kpi drv3-kpi-quick">
+                <div class="drv3-kpi-body">
+                    <div class="drv3-kpi-badge drv3-badge-quick">
+                        <MudIcon Icon="@Icons.Material.Filled.FlashOn" Class="drv3-kpi-icon" />
+                    </div>
+                    <div class="drv3-kpi-info">
+                        <span class="drv3-kpi-label">TOTAL QUICK COLLECTION</span>
+                        <span class="drv3-kpi-value">₹@Fmt(FilteredPayments.Sum(p => p.Amount), "N0")</span>
+                        <span class="drv3-kpi-sub">@FilteredPayments.Count Due payments</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collection Efficiency -->
+            <div class="drv3-kpi drv3-kpi-efficiency">
+                <div class="drv3-kpi-body">
+                    <div class="drv3-kpi-badge drv3-badge-efficiency">
+                        <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Class="drv3-kpi-icon" />
+                    </div>
+                    <div class="drv3-kpi-info">
+                        <span class="drv3-kpi-label">COLLECTION EFFICIENCY</span>
+                        <span class="drv3-kpi-value">@GetCollectionEfficiency().ToString("N0")%</span>
+                        <span class="drv3-kpi-sub @GetEfficiencyClass(GetCollectionEfficiency())">@GetEfficiencyStatus(GetCollectionEfficiency())</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══════════════════════════════════════ TRADE LEDGER SNAPSHOT ═══ -->
+        <div class="drv3-panel">
+            <div class="drv3-panel-header">
+                <div>
+                    <h2 class="drv3-panel-title">TRADE LEDGER SNAPSHOT</h2>
+                    <p class="drv3-panel-sub">Realtime fiscal synchronization</p>
+                </div>
             </div>
             
-            <MudTable Items="@FilteredInvoices" Hover="true" Elevation="0" Class="audit-table" Dense="true" Breakpoint="Breakpoint.None">
+            <MudTable @ref="_invoiceTable" Items="@FilteredInvoices" Hover="true" Elevation="0" Class="drv3-mud-table" Dense="true" Breakpoint="Breakpoint.None">
                 <ColGroup>
                     <col style="width: 25%;" />
                     <col style="width: 10%;" />
@@ -134,296 +151,337 @@
                     <col style="width: 9%;" />
                 </ColGroup>
                 <HeaderContent>
-                    <MudTh Class="table-header-cell">Invoice No / Customer</MudTh>
-                    <MudTh Class="table-header-cell text-center">Weight (KG)</MudTh>
-                    <MudTh Class="table-header-cell text-center">Total Bill (₹)</MudTh>
-                    <MudTh Class="table-header-cell text-center accent-amber">Collected (Cash)</MudTh>
-                    <MudTh Class="table-header-cell text-center accent-green">Collected (A/C)</MudTh>
-                    <MudTh Class="table-header-cell text-center accent-red">Outstanding (Due)</MudTh>
-                    <MudTh Class="table-header-cell text-right">Actions</MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<InvoiceListDto, object>(x => x.CustomerName)">
+                            Invoice No / Customer
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-c">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="new Func<InvoiceListDto, object>(x => x.TotalWeightKg)">
+                            Weight (KG)
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-r">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="new Func<InvoiceListDto, object>(x => x.TotalAmount)">
+                            Total Bill (₹)
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-r drv3-th-cash">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="new Func<InvoiceListDto, object>(x => x.CashAmount)">
+                            Collected (Cash)
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-r drv3-th-bank">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="new Func<InvoiceListDto, object>(x => x.BankAmount)">
+                            Collected (A/C)
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-r drv3-th-due">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="new Func<InvoiceListDto, object>(x => x.DueAmount)">
+                            Outstanding (Due)
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-r">Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd Class="table-data-cell">
-                        <div class="customer-info-wrapper">
-                            <MudAvatar Color="@GetRandomColor(context.CustomerName)" Size="Size.Small" Class="customer-avatar">
-                                @(string.IsNullOrEmpty(context.CustomerName) ? "?" : context.CustomerName.Substring(0, 1).ToUpper())
-                            </MudAvatar>
-                            <div class="customer-text">
-                                <MudText Typo="Typo.body2" Class="customer-name">@context.CustomerName</MudText>
-                                <MudText Typo="Typo.caption" Class="invoice-no">@context.InvoiceNumber</MudText>
+                    @{
+                        var initials = string.IsNullOrEmpty(context.CustomerName) ? "?"
+                            : context.CustomerName.Length >= 2
+                                ? context.CustomerName.Substring(0, 2).ToUpper()
+                                : context.CustomerName.Substring(0, 1).ToUpper();
+                    }
+                    <MudTd DataLabel="Invoice No / Customer">
+                        <div class="drv3-customer">
+                            <div class="drv3-avatar drv3-avatar-ledger">@initials</div>
+                            <div class="drv3-cust-info">
+                                <span class="drv3-cust-name">@context.CustomerName</span>
+                                <span class="drv3-inv-num">@context.InvoiceNumber</span>
                             </div>
                         </div>
                     </MudTd>
-                    <MudTd Class="table-data-cell text-center numeric-font">@context.TotalWeightKg.ToString("N2")</MudTd>
-                    <MudTd Class="table-data-cell text-center numeric-font bill-total">₹@context.TotalAmount.ToString("N2")</MudTd>
-                    <MudTd Class="table-data-cell text-center numeric-font cash-paid">₹@context.CashAmount.ToString("N2")</MudTd>
-                    <MudTd Class="table-data-cell text-center numeric-font bank-paid">₹@context.BankAmount.ToString("N2")</MudTd>
-                    <MudTd Class="table-data-cell text-center numeric-font balance-due">₹@context.DueAmount.ToString("N2")</MudTd>
-                    <MudTd Class="table-data-cell text-right">
-                        <div class="actions-wrapper">
+                    <MudTd Class="ta-c drv3-mono" DataLabel="Weight (KG)">@Fmt(context.TotalWeightKg)</MudTd>
+                    <MudTd Class="ta-r drv3-mono drv3-total-bill" DataLabel="Total Bill (₹)">₹@Fmt(context.TotalAmount)</MudTd>
+                    <MudTd Class="ta-r drv3-mono drv3-cash" DataLabel="Collected (Cash)">₹@Fmt(context.CashAmount)</MudTd>
+                    <MudTd Class="ta-r drv3-mono drv3-bank" DataLabel="Collected (A/C)">₹@Fmt(context.BankAmount)</MudTd>
+                    <MudTd Class="ta-r drv3-mono drv3-due" DataLabel="Outstanding (Due)">₹@Fmt(context.DueAmount)</MudTd>
+                    <MudTd Class="ta-r" DataLabel="Actions">
+                        <div class="drv3-actions">
                             @if (CanModify(context))
                             {
-                                <MudTooltip Text="Adjust Payment">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Info" OnClick="() => OpenEditPayment(context)" />
-                                </MudTooltip>
+                                <button class="drv3-btn drv3-btn-edit" title="Adjust Payment" @onclick="() => OpenEditPayment(context)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                </button>
                             }
                             else
                             {
-                                <MudIconButton Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Color="Color.Default" Disabled="true" />
+                                <button class="drv3-btn drv3-btn-lock" title="Locked" disabled>
+                                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" />
+                                </button>
                             }
-                            <MudTooltip Text="Audit Details">
-                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Primary" OnClick="() => ViewInvoiceDetails(context.Id)" />
-                            </MudTooltip>
-                            <MudTooltip Text="Print Bill">
-                                <MudIconButton Icon="@Icons.Material.Filled.Print" Size="Size.Small" Color="Color.Success" OnClick="() => PrintIndividualBill(context.Id)" />
-                            </MudTooltip>
+                            <button class="drv3-btn drv3-btn-view" title="View Details" @onclick="() => ViewInvoiceDetails(context.Id)">
+                                <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" />
+                            </button>
+                            <button class="drv3-btn drv3-btn-print" title="Print Bill" @onclick="() => PrintIndividualBill(context.Id)">
+                                <MudIcon Icon="@Icons.Material.Filled.Print" Size="Size.Small" />
+                            </button>
                         </div>
                     </MudTd>
                 </RowTemplate>
+                <NoRecordsContent>
+                    <div class="drv3-empty">
+                        <MudIcon Icon="@Icons.Material.Filled.Inbox" />
+                        <p>No trade ledger records found for this date.</p>
+                    </div>
+                </NoRecordsContent>
                 <FooterContent>
-                    <MudTd Class="table-footer-cell grand-total-label">GRAND TOTAL (कुल योग)</MudTd>
-                    <MudTd Class="table-footer-cell text-center numeric-font footer-value">
-                        @FilteredInvoices.Sum(b => b.TotalWeightKg).ToString("N2")
-                    </MudTd>
-                    <MudTd Class="table-footer-cell text-center numeric-font footer-value">
-                        ₹@FilteredInvoices.Sum(b => b.TotalAmount).ToString("N2")
-                    </MudTd>
-                    <MudTd Class="table-footer-cell text-center numeric-font footer-value">
-                        ₹@FilteredInvoices.Sum(b => b.CashAmount).ToString("N2")
-                    </MudTd>
-                    <MudTd Class="table-footer-cell text-center numeric-font footer-value">
-                        ₹@FilteredInvoices.Sum(b => b.BankAmount).ToString("N2")
-                    </MudTd>
-                    <MudTd Class="table-footer-cell text-center numeric-font footer-value">
-                        ₹@FilteredInvoices.Sum(b => b.DueAmount).ToString("N2")
-                    </MudTd>
-                    <MudTd Class="table-footer-cell"></MudTd>
+                    <MudTd Class="drv3-grand-total-label">GRAND TOTAL (कुल योग)</MudTd>
+                    <MudTd Class="drv3-grand-total-cell ta-c drv3-mono">@Fmt(FilteredInvoices.Sum(b => b.TotalWeightKg))</MudTd>
+                    <MudTd Class="drv3-grand-total-cell ta-r drv3-mono">₹@Fmt(FilteredInvoices.Sum(b => b.TotalAmount))</MudTd>
+                    <MudTd Class="drv3-grand-total-cell ta-r drv3-mono drv3-cash">₹@Fmt(FilteredInvoices.Sum(b => b.CashAmount))</MudTd>
+                    <MudTd Class="drv3-grand-total-cell ta-r drv3-mono drv3-bank">₹@Fmt(FilteredInvoices.Sum(b => b.BankAmount))</MudTd>
+                    <MudTd Class="drv3-grand-total-cell ta-r drv3-mono drv3-due">₹@Fmt(FilteredInvoices.Sum(b => b.DueAmount))</MudTd>
+                    <MudTd Class="drv3-grand-total-cell"></MudTd>
                 </FooterContent>
             </MudTable>
-        </MudPaper>
+        </div>
 
-        <!-- Quick Collections Section -->
-        @if (FilteredPayments.Any())
-        {
-            <MudPaper Elevation="0" Class="table-panel pa-0 overflow-hidden mt-6">
-                <div class="table-panel-header px-6 py-4" style="background: linear-gradient(135deg, hsl(280,60%,18%) 0%, hsl(280,50%,12%) 100%);">
-                    <div>
-                        <MudText Typo="Typo.subtitle2" Class="table-title">⚡ Quick Collections</MudText>
-                        <MudText Typo="Typo.caption" Class="table-subtitle">Due payments received on @(SelectedDate?.ToString("dd MMM yyyy") ?? "all dates") · not tied to a specific invoice</MudText>
-                    </div>
-                    <MudChip T="string" Color="Color.Secondary" Size="Size.Small" Variant="Variant.Filled">₹@FilteredPayments.Sum(p => p.Amount).ToString("N0") collected</MudChip>
+        <!-- ═══════════════════════════════════════════ QUICK COLLECTIONS ═══ -->
+        <div class="drv3-panel drv3-panel-quick">
+            <div class="drv3-panel-header">
+                <div>
+                    <h2 class="drv3-panel-title">Quick Collections</h2>
+                    <p class="drv3-panel-sub">Due payments received today</p>
                 </div>
-                <MudTable Items="@FilteredPayments" Hover="true" Elevation="0" Class="audit-table" Dense="true" Breakpoint="Breakpoint.None">
-                    <ColGroup>
-                        <col style="width: 30%;" />
-                        <col style="width: 20%;" />
-                        <col style="width: 15%;" />
-                        <col style="width: 20%;" />
-                        <col style="width: 15%;" />
-                    </ColGroup>
-                    <HeaderContent>
-                        <MudTh Class="table-header-cell">Customer</MudTh>
-                        <MudTh Class="table-header-cell text-center">Time</MudTh>
-                        <MudTh Class="table-header-cell text-center accent-amber">Mode</MudTh>
-                        <MudTh Class="table-header-cell text-center accent-green">Amount Received (₹)</MudTh>
-                        <MudTh Class="table-header-cell">Remarks</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd Class="table-data-cell">
-                            <div class="customer-info-wrapper">
-                                <MudAvatar Color="Color.Secondary" Size="Size.Small" Class="customer-avatar">
-                                    @(string.IsNullOrEmpty(context.CustomerName) ? "?" : context.CustomerName.Substring(0, 1).ToUpper())
-                                </MudAvatar>
-                                <MudText Typo="Typo.body2" Class="customer-name">@context.CustomerName</MudText>
-                            </div>
-                        </MudTd>
-                        <MudTd Class="table-data-cell text-center">
-                            <MudText Typo="Typo.caption">@context.TransactionDate.ToKolkataTime().ToString("hh:mm tt")</MudText>
-                        </MudTd>
-                        <MudTd Class="table-data-cell text-center">
-                            <MudChip T="string" Size="Size.Small" Color="@(context.PaymentMode == "Cash" ? Color.Warning : Color.Info)" Variant="Variant.Filled">
-                                @context.PaymentMode
-                            </MudChip>
-                        </MudTd>
-                        <MudTd Class="table-data-cell text-center numeric-font cash-paid" Style="font-weight: 700;">₹@context.Amount.ToString("N2")</MudTd>
-                        <MudTd Class="table-data-cell">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(context.Remarks ?? "-")</MudText>
-                        </MudTd>
-                    </RowTemplate>
-                    <FooterContent>
-                        <MudTd Class="table-footer-cell grand-total-label" colspan="3">TOTAL QUICK COLLECTIONS</MudTd>
-                        <MudTd Class="table-footer-cell text-center numeric-font footer-value">₹@FilteredPayments.Sum(p => p.Amount).ToString("N2")</MudTd>
-                        <MudTd Class="table-footer-cell"></MudTd>
-                    </FooterContent>
-                </MudTable>
-            </MudPaper>
-        }
-        else
-        {
-            <MudPaper Elevation="0" Class="table-panel pa-4 mt-6" Style="border: 1px dashed hsl(280,40%,30%); text-align: center;">
-                <MudIcon Icon="@Icons.Material.Filled.FlashOn" Color="Color.Secondary" Style="opacity: 0.3; font-size: 2rem;" />
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="d-block mt-2">No quick payments received on this date</MudText>
-            </MudPaper>
-        }
+            </div>
+            
+            <MudTable Items="@FilteredPayments" Hover="true" Elevation="0" Class="drv3-mud-table" Dense="true" Breakpoint="Breakpoint.None">
+                <ColGroup>
+                    <col style="width: 30%;" />
+                    <col style="width: 15%;" />
+                    <col style="width: 10%;" />
+                    <col style="width: 15%;" />
+                    <col style="width: 15%;" />
+                    <col style="width: 15%;" />
+                    <col style="width: 0%;" />
+                </ColGroup>
+                <HeaderContent>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<RecentCustomerPaymentDto, object>(x => x.CustomerName)">
+                            Customer
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-c">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="new Func<RecentCustomerPaymentDto, object>(x => x.TransactionDate)">
+                            Time
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-c">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="new Func<RecentCustomerPaymentDto, object>(x => x.PaymentMode)">
+                            Mode
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-r drv3-th-cash">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="@(new Func<RecentCustomerPaymentDto, object>(x => string.Equals(x.PaymentMode, "Cash", StringComparison.OrdinalIgnoreCase) ? x.Amount : 0m))">
+                            Collected (Cash)
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-r drv3-th-bank">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="@(new Func<RecentCustomerPaymentDto, object>(x => !string.Equals(x.PaymentMode, "Cash", StringComparison.OrdinalIgnoreCase) ? x.Amount : 0m))">
+                            Collected (A/C)
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh Class="ta-r">
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="@(new Func<RecentCustomerPaymentDto, object>(x => x.Amount))">
+                            Total Received (₹)
+                        </MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel InitialDirection="SortDirection.None" SortBy="@(new Func<RecentCustomerPaymentDto, object>(x => x.Remarks ?? ""))">
+                            Remarks
+                        </MudTableSortLabel>
+                    </MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    @{
+                        var initials = string.IsNullOrEmpty(context.CustomerName) ? "?"
+                            : context.CustomerName.Length >= 2
+                                ? context.CustomerName.Substring(0, 2).ToUpper()
+                                : context.CustomerName.Substring(0, 1).ToUpper();
+                        var isCash = string.Equals(context.PaymentMode, "Cash", StringComparison.OrdinalIgnoreCase);
+                        var modeClass = isCash ? "drv3-mode-cash" : "drv3-mode-bank";
+                    }
+                    <MudTd DataLabel="Customer">
+                        <div class="drv3-customer">
+                            <div class="drv3-avatar drv3-avatar-quick">@initials</div>
+                            <span class="drv3-cust-name">@context.CustomerName</span>
+                        </div>
+                    </MudTd>
+                    <MudTd Class="ta-c drv3-time" DataLabel="Time">@context.TransactionDate.ToKolkataTime().ToString("hh:mm tt")</MudTd>
+                    <MudTd Class="ta-c" DataLabel="Mode">
+                        <span class="drv3-mode @modeClass">@context.PaymentMode</span>
+                    </MudTd>
+                    <MudTd Class="ta-r drv3-mono drv3-cash" DataLabel="Collected (Cash)">₹@(isCash ? Fmt(context.Amount) : "0.00")</MudTd>
+                    <MudTd Class="ta-r drv3-mono drv3-bank" DataLabel="Collected (A/C)">₹@(!isCash ? Fmt(context.Amount) : "0.00")</MudTd>
+                    <MudTd Class="ta-r drv3-mono drv3-total-received" DataLabel="Total Received (₹)">₹@Fmt(context.Amount)</MudTd>
+                    <MudTd Class="drv3-remarks" DataLabel="Remarks">@(context.Remarks ?? "-")</MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <div class="drv3-empty">
+                        <MudIcon Icon="@Icons.Material.Filled.FlashOn" />
+                        <p>No quick payments received on this date.</p>
+                    </div>
+                </NoRecordsContent>
+                <FooterContent>
+                    <MudTd Class="drv3-grand-total-label" Colspan="3">GRAND TOTAL (कुल योग)</MudTd>
+                    <MudTd Class="drv3-grand-total-cell ta-r drv3-mono drv3-cash">₹@Fmt(FilteredPayments.Where(p => string.Equals(p.PaymentMode, "Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount))</MudTd>
+                    <MudTd Class="drv3-grand-total-cell ta-r drv3-mono drv3-bank">₹@Fmt(FilteredPayments.Where(p => !string.Equals(p.PaymentMode, "Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount))</MudTd>
+                    <MudTd Class="drv3-grand-total-cell ta-r drv3-mono drv3-total-received">₹@Fmt(FilteredPayments.Sum(p => p.Amount))</MudTd>
+                    <MudTd Class="drv3-grand-total-cell"></MudTd>
+                </FooterContent>
+            </MudTable>
+        </div>
+
+
+
+        <!-- ══════════════════════════════════════ OVERALL RECONCILIATION ═══ -->
+        <div class="drv3-panel drv3-reconcile-panel">
+            <div class="drv3-panel-header">
+                <h2 class="drv3-panel-title">OVERALL RECONCILIATION</h2>
+            </div>
+            <div class="drv3-reconcile-body">
+
+                <!-- Cash Summary -->
+                <div class="drv3-recon-side drv3-recon-cash-side">
+                    <div class="drv3-recon-side-label drv3-recon-cash-label">CASH SUMMARY</div>
+                    <div class="drv3-equation">
+                        <div class="drv3-eq-block">
+                            <span class="drv3-eq-label">Total Daily Revenue (Cash)</span>
+                            <span class="drv3-eq-val drv3-cash">₹@Fmt(ReconInvCash)</span>
+                        </div>
+                        <span class="drv3-eq-op">+</span>
+                        <div class="drv3-eq-block">
+                            <span class="drv3-eq-label">Quick Collection (Cash)</span>
+                            <span class="drv3-eq-val drv3-cash">₹@Fmt(ReconQkCash)</span>
+                        </div>
+                        <span class="drv3-eq-op">−</span>
+                        <div class="drv3-eq-block">
+                            <span class="drv3-eq-label">Daily Kharcha (Cash)</span>
+                            <span class="drv3-eq-val">₹0.00</span>
+                        </div>
+                        <span class="drv3-eq-op">=</span>
+                        <div class="drv3-eq-block drv3-eq-result drv3-eq-result-cash">
+                            <span class="drv3-eq-label">Total Cash Surplus</span>
+                            <span class="drv3-eq-val drv3-surplus-cash">₹@Fmt(ReconTotalCash)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="drv3-recon-divider"></div>
+
+                <!-- A/C Summary -->
+                <div class="drv3-recon-side drv3-recon-bank-side">
+                    <div class="drv3-recon-side-label drv3-recon-bank-label">A/C SUMMARY</div>
+                    <div class="drv3-equation">
+                        <div class="drv3-eq-block">
+                            <span class="drv3-eq-label">Total Daily Revenue (A/C)</span>
+                            <span class="drv3-eq-val drv3-bank">₹@Fmt(ReconInvBank)</span>
+                        </div>
+                        <span class="drv3-eq-op">+</span>
+                        <div class="drv3-eq-block">
+                            <span class="drv3-eq-label">Quick Collection (A/C)</span>
+                            <span class="drv3-eq-val drv3-bank">₹@Fmt(ReconQkBank)</span>
+                        </div>
+                        <span class="drv3-eq-op">−</span>
+                        <div class="drv3-eq-block">
+                            <span class="drv3-eq-label">Daily Kharcha (A/C)</span>
+                            <span class="drv3-eq-val">₹0.00</span>
+                        </div>
+                        <span class="drv3-eq-op">=</span>
+                        <div class="drv3-eq-block drv3-eq-result drv3-eq-result-bank">
+                            <span class="drv3-eq-label">Total A/C Surplus</span>
+                            <span class="drv3-eq-val drv3-surplus-bank">₹@Fmt(ReconTotalBank)</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bill & Due Summary footer -->
+            <div class="drv3-recon-footer">
+                <div class="drv3-recon-footer-left">
+                    <span class="drv3-footer-label">TOTAL BILL (कुल बिल)</span>
+                    <span class="drv3-footer-val drv3-footer-bill">₹@Fmt(ReconTotalBill)</span>
+                </div>
+                <div class="drv3-recon-footer-divider"></div>
+                <div class="drv3-recon-footer-right">
+                    <span class="drv3-footer-label drv3-footer-due-lbl">TOTAL DUE (कुल बकाया)</span>
+                    <span class="drv3-footer-val drv3-footer-due">₹@Fmt(ReconTotalDue)</span>
+                </div>
+            </div>
+        </div>
+
     }
 
-    <!-- High-Performance Audit Overlay (Glassmorphism Styled) -->
-    <MudOverlay @bind-Visible="ViewDialogVisible" DarkBackground="true" AutoClose="false" ZIndex="9999" LockScroll="true">
-        <MudPaper Elevation="25" Class="audit-overlay-panel pa-8">
-            <div class="overlay-header">
-                <div>
-                    <MudText Typo="Typo.h5" Class="overlay-title">FISCAL AUDIT</MudText>
-                    <MudText Typo="Typo.caption" Class="overlay-subtitle">INVOICE ID: @ViewingInvoice?.InvoiceNumber</MudText>
-                </div>
-                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="() => { ViewDialogVisible = false; StateHasChanged(); }" />
-            </div>
+    <!-- Audit Timestamp Footer -->
+    <div class="drv3-page-footer">
+        <div>
+            <MudIcon Icon="@Icons.Material.Filled.Sync" Style="font-size:0.95rem; margin-right:4px; vertical-align:middle;" />
+            Last updated: @DateTime.Now.ToKolkataTime().ToString("dd MMM yyyy, hh:mm tt")
+        </div>
+        <div>All amounts are in INR (₹)</div>
+    </div>
 
-            @if (ViewingInvoice == null)
-            {
-                <div class="d-flex flex-column align-center pa-10">
-                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-                    <MudText Typo="Typo.caption" Class="mt-4 text-secondary">Retrieving Transaction Metadata...</MudText>
-                </div>
-            }
-            else
-            {
-                <div class="overlay-meta-grid mb-6">
-                    <div>
-                        <MudText Typo="Typo.overline" Class="meta-label">Customer Node</MudText>
-                        <MudText Typo="Typo.h6" Class="meta-value">@ViewingInvoice.CustomerName</MudText>
-                    </div>
-                    <div style="text-align: right;">
-                        <MudText Typo="Typo.overline" Class="meta-label">Temporal Timestamp</MudText>
-                        <MudText Typo="Typo.h6" Class="meta-value">@ViewingInvoice.InvoiceDate.ToKolkataTime().ToString("dd MMM yyyy")</MudText>
-                        <MudText Typo="Typo.caption" Class="meta-time">@ViewingInvoice.InvoiceDate.ToKolkataTime().ToString("hh:mm tt")</MudText>
-                    </div>
-                </div>
-
-                <div class="overlay-table-wrapper mb-6">
-                    <table class="detail-items-table">
-                        <thead>
-                            <tr>
-                                <th style="text-align:left;">Material</th>
-                                <th style="text-align:center;">Qty (Pcs)</th>
-                                <th style="text-align:center;">Weight (KG)</th>
-                                <th style="text-align:right;">Rate</th>
-                                <th style="text-align:right;">Total Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in ViewingInvoice.Items)
-                            {
-                                <tr>
-                                    <td style="font-weight: 700;">@item.VariantName</td>
-                                    <td style="text-align:center; font-family:monospace;">@item.QtyPcs</td>
-                                    <td style="text-align:center; font-family:monospace;">@item.WeightKg.ToString("N2")</td>
-                                    <td style="text-align:right; font-family:monospace;">₹@item.Rate.ToString("N2") / @item.RateOn</td>
-                                    <td style="text-align:right; font-family:monospace; font-weight: 700;">₹@item.TotalPrice.ToString("N2")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="overlay-summary-card p-6">
-                    <div class="summary-notes">
-                        <MudText Typo="Typo.overline" Class="meta-label">Notes & Logistics</MudText>
-                        <MudText Typo="Typo.body2" Class="notes-text">@ViewingInvoice.Remarks</MudText>
-                        <MudText Typo="Typo.body2" Class="notes-text mt-2"><strong>Vehicle No:</strong> @ViewingInvoice.VehicleNumber</MudText>
-                    </div>
-                    <MudStack Spacing="1" Class="summary-charges">
-                        <div class="charge-row">
-                            <MudText Typo="Typo.caption">Subtotal Ledger</MudText>
-                            <MudText Typo="Typo.caption" Class="charge-val">₹@ViewingInvoice.Subtotal.ToString("N2")</MudText>
-                        </div>
-                        @if (ViewingInvoice.CgstAmount > 0 || ViewingInvoice.SgstAmount > 0)
-                        {
-                            <div class="charge-row">
-                                <MudText Typo="Typo.caption">CGST (9%) & SGST (9%)</MudText>
-                                <MudText Typo="Typo.caption" Class="charge-val">₹@((ViewingInvoice.CgstAmount + ViewingInvoice.SgstAmount).ToString("N2"))</MudText>
-                            </div>
-                        }
-                        @if (ViewingInvoice.FreightCharge > 0)
-                        {
-                            <div class="charge-row">
-                                <MudText Typo="Typo.caption">Freight (Bhada)</MudText>
-                                <MudText Typo="Typo.caption" Class="charge-val">₹@ViewingInvoice.FreightCharge.ToString("N2")</MudText>
-                            </div>
-                        }
-                        @if (ViewingInvoice.LoadingCharge > 0)
-                        {
-                            <div class="charge-row">
-                                <MudText Typo="Typo.caption">Loading Charge</MudText>
-                                <MudText Typo="Typo.caption" Class="charge-val">₹@ViewingInvoice.LoadingCharge.ToString("N2")</MudText>
-                            </div>
-                        }
-                        @if (ViewingInvoice.RoundingAmount != 0)
-                        {
-                            <div class="charge-row">
-                                <MudText Typo="Typo.caption">Rounding Adjustment</MudText>
-                                <MudText Typo="Typo.caption" Class="charge-val">₹@ViewingInvoice.RoundingAmount.ToString("N2")</MudText>
-                            </div>
-                        }
-                        <div class="grand-total-row mt-2 pt-2">
-                            <MudText Typo="Typo.h6" Class="total-label">GRAND TOTAL</MudText>
-                            <MudText Typo="Typo.h6" Class="total-value">₹@ViewingInvoice.TotalAmount.ToString("N2")</MudText>
-                        </div>
-                    </MudStack>
-                </div>
-            }
-            
-            <div class="overlay-footer-actions mt-6">
-                <MudButton OnClick="() => { ViewDialogVisible = false; StateHasChanged(); }" Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" Class="close-overlay-btn">CLOSE ARCHIVE</MudButton>
-            </div>
-        </MudPaper>
-    </MudOverlay>
-
-    <!-- Payment Adjustment Overlay -->
-    <MudOverlay @bind-Visible="EditDialogVisible" DarkBackground="true" AutoClose="false" ZIndex="9999">
-        <MudPaper Elevation="25" Class="payment-overlay-panel pa-8">
-            <MudText Typo="Typo.h6" Class="payment-overlay-title">Realize Payment</MudText>
-            <MudText Typo="Typo.caption" Class="payment-overlay-subtitle">ADJUSTING INVOICE: @EditingInvoice?.InvoiceNumber</MudText>
-            
-            <MudStack Spacing="4" Class="mt-6">
-                <MudNumericField T="decimal" Label="CASH PAYMENT (नकद)" Value="EditCash" ValueChanged="OnEditCashChanged" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Payments" Class="cash-field" HideSpinButtons="true" />
-                <MudNumericField T="decimal" Label="A/C PAYMENT (बैंक)" Value="EditAccount" ValueChanged="OnEditAccountChanged" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AccountBalance" Class="bank-field" HideSpinButtons="true" />
-                
-                <div class="payment-summary-box pa-4 mt-2">
-                    <div class="d-flex justify-content-between mb-1">
-                        <MudText Typo="Typo.caption">TOTAL BILL</MudText>
-                        <MudText Typo="Typo.caption" Class="font-monospace font-bold">₹@EditingInvoice?.TotalAmount.ToString("N2")</MudText>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <MudText Typo="Typo.caption" Class="due-label">REMAINING DUE</MudText>
-                        <MudText Typo="Typo.caption" Class="due-value font-monospace font-bold">₹@((EditingInvoice?.TotalAmount ?? 0) - (EditCash + EditAccount))</MudText>
-                    </div>
-                </div>
-
-                <div class="payment-actions-wrapper mt-4">
-                    <MudButton OnClick="() => { EditDialogVisible = false; StateHasChanged(); }" Variant="Variant.Text" FullWidth="true">Cancel</MudButton>
-                    <MudButton OnClick="SaveEditPayment" Color="Color.Primary" Variant="Variant.Filled" DropShadow="false" FullWidth="true" Class="commit-btn">Commit</MudButton>
-                </div>
-            </MudStack>
-        </MudPaper>
-    </MudOverlay>
 </div>
 
+
+
+<!-- ════════════════════════════════════ PAYMENT ADJUSTMENT OVERLAY ═══ -->
+<MudOverlay @bind-Visible="EditDialogVisible" DarkBackground="true" AutoClose="false" ZIndex="9999">
+    <MudPaper Elevation="25" Class="drv3-pay-overlay pa-8">
+        <MudText Typo="Typo.h6" Class="drv3-overlay-title">Realize Payment</MudText>
+        <MudText Typo="Typo.caption" Class="drv3-overlay-caption">Adjusting Invoice: @EditingInvoice?.InvoiceNumber</MudText>
+        <MudStack Spacing="4" Class="mt-6">
+            <MudNumericField T="decimal" Label="CASH PAYMENT (नकद)" Value="EditCash" ValueChanged="OnEditCashChanged"
+                             Variant="Variant.Outlined" Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.Payments" HideSpinButtons="true" Class="cash-field" />
+            <MudNumericField T="decimal" Label="A/C PAYMENT (बैंक)" Value="EditAccount" ValueChanged="OnEditAccountChanged"
+                             Variant="Variant.Outlined" Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.AccountBalance" HideSpinButtons="true" Class="bank-field" />
+            <div class="drv3-pay-summary">
+                <div class="drv3-pay-row"><span>Total Bill</span><span>₹@EditingInvoice?.TotalAmount.ToString("N2")</span></div>
+                <div class="drv3-pay-row drv3-pay-due"><span>Remaining Due</span><span>₹@((EditingInvoice?.TotalAmount ?? 0) - (EditCash + EditAccount))</span></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;">
+                <MudButton OnClick="() => { EditDialogVisible = false; StateHasChanged(); }"
+                           Variant="Variant.Text" FullWidth="true">Cancel</MudButton>
+                <MudButton OnClick="SaveEditPayment" Color="Color.Primary" Variant="Variant.Filled"
+                           DropShadow="false" FullWidth="true">Commit</MudButton>
+            </div>
+        </MudStack>
+    </MudPaper>
+</MudOverlay>
+
 @code {
+    private static readonly CultureInfo InCulture = CultureInfo.GetCultureInfo("en-IN");
+
+    private static string Fmt(decimal value, string format = "N2") =>
+        value.ToString(format, InCulture);
+
     private List<InvoiceListDto> _invoices = new();
     private List<RecentCustomerPaymentDto> _payments = new();
     private DateTime? SelectedDate = DateTime.Today;
     private bool Loading = true;
     private bool IsSuperAdmin = false;
+    private string _searchQuery = "";
+    private MudTable<InvoiceListDto>? _invoiceTable;
 
-    // Payment editing state
+
     private InvoiceListDto? EditingInvoice;
     private bool EditDialogVisible = false;
     private decimal EditCash;
     private decimal EditAccount;
 
-    // Detailed audit overlay state
-    private InvoiceDetailDto? ViewingInvoice;
-    private bool ViewDialogVisible = false;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -433,18 +491,17 @@
     private async Task LoadDataAsync()
     {
         Loading = true;
-        try 
+        try
         {
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
             IsSuperAdmin = user.IsInRole("SuperAdmin") || user.IsInRole("Admin");
-
             _invoices = await SalesService.GetInvoicesAsync();
             _payments = await CustomerWebService.GetRecentPaymentsAsync();
         }
         catch (Exception ex)
         {
-            NotificationService.Error($"Error retrieving fiscal records: {ex.Message}");
+            NotificationService.Error($"Error retrieving records: {ex.Message}");
         }
         finally
         {
@@ -455,28 +512,65 @@
     private bool CanModify(InvoiceListDto b)
     {
         if (IsSuperAdmin) return true;
-        // Check if created within last 12 hours
         return (DateTime.UtcNow - b.InvoiceDate).TotalHours <= 12;
     }
 
-    private List<InvoiceListDto> FilteredInvoices => SelectedDate.HasValue
-        ? _invoices.Where(b => b.InvoiceDate.Date == SelectedDate.Value.Date).ToList()
-        : _invoices;
-
-    // Quick payments filtered by the date the payment was RECEIVED (TransactionDate)
-    private List<RecentCustomerPaymentDto> FilteredPayments => SelectedDate.HasValue
-        ? _payments.Where(p => p.TransactionDate.ToKolkataTime().Date == SelectedDate.Value.Date).ToList()
-        : _payments;
-
-    private string GetCollectionEfficiency()
+    private void OnSearchChanged(string val)
     {
-        var total = FilteredInvoices.Sum(b => b.TotalAmount);
-        if (total == 0) return "0%";
-        var paid = FilteredInvoices.Sum(b => b.BankAmount + b.CashAmount);
-        return $"{(paid / total * 100m).ToString("N1")}%";
+        _searchQuery = val;
+        StateHasChanged();
     }
 
-    // ── Payment Editing ──
+    private List<InvoiceListDto> FilteredInvoices => _invoices
+        .Where(b => (!SelectedDate.HasValue || b.InvoiceDate.Date == SelectedDate.Value.Date) &&
+                    (string.IsNullOrWhiteSpace(_searchQuery) ||
+                     (b.InvoiceNumber != null && b.InvoiceNumber.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)) ||
+                     (b.CustomerName != null && b.CustomerName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase))))
+        .ToList();
+
+    private List<RecentCustomerPaymentDto> FilteredPayments => _payments
+        .Where(p => (!SelectedDate.HasValue || p.TransactionDate.ToKolkataTime().Date == SelectedDate.Value.Date) &&
+                    (string.IsNullOrWhiteSpace(_searchQuery) ||
+                     (p.CustomerName != null && p.CustomerName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)) ||
+                     (p.Remarks != null && p.Remarks.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)) ||
+                     (p.PaymentMode != null && p.PaymentMode.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase))))
+        .ToList();
+
+
+    // ── Reconciliation computed properties ──
+    private decimal ReconInvCash   => FilteredInvoices.Sum(b => b.CashAmount);
+    private decimal ReconInvBank   => FilteredInvoices.Sum(b => b.BankAmount);
+    private decimal ReconQkCash    => FilteredPayments.Where(p => string.Equals(p.PaymentMode, "Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
+    private decimal ReconQkBank    => FilteredPayments.Where(p => !string.Equals(p.PaymentMode, "Cash", StringComparison.OrdinalIgnoreCase)).Sum(p => p.Amount);
+    private decimal ReconTotalCash => ReconInvCash + ReconQkCash;
+    private decimal ReconTotalBank => ReconInvBank + ReconQkBank;
+    private decimal ReconTotalBill => FilteredInvoices.Sum(b => b.TotalAmount);
+    private decimal ReconTotalDue  => FilteredInvoices.Sum(b => b.DueAmount);
+
+    private decimal GetCollectionEfficiency()
+    {
+        var total = FilteredInvoices.Sum(b => b.TotalAmount);
+        if (total == 0) return 100m;
+        var paid = FilteredInvoices.Sum(b => b.CashAmount + b.BankAmount);
+        return Math.Min((paid / total) * 100m, 100m);
+    }
+
+    private string GetEfficiencyStatus(decimal pct)
+    {
+        if (pct >= 95) return "Excellent";
+        if (pct >= 80) return "Good";
+        if (pct >= 50) return "Average";
+        return "Poor";
+    }
+
+    private string GetEfficiencyClass(decimal pct)
+    {
+        if (pct >= 95) return "drv3-eff-excellent";
+        if (pct >= 80) return "drv3-eff-good";
+        if (pct >= 50) return "drv3-eff-average";
+        return "drv3-eff-poor";
+    }
+
     private void OpenEditPayment(InvoiceListDto invoice)
     {
         EditingInvoice = invoice;
@@ -508,7 +602,7 @@
             var success = await SalesService.UpdateInvoicePaymentAsync(EditingInvoice.Id, EditCash, EditAccount);
             if (success)
             {
-                NotificationService.Success("Ledger updated. Payment distribution synchronized.");
+                NotificationService.Success("Payment updated successfully.");
                 EditDialogVisible = false;
                 await LoadDataAsync();
             }
@@ -523,64 +617,34 @@
         }
     }
 
-    // ── Detailed Preview ──
     private async Task ViewInvoiceDetails(Guid id)
     {
-        ViewingInvoice = null;
-        ViewDialogVisible = true;
-        StateHasChanged();
-
-        try
-        {
-            ViewingInvoice = await SalesService.GetInvoiceByIdAsync(id);
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Error($"Audit retrieval failed: {ex.Message}");
-            ViewDialogVisible = false;
-        }
+        await JSRuntime.InvokeVoidAsync("open", $"/sales/print/{id}", "_blank");
     }
 
-    private MudBlazor.Color GetRandomColor(string input)
-    {
-        if (string.IsNullOrEmpty(input)) return MudBlazor.Color.Primary;
-        int hash = input.GetHashCode();
-        var values = Enum.GetValues(typeof(MudBlazor.Color));
-        return (MudBlazor.Color)values.GetValue(Math.Abs(hash) % 5 + 1)!;
-    }
-
-    // ── Excel Download ──
+    // ── Excel Export ──
     private async Task DownloadLedger()
     {
-        try 
+        try
         {
-            NotificationService.Success("Synthesizing Excel ledger...");
-            
+            NotificationService.Success("Generating Excel report...");
             ExcelPackage.License.SetNonCommercialOrganization("Vikash Ironix");
             using var package = new ExcelPackage();
-            var sheet = package.Workbook.Worksheets.Add("Daily Revenue Audit");
-            
-            // Define Column Headers
-            string[] headers = { "Invoice Number", "Customer Name", "Date", "Weight (KG)", "Grand Total (₹)", "Cash Paid (₹)", "Bank Paid (₹)", "Due Amount (₹)" };
-            
-            // Header Styling
+            var sheet = package.Workbook.Worksheets.Add("Daily Revenue");
+
+            string[] headers = { "Invoice No", "Customer", "Date", "Weight (KG)", "Total Bill (₹)", "Cash (₹)", "A/C (₹)", "Due (₹)" };
             var headerRange = sheet.Cells[1, 1, 1, headers.Length];
             headerRange.Style.Font.Bold = true;
             headerRange.Style.Font.Color.SetColor(System.Drawing.Color.White);
-            headerRange.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-            headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.ColorTranslator.FromHtml("#2c73d2"));
-            headerRange.Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
-            headerRange.Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+            headerRange.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            headerRange.Style.Fill.BackgroundColor.SetColor(System.Drawing.ColorTranslator.FromHtml("#1e3a5f"));
+            headerRange.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
             for (int i = 0; i < headers.Length; i++)
-            {
                 sheet.Cells[1, i + 1].Value = headers[i];
-            }
 
-            // Data Population
             int row = 2;
-            foreach (var b in FilteredInvoices)
+            foreach (var b in (_invoiceTable?.FilteredItems ?? FilteredInvoices))
             {
                 sheet.Cells[row, 1].Value = b.InvoiceNumber;
                 sheet.Cells[row, 2].Value = b.CustomerName;
@@ -590,216 +654,69 @@
                 sheet.Cells[row, 6].Value = (double)b.CashAmount;
                 sheet.Cells[row, 7].Value = (double)b.BankAmount;
                 sheet.Cells[row, 8].Value = (double)b.DueAmount;
-
-                // Striping
                 if (row % 2 == 0)
                 {
-                    sheet.Cells[row, 1, row, headers.Length].Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    sheet.Cells[row, 1, row, headers.Length].Style.Fill.BackgroundColor.SetColor(System.Drawing.ColorTranslator.FromHtml("#f8fafc"));
+                    sheet.Cells[row, 1, row, headers.Length].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    sheet.Cells[row, 1, row, headers.Length].Style.Fill.BackgroundColor.SetColor(System.Drawing.ColorTranslator.FromHtml("#f0f4f8"));
                 }
-
                 row++;
             }
 
-            // Number Formatting
             sheet.Cells[2, 4, row - 1, 8].Style.Numberformat.Format = "#,##0.00";
-
-            // Footer / Totalling
-            int lastDataRow = row - 1;
-            sheet.Cells[row, 3].Value = "Total";
-            sheet.Cells[row, 3].Style.Font.Bold = true;
-            sheet.Cells[row, 4].Formula = $"SUM(D2:D{lastDataRow})";
-            sheet.Cells[row, 5].Formula = $"SUM(E2:E{lastDataRow})";
-            sheet.Cells[row, 6].Formula = $"SUM(F2:F{lastDataRow})";
-            sheet.Cells[row, 7].Formula = $"SUM(G2:G{lastDataRow})";
-            sheet.Cells[row, 8].Formula = $"SUM(H2:H{lastDataRow})";
-            
-            var footerRange = sheet.Cells[row, 4, row, 8];
-            footerRange.Style.Font.Bold = true;
-            footerRange.Style.Numberformat.Format = "#,##0.00";
-            
-            // Auto-fit Columns
             sheet.Cells.AutoFitColumns();
-            
+
             var bytes = package.GetAsByteArray();
             var base64 = Convert.ToBase64String(bytes);
-            
-            var filename = $"DailyRevenue_Audit_{SelectedDate?.ToString("yyyyMMdd") ?? "All"}.xlsx";
+            var filename = $"DailyRevenue_{SelectedDate?.ToString("yyyyMMdd") ?? "All"}.xlsx";
             await JSRuntime.InvokeVoidAsync("saveAsFile", filename, base64);
-            
-            NotificationService.Success("Excel Ledger downloaded successfully.");
+            NotificationService.Success("Excel downloaded successfully.");
         }
         catch (Exception ex)
         {
-            NotificationService.Error($"Excel export failed: {ex.Message}");
+            NotificationService.Error($"Export failed: {ex.Message}");
         }
     }
 
-    // ── HTML Printing ──
+    // ── Print ──
     private async Task PrintLedger()
     {
-        var html = BuildLedgerHtml();
+        var html = BuildPrintHtml();
         await JSRuntime.InvokeVoidAsync("vikashPrint", html);
     }
 
-    private string BuildLedgerHtml()
+    private string BuildPrintHtml()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<!DOCTYPE html><html><head><style>");
-        sb.Append("body{font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding:20px; color:#333;}");
-        sb.Append(".report-title{font-size:24px; font-weight:bold; color:#2c73d2; border-bottom:2px solid #2c73d2; padding-bottom:10px; margin-bottom:20px;}");
-        sb.Append("table{width:100%; border-collapse:collapse; font-size:12px;}");
-        sb.Append("th{background-color:#2c73d2; color:white; padding:10px; border:1px solid #1e5bb0; text-align:left; text-transform:uppercase;}");
-        sb.Append("td{padding:8px; border:1px solid #dee2e6;}");
-        sb.Append("tr:nth-child(even){background-color:#f8fafc;}");
-        sb.Append(".totals-row{font-weight:bold; background-color:#ebf3ff !important;}");
-        sb.Append(".text-right{text-align:right;}");
-        sb.Append(".text-center{text-align:center;}");
+        sb.Append("body{font-family:'Segoe UI',sans-serif;padding:20px;color:#0f172a;}");
+        sb.Append(".title{font-size:22px;font-weight:bold;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:8px;margin-bottom:16px;}");
+        sb.Append("table{width:100%;border-collapse:collapse;font-size:12px;}");
+        sb.Append("th{background:#1e3a5f;color:#fff;padding:8px;text-align:left;}");
+        sb.Append("td{padding:7px;border-bottom:1px solid #e2e8f0;}");
+        sb.Append("tr:nth-child(even){background:#f8fafc;}");
+        sb.Append(".totals{font-weight:bold;background:#dbeafe!important;}");
+        sb.Append(".tr{text-align:right;}.tc{text-align:center;}");
         sb.Append("</style></head><body>");
-        sb.Append("<div class='report-title'>Daily Revenue Audit Report - Vikash Iron & Steel</div>");
-        sb.Append("<p><strong>Audit Date:</strong> " + (SelectedDate?.ToString("dd MMMM yyyy") ?? "All Time") + "</p>");
-        
-        sb.Append("<table><thead><tr>");
-        sb.Append("<th>Invoice Number</th><th>Customer Name</th><th>Date</th><th class='text-center'>Weight (KG)</th><th class='text-right'>Grand Total</th><th class='text-right'>Cash Paid</th><th class='text-right'>Bank Paid</th><th class='text-right'>Balance Due</th>");
-        sb.Append("</tr></thead><tbody>");
-        
-        foreach (var b in FilteredInvoices)
+        sb.Append($"<div class='title'>Daily Revenue Audit — {SelectedDate?.ToString("dd MMMM yyyy") ?? "All Time"}</div>");
+        sb.Append("<table><thead><tr><th>Invoice No</th><th>Customer</th><th>Date</th><th class='tc'>Weight (KG)</th><th class='tr'>Total Bill</th><th class='tr'>Cash</th><th class='tr'>A/C</th><th class='tr'>Due</th></tr></thead><tbody>");
+        foreach (var b in (_invoiceTable?.FilteredItems ?? FilteredInvoices))
         {
             sb.Append("<tr>");
-            sb.Append($"<td>{b.InvoiceNumber}</td>");
-            sb.Append($"<td>{b.CustomerName}</td>");
-            sb.Append($"<td>{b.InvoiceDate.ToKolkataTime():dd/MM/yyyy}</td>");
-            sb.Append($"<td class='text-center'>{b.TotalWeightKg:N2}</td>");
-            sb.Append($"<td class='text-right'>₹{b.TotalAmount:N2}</td>");
-            sb.Append($"<td class='text-right'>₹{b.CashAmount:N2}</td>");
-            sb.Append($"<td class='text-right'>₹{b.BankAmount:N2}</td>");
-            sb.Append($"<td class='text-right'>₹{b.DueAmount:N2}</td>");
+            sb.Append($"<td>{b.InvoiceNumber}</td><td>{b.CustomerName}</td><td>{b.InvoiceDate.ToKolkataTime():dd/MM/yyyy}</td>");
+            sb.Append($"<td class='tc'>{b.TotalWeightKg:N2}</td>");
+            sb.Append($"<td class='tr'>₹{b.TotalAmount:N2}</td><td class='tr'>₹{b.CashAmount:N2}</td><td class='tr'>₹{b.BankAmount:N2}</td><td class='tr'>₹{b.DueAmount:N2}</td>");
             sb.Append("</tr>");
         }
-        
-        sb.Append("<tr class='totals-row'>");
-        sb.Append("<td colspan='3'>GRAND TOTAL (कुल योग)</td>");
-        sb.Append($"<td class='text-center'>{FilteredInvoices.Sum(b => b.TotalWeightKg):N2}</td>");
-        sb.Append($"<td class='text-right'>₹{FilteredInvoices.Sum(b => b.TotalAmount):N2}</td>");
-        sb.Append($"<td class='text-right'>₹{FilteredInvoices.Sum(b => b.CashAmount):N2}</td>");
-        sb.Append($"<td class='text-right'>₹{FilteredInvoices.Sum(b => b.BankAmount):N2}</td>");
-        sb.Append($"<td class='text-right'>₹{FilteredInvoices.Sum(b => b.DueAmount):N2}</td>");
-        sb.Append("</tr>");
-        
+        sb.Append($"<tr class='totals'><td colspan='3'>GRAND TOTAL (कुल योग)</td><td class='tc'>{FilteredInvoices.Sum(b => b.TotalWeightKg):N2}</td><td class='tr'>₹{FilteredInvoices.Sum(b => b.TotalAmount):N2}</td><td class='tr'>₹{FilteredInvoices.Sum(b => b.CashAmount):N2}</td><td class='tr'>₹{FilteredInvoices.Sum(b => b.BankAmount):N2}</td><td class='tr'>₹{FilteredInvoices.Sum(b => b.DueAmount):N2}</td></tr>");
         sb.Append("</tbody></table>");
-        sb.Append("<div style='margin-top:20px; font-size:10px; color:#777;'>Generated on: " + DateTime.Now.ToString("dd/MM/yyyy HH:mm") + "</div>");
+        sb.Append($"<div style='margin-top:16px;font-size:10px;color:#64748b;'>Generated: {DateTime.Now:dd/MM/yyyy HH:mm}</div>");
         sb.Append("</body></html>");
         return sb.ToString();
     }
 
     private async Task PrintIndividualBill(Guid id)
     {
-        try
-        {
-            var invoice = await SalesService.GetInvoiceByIdAsync(id);
-            if (invoice == null)
-            {
-                NotificationService.Error("Failed to retrieve invoice details.");
-                return;
-            }
-            
-            var html = BuildIndividualInvoiceHtml(invoice);
-            await JSRuntime.InvokeVoidAsync("vikashPrint", html);
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Error($"Error generating print preview: {ex.Message}");
-        }
-    }
-
-    private string BuildIndividualInvoiceHtml(InvoiceDetailDto b)
-    {
-        var sb = new System.Text.StringBuilder();
-        bool hasGst = b.CgstAmount > 0 || b.SgstAmount > 0;
-
-        sb.Append("<!DOCTYPE html><html><head><meta charset='utf-8'><style>");
-        sb.Append("body{font-family:'Segoe UI',sans-serif;color:#0f172a;padding:40px;max-width:800px;margin:0 auto;}");
-        sb.Append("h1{font-size:24px;font-weight:800;margin:0;}");
-        sb.Append(".subtitle{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.1em;}");
-        sb.Append("table{width:100%;border-collapse:collapse;margin-top:24px;}");
-        sb.Append("th{background:#f8fafc;padding:10px 4px;text-align:left;font-size:12px;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0;}");
-        sb.Append("th:not(:first-child){text-align:right;}");
-        sb.Append("td{padding:8px 4px;border-bottom:1px solid #e2e8f0;font-size:13px;}");
-        sb.Append(".totals{margin-top:24px;border-top:1px solid #e2e8f0;padding-top:16px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;}");
-        sb.Append(".grand{font-size:22px;font-weight:800;color:#16a34a;}");
-        sb.Append(".footer{margin-top:48px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:16px;}");
-        sb.Append("</style></head><body>");
-
-        sb.Append("<div style='display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0f172a;padding-bottom:16px;'>");
-        sb.Append("<div><div class='subtitle'>Tax Invoice</div><h1>VIKASH IRON AND STEEL PVT LTD</h1><div style='font-size:12px;color:#64748b;margin-top:4px;'>Ekma Parsa Road, 841208 | Mob: 9631691290</div></div>");
-        sb.Append("<div style='text-align:right;'>");
-        sb.Append($"<div style='font-size:20px;font-weight:700;'>{b.InvoiceNumber}</div>");
-        sb.Append($"<div style='font-size:13px;color:#64748b;'>Date: {b.InvoiceDate.ToKolkataTime():dd MMM yyyy}</div>");
-        if (b.CashAmount > 0 && b.BankAmount > 0)
-            sb.Append($"<div style='font-size:12px;color:#16a34a;font-weight:bold;margin-top:4px;'>Payment: Cash(₹{b.CashAmount:N2}) + A/C(₹{b.BankAmount:N2})</div>");
-        else if (b.CashAmount > 0)
-            sb.Append($"<div style='font-size:12px;color:#16a34a;font-weight:bold;margin-top:4px;'>Payment: CASH</div>");
-        else if (b.BankAmount > 0)
-            sb.Append($"<div style='font-size:12px;color:#16a34a;font-weight:bold;margin-top:4px;'>Payment: A/C</div>");
-        sb.Append("</div></div>");
-
-        sb.Append("<div style='display:flex;justify-content:space-between;margin:24px 0;'><div><div class='subtitle'>Bill To</div>");
-        sb.Append($"<div style='font-size:15px;font-weight:700;margin-top:6px;'>{b.CustomerName}</div>");
-        sb.Append("</div>");
-
-        sb.Append("<table><thead><tr><th>ITEM</th><th style='text-align:right;'>QTY (PCS)</th><th style='text-align:right;'>WEIGHT (KG)</th><th style='text-align:right;'>RATE</th>");
-        if (hasGst) sb.Append("<th style='text-align:right;'>GST%</th>");
-        sb.Append("<th style='text-align:right;'>AMOUNT</th></tr></thead><tbody>");
-
-        foreach (var item in b.Items)
-        {
-            sb.Append("<tr>");
-            sb.Append($"<td>{item.VariantName}</td>");
-            sb.Append($"<td style='text-align:right;'>{item.QtyPcs}</td>");
-            sb.Append($"<td style='text-align:right;'>{item.WeightKg:N2}</td>");
-            sb.Append($"<td style='text-align:right;'>&#8377;{item.Rate:N2} / {item.RateOn}</td>");
-            if (hasGst) sb.Append($"<td style='text-align:right;'>{(item.CgstRate + item.SgstRate)}%</td>");
-            sb.Append($"<td style='text-align:right;font-weight:700;'>&#8377;{item.TotalPrice:N2}</td>");
-            sb.Append("</tr>");
-        }
-        sb.Append("</tbody></table>");
-
-        sb.Append("<div style='display:grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 24px;'>");
-        
-        // Payment Info & QR (Left)
-        sb.Append("<div style='background:#f8fafc; padding:16px; border-radius:8px; border:1px solid #e2e8f0;'>");
-        sb.Append("<div class='subtitle' style='margin-bottom:8px;'>Collection Status</div>");
-        sb.Append($"<div style='font-size:12px;'>Cash Realized: ₹{b.CashAmount:N2}</div>");
-        sb.Append($"<div style='font-size:12px;'>Bank Realized: ₹{b.BankAmount:N2}</div>");
-        var balDue = b.DueAmount;
-        sb.Append($"<div style='font-size:13px; font-weight:800; color:{(balDue > 0 ? "#ef4444" : "#16a34a")}; border-top:1px solid #e2e8f0; margin-top:8px; padding-top:4px;'>Balance Due: ₹{balDue:N2}</div>");
-        
-        if (balDue > 0)
-        {
-            sb.Append("<div style='margin-top:16px; text-align:center;'>");
-            sb.Append($"<img src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=upi://pay?pa=risham123sharma@ybl%26pn=Vikash%20Iron%26am={balDue}%26cu=INR' style='width:100px; height:100px; border: 1px solid #cbd5e1; border-radius:4px;' />");
-            sb.Append("<div style='font-size:10px; font-weight:800; font-family:monospace; margin-top:4px;'>risham123sharma@ybl</div>");
-            sb.Append("</div>");
-        }
-        sb.Append("</div>");
-
-        // Totals (Right)
-        sb.Append("<div class='totals' style='margin-top:0;'>");
-        sb.Append($"<div>Subtotal: <strong>&#8377;{b.Subtotal:N2}</strong></div>");
-        if (hasGst)
-        {
-            sb.Append($"<div style='font-size:13px;color:#64748b;'>CGST (9%): &#8377;{(b.CgstAmount):N2}</div>");
-            sb.Append($"<div style='font-size:13px;color:#64748b;'>SGST (9%): &#8377;{(b.SgstAmount):N2}</div>");
-        }
-        if (b.FreightCharge > 0) sb.Append($"<div style='font-size:13px;color:#64748b;'>Freight (Bhada): &#8377;{b.FreightCharge:N2}</div>");
-        if (b.LoadingCharge > 0) sb.Append($"<div style='font-size:13px;color:#64748b;'>Loading Charge: &#8377;{b.LoadingCharge:N2}</div>");
-        if (b.RoundingAmount != 0) sb.Append($"<div style='font-size:13px;color:#64748b;'>Rounding: &#8377;{b.RoundingAmount:N2}</div>");
-        sb.Append($"<div class='grand'>Grand Total: &#8377;{b.TotalAmount:N2}</div>");
-        sb.Append("</div></div>");
-
-        sb.Append("<div class='footer'>This is a computer generated document. &mdash; Vikash Iron Ltd.</div>");
-        sb.Append("</body></html>");
-        return sb.ToString();
+        await JSRuntime.InvokeVoidAsync("open", $"/sales/print/{id}", "_blank");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -807,7 +724,7 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("eval", @"
-                window.saveAsFile = function(filename, base64) {
+                window.saveAsFile = window.saveAsFile || function(filename, base64) {
                     var link = document.createElement('a');
                     link.download = filename;
                     link.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64;
@@ -815,12 +732,12 @@
                     link.click();
                     document.body.removeChild(link);
                 };
-                window.vikashPrint = function(html) {
-                    var printWin = window.open('', '_blank');
-                    printWin.document.write(html);
-                    printWin.document.close();
-                    printWin.focus();
-                    printWin.print();
+                window.vikashPrint = window.vikashPrint || function(html) {
+                    var w = window.open('', '_blank');
+                    w.document.write(html);
+                    w.document.close();
+                    w.focus();
+                    w.print();
                 };
             ");
         }

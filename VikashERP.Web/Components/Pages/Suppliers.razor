@@ -12,98 +12,146 @@
 
 <PageTitle>Suppliers</PageTitle>
 
-<div class="page-container">
-    <div class="hero-section">
-        <div class="hero-content">
-            <MudText Typo="Typo.h5" HtmlTag="h1" Class="hero-title">Supplier Management</MudText>
-            <MudText Typo="Typo.body2" Class="hero-subtitle">Manage your suppliers, contact details, and ledger balances.</MudText>
+<MudStack Class="suppliers-list-page" Spacing="4">
+    <!-- Header Hero -->
+    <div class="org-hero">
+        <div class="org-hero-copy">
+            <h1>Supplier Management</h1>
+            <p class="org-subtitle">Manage your suppliers, contact details, and ledger balances.</p>
         </div>
-        <button class="btn-primary" @onclick="OpenAddSupplierDialog">
-            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" Class="mr-2" />
+        <MudButton Variant="Variant.Filled"
+                   Class="dashboard-action-primary org-save-btn"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenAddSupplierDialog">
             Add Supplier
-        </button>
+        </MudButton>
     </div>
 
-    <!-- KPI Metric Cards -->
-    <MudGrid Class="mb-6">
-        <MudItem xs="12" sm="6" md="4">
-            <MudPaper Class="kpi-card" Elevation="0">
-                <div class="kpi-icon-wrapper" style="background: rgba(var(--mud-palette-primary-rgb), 0.1); color: var(--mud-palette-primary);">
-                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" />
-                </div>
-                <div class="kpi-content">
-                    <MudText Typo="Typo.body2" Class="kpi-label">Total Suppliers</MudText>
-                    <MudText Typo="Typo.h5" Class="kpi-value">@_suppliers.Count</MudText>
-                </div>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudPaper Class="kpi-card" Elevation="0">
-                <div class="kpi-icon-wrapper" style="background: rgba(var(--mud-palette-success-rgb), 0.1); color: var(--mud-palette-success);">
-                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
-                </div>
-                <div class="kpi-content">
-                    <MudText Typo="Typo.body2" Class="kpi-label">Total Outstanding Balance</MudText>
-                    <MudText Typo="Typo.h5" Class="kpi-value">₹@_suppliers.Sum(s => s.CurrentBalance).ToString("N2")</MudText>
-                </div>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+    @if (!_isLoading)
+    {
+        <!-- KPI Cards -->
+        <MudGrid Spacing="2" Class="dashboard-kpis">
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-blue">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Suppliers</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@_suppliers.Count</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Active contacts</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-amber">
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Payables (Cr)</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@TotalPayables.ToString("N2")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Our total debt</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
 
-    <MudPaper Class="table-container" Elevation="0">
-        <div class="table-header">
-            <MudTextField @bind-Value="_searchString" 
-                          Placeholder="Search suppliers..." 
-                          Adornment="Adornment.Start" 
-                          AdornmentIcon="@Icons.Material.Filled.Search" 
-                          IconSize="Size.Medium" 
-                          Class="search-input"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Clearable="true" />
-            <div class="table-actions">
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-red">
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Total Receivables (Dr)</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">₹@TotalReceivables.ToString("N2")</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Advances paid</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-purple">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">Net Position</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@NetPositionFormatted</MudText>
+                        <MudText Typo="Typo.caption" Class="trend-neutral">Net payables</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Main Datagrid Panel -->
+        <MudPaper Elevation="0" Class="org-tab-panel pa-6">
+            <div class="mb-4 filter-bar">
+                <MudTextField @bind-Value="_searchString"
+                               Placeholder="Search suppliers..."
+                               Adornment="Adornment.Start"
+                               AdornmentIcon="@Icons.Material.Filled.Search"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="search-bar-full"
+                               Immediate="true"
+                               Clearable="true" />
                 <MudTooltip Text="Refresh">
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="LoadDataAsync" Disabled="@_isLoading" />
                 </MudTooltip>
             </div>
-        </div>
 
-        <MudDataGrid T="SupplierListDto" Items="@_suppliers" 
-                     Loading="@_isLoading" 
-                     Filterable="true" 
-                     SortMode="SortMode.Multiple" 
-                     Groupable="false" 
-                     Dense="true"
-                     Hover="true"
-                     Striped="false"
-                     QuickFilter="@QuickFilter">
-            <Columns>
-                <PropertyColumn Property="x => x.Name" Title="Supplier Name" />
-                <PropertyColumn Property="x => x.CompanyName" Title="Company Name" />
-                <PropertyColumn Property="x => x.Phone" Title="Phone" />
-                <TemplateColumn Title="Balance">
-                    <CellTemplate>
-                        @{
-                            var bal = context.Item.CurrentBalance;
-                            var text = bal == 0 ? "₹0.00" : (bal > 0 ? $"₹{bal:N2} (Cr)" : $"₹{Math.Abs(bal):N2} (Dr)");
-                            var colorClass = bal == 0 ? "" : (bal > 0 ? "text-success" : "text-error");
-                        }
-                        <span class="@colorClass fw-bold">@text</span>
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
-                    <CellTemplate>
-                        <MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditSupplierDialog(context.Item))" />
-                        <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteSupplierAsync(context.Item))" />
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-            <PagerContent>
-                <MudDataGridPager T="SupplierListDto" />
-            </PagerContent>
-        </MudDataGrid>
-    </MudPaper>
-</div>
+            <MudDataGrid T="SupplierListDto" Items="@_suppliers" 
+                         Loading="@_isLoading" 
+                         Filterable="true" 
+                         SortMode="SortMode.Multiple" 
+                         Groupable="false" 
+                         Dense="true"
+                         Hover="true"
+                         Striped="false"
+                         QuickFilter="@QuickFilter"
+                         Class="supplier-table"
+                         Style="background: transparent;">
+                <Columns>
+                    <PropertyColumn Property="x => x.Name" Title="Supplier Name">
+                        <CellTemplate>
+                            <span style="font-weight: 600;">@context.Item.Name</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.CompanyName" Title="Company Name">
+                        <CellTemplate>
+                            <span style="font-weight: 500;">@context.Item.CompanyName</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Phone" Title="Phone">
+                        <CellTemplate>
+                            <span style="font-family: monospace;">@context.Item.Phone</span>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <TemplateColumn Title="Balance" SortBy="x => x.CurrentBalance">
+                        <CellTemplate>
+                            @{
+                                var bal = context.Item.CurrentBalance;
+                                var text = bal == 0 ? "₹0.00" : (bal > 0 ? $"₹{bal:N2} (Cr)" : $"₹{Math.Abs(bal):N2} (Dr)");
+                                var colorClass = bal == 0 ? "" : (bal > 0 ? "text-success" : "text-error");
+                            }
+                            <span class="@colorClass fw-bold">@text</span>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;" Sortable="false" Filterable="false">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditSupplierDialog(context.Item))" />
+                            <MudIconButton Icon="@Icons.Material.Outlined.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteSupplierAsync(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="SupplierListDto" />
+                </PagerContent>
+            </MudDataGrid>
+        </MudPaper>
+    }
+</MudStack>
 
 <MudDialog @bind-Visible="_dialogVisible" Options="_dialogOptions">
     <TitleContent>
@@ -149,117 +197,24 @@
     </DialogContent>
 </MudDialog>
 
-<style>
-    .page-container {
-        padding: 24px;
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-
-    .hero-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 32px;
-        background: linear-gradient(135deg, var(--mud-palette-surface) 0%, rgba(var(--mud-palette-primary-rgb), 0.05) 100%);
-        padding: 24px 32px;
-        border-radius: 16px;
-        border: 1px solid rgba(var(--mud-palette-primary-rgb), 0.1);
-    }
-
-    .hero-title {
-        font-weight: 700;
-        letter-spacing: -0.5px;
-        margin-bottom: 8px;
-    }
-
-    .hero-subtitle {
-        color: var(--mud-palette-text-secondary);
-    }
-
-    .kpi-card {
-        padding: 20px;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        border: 1px solid var(--mud-palette-lines-default);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    .kpi-icon-wrapper {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .kpi-icon-wrapper .mud-icon-root {
-        font-size: 24px;
-    }
-
-    .kpi-label {
-        font-weight: 500;
-        color: var(--mud-palette-text-secondary);
-        margin-bottom: 4px;
-    }
-
-    .kpi-value {
-        font-weight: 700;
-        line-height: 1;
-    }
-
-    .table-container {
-        border-radius: 16px;
-        border: 1px solid var(--mud-palette-lines-default);
-        overflow: hidden;
-    }
-
-    .table-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--mud-palette-lines-default);
-        background: var(--mud-palette-surface);
-    }
-
-    .search-input {
-        max-width: 300px;
-    }
-
-    .btn-primary {
-        background: var(--mud-palette-primary);
-        color: white;
-        border: none;
-        padding: 10px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .btn-primary:hover {
-        background: var(--mud-palette-primary-darken);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(var(--mud-palette-primary-rgb), 0.3);
-    }
-</style>
-
 @code {
     private List<SupplierListDto> _suppliers = new();
     private bool _isLoading = true;
     private bool _isSaving = false;
     private string _searchString = "";
+
+    private decimal TotalPayables => _suppliers.Where(s => s.CurrentBalance > 0).Sum(s => s.CurrentBalance);
+    private decimal TotalReceivables => _suppliers.Where(s => s.CurrentBalance < 0).Sum(s => Math.Abs(s.CurrentBalance));
+    
+    private string NetPositionFormatted
+    {
+        get
+        {
+            var net = _suppliers.Sum(s => s.CurrentBalance);
+            if (net == 0) return "₹0.00";
+            return net > 0 ? $"₹{net:N2} (Cr)" : $"₹{Math.Abs(net):N2} (Dr)";
+        }
+    }
     
     private bool _dialogVisible = false;
     private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };

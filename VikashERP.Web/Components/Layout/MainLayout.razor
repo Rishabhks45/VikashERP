@@ -1,137 +1,328 @@
 @inherits LayoutComponentBase
 
 <MudLayout Class="app-layout">
-    <MudAppBar Elevation="0" Fixed="true" Class="app-topbar" Dense="true">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu"
-                       Class="app-topbar-menu"
-                       OnClick="@DrawerToggle" />
+    @if (!string.Equals(_userRole, "Customer", StringComparison.OrdinalIgnoreCase))
+    {
+        <MudAppBar Elevation="0" Fixed="true" Class="app-topbar" Dense="true">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                           Class="app-topbar-menu"
+                           OnClick="@DrawerToggle" />
 
-        <MudHidden Breakpoint="Breakpoint.MdAndUp">
-            <MudIconButton Icon="@Icons.Material.Filled.Search" Class="app-topbar-icon" />
-        </MudHidden>
+            <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                <MudIconButton Icon="@Icons.Material.Filled.Search" Class="app-topbar-icon" />
+            </MudHidden>
 
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <div class="appbar-search">
-                <MudIcon Icon="@Icons.Material.Filled.Search" Class="appbar-search-icon" />
-                <input type="text" placeholder="Search anything..." class="appbar-search-input" />
-                <span class="appbar-search-kbd">⌘K</span>
-            </div>
-        </MudHidden>
+            <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                <div class="appbar-search">
+                    <MudIcon Icon="@Icons.Material.Filled.Search" Class="appbar-search-icon" />
+                    <input type="text" placeholder="Search anything..." class="appbar-search-input" />
+                    <span class="appbar-search-kbd">⌘K</span>
+                </div>
+            </MudHidden>
 
-        <MudSpacer />
+            <MudSpacer />
 
-        <div class="app-topbar-actions">
-            <MudIconButton Icon="@(DarkModeService.IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                           Class="app-topbar-icon"
-                           OnClick="@ToggleDarkMode" />
-
-            <div class="notification-badge-container">
-                <MudIconButton Icon="@Icons.Material.Filled.Notifications"
-                               Color="Color.Inherit"
+            <div class="app-topbar-actions">
+                <MudIconButton Icon="@(DarkModeService.IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
                                Class="app-topbar-icon"
-                               AriaLabel="Notifications" />
-                <span class="notification-badge">3</span>
-            </div>
+                               OnClick="@ToggleDarkMode" />
 
-            <MudMenu AnchorOrigin="Origin.BottomRight"
-                     TransformOrigin="Origin.TopRight"
-                     PopoverClass="appbar-profile-popover"
-                     Class="appbar-profile-menu"
-                     ActivationEvent="MouseEvent.MouseOver"
-                     Dense="true">
-                <ActivatorContent>
-                    <div class="user-avatar-trigger">
-                        @if (!string.IsNullOrEmpty(_userProfilePictureUrl))
-                        {
-                            <img src="@_userProfilePictureUrl" class="user-avatar-img" alt="Profile" />
-                        }
-                        else
-                        {
-                            <MudAvatar Color="Color.Dark" Class="user-avatar">@_userInitials</MudAvatar>
-                        }
-                        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-                            <div class="user-profile-details">
-                                <span class="user-profile-name">@_userName</span>
-                                <span class="user-profile-role">@_displayRole</span>
-                            </div>
-                        </MudHidden>
-                    </div>
-                </ActivatorContent>
-                <ChildContent>
-                    <div class="menu-profile-header">
-                        <MudText Typo="Typo.subtitle2" Class="menu-profile-username">@_userName</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@_displayRole</MudText>
-                    </div>
-                    <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="/profile" Class="menu-item-text">
-                        My Profile
-                    </MudMenuItem>
-                    <MudDivider />
-                    <MudMenuItem Icon="@Icons.Material.Filled.Logout"
-                                 Color="Color.Error"
-                                 Class="menu-item-text"
-                                 OnClick="@Logout">
-                        Logout
-                    </MudMenuItem>
-                </ChildContent>
-            </MudMenu>
-        </div>
-    </MudAppBar>
+                <div class="notification-badge-container">
+                    <MudIconButton Icon="@Icons.Material.Filled.Notifications"
+                                   Color="Color.Inherit"
+                                   Class="app-topbar-icon"
+                                   AriaLabel="Notifications" />
+                    <span class="notification-badge">3</span>
+                </div>
 
-    <MudDrawer @bind-Open="_drawerOpen"
-               Elevation="0"
-               Variant="DrawerVariant.Responsive"
-               ClipMode="DrawerClipMode.Never"
-               Breakpoint="Breakpoint.Md"
-               Class="app-drawer">
-        <div class="app-drawer-inner">
-            <div class="app-drawer-header">
-                <div class="sidebar-logo-container">
-                    @if (!string.IsNullOrWhiteSpace(OrganizationBranding.LogoSrc))
-                    {
-                        <div class="sidebar-logo-wrap">
-                            <img src="@OrganizationBranding.LogoSrc" alt="@OrganizationBranding.Current.DisplayName" class="sidebar-logo-img" loading="eager" />
+                <MudMenu AnchorOrigin="Origin.BottomRight"
+                         TransformOrigin="Origin.TopRight"
+                         PopoverClass="appbar-profile-popover"
+                         Class="appbar-profile-menu"
+                         ActivationEvent="MouseEvent.MouseOver"
+                         Dense="true">
+                    <ActivatorContent>
+                        <div class="user-avatar-trigger">
+                            @if (!string.IsNullOrEmpty(_userProfilePictureUrl))
+                            {
+                                <img src="@_userProfilePictureUrl" class="user-avatar-img" alt="Profile" />
+                            }
+                            else
+                            {
+                                <MudAvatar Color="Color.Dark" Class="user-avatar">@_userInitials</MudAvatar>
+                            }
+                            <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                                <div class="user-profile-details">
+                                    <span class="user-profile-name">@_userName</span>
+                                    <span class="user-profile-role">@_displayRole</span>
+                                </div>
+                            </MudHidden>
                         </div>
-                    }
-                    <div class="sidebar-brand-text">
-                        @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.DisplayName))
+                    </ActivatorContent>
+                    <ChildContent>
+                        <div class="menu-profile-header">
+                            <MudText Typo="Typo.subtitle2" Class="menu-profile-username">@_userName</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@_displayRole</MudText>
+                        </div>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="/profile" Class="menu-item-text">
+                            My Profile
+                        </MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout"
+                                     Color="Color.Error"
+                                     Class="menu-item-text"
+                                     OnClick="@Logout">
+                            Logout
+                        </MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            </div>
+        </MudAppBar>
+
+        <MudDrawer @bind-Open="_drawerOpen"
+                   Elevation="0"
+                   Variant="DrawerVariant.Responsive"
+                   ClipMode="DrawerClipMode.Never"
+                   Breakpoint="Breakpoint.Md"
+                   Class="app-drawer">
+            <div class="app-drawer-inner">
+                <div class="app-drawer-header">
+                    <div class="sidebar-logo-container">
+                        @if (!string.IsNullOrWhiteSpace(OrganizationBranding.LogoSrc))
                         {
-                            <span class="sidebar-logo-title">@OrganizationBranding.Current.DisplayName</span>
+                            <div class="sidebar-logo-wrap">
+                                <img src="@OrganizationBranding.LogoSrc" alt="@OrganizationBranding.Current.DisplayName" class="sidebar-logo-img" loading="eager" />
+                            </div>
                         }
-                        @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.Tagline))
-                        {
-                            <span class="sidebar-logo-subtitle">@OrganizationBranding.Current.Tagline</span>
-                        }
+                        <div class="sidebar-brand-text">
+                            @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.DisplayName))
+                            {
+                                <span class="sidebar-logo-title">@OrganizationBranding.Current.DisplayName</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(OrganizationBranding.Current.Tagline))
+                            {
+                                <span class="sidebar-logo-subtitle">@OrganizationBranding.Current.Tagline</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="app-drawer-nav">
+                    <NavMenu />
+                </div>
+
+                <div class="app-drawer-footer">
+                    <div class="app-drawer-help">
+                        <div class="app-drawer-help-icon">
+                            <MudIcon Icon="@Icons.Material.Filled.HelpOutline" />
+                        </div>
+                        <div>
+                            <div class="app-drawer-help-title">Need Help?</div>
+                            <div class="app-drawer-help-sub">
+                                Check our documentation
+                                <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Style="font-size: 12px;" />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="app-drawer-nav">
-                <NavMenu />
+        </MudDrawer>
+    }
+    else
+    {
+        <!-- Customer Top Storefront Header -->
+        <header class="portal-header">
+            <div class="logo-section">
+                <div class="logo-icon-wrap">
+                    <span class="logo-icon">V</span>
+                </div>
+                <div class="logo-text">
+                    <span class="brand-name">VIKASH</span>
+                    <span class="brand-tagline">Iron &amp; Steel</span>
+                </div>
             </div>
 
-            <div class="app-drawer-footer">
-                <div class="app-drawer-help">
-                    <div class="app-drawer-help-icon">
-                        <MudIcon Icon="@Icons.Material.Filled.HelpOutline" />
+            <div class="search-center-wrap">
+                <input type="text" 
+                       placeholder="Search for products, brands, grades..." 
+                       class="search-input" 
+                       @bind="_globalSearchQuery"
+                       @onkeyup="OnSearchKeyUp" />
+                <svg class="search-icon-nav" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+
+            <div class="header-actions-right">
+                <a href="/customer-dashboard?tab=rfq" class="info-link-item">
+                    <div class="icon-circle">
+                        <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
                     </div>
                     <div>
-                        <div class="app-drawer-help-title">Need Help?</div>
-                        <div class="app-drawer-help-sub">
-                            Check our documentation
-                            <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Style="font-size: 12px;" />
-                        </div>
+                        <span class="lbl">Bulk Order</span>
+                        <span class="sub">Get Best Price</span>
+                    </div>
+                </a>
+
+                <div class="info-link-item">
+                    <div class="icon-circle">
+                        <MudIcon Icon="@Icons.Material.Filled.HeadsetMic" Size="Size.Small" />
+                    </div>
+                    <div>
+                        <span class="lbl">24x7 Support</span>
+                        <span class="sub">+91 98765 43210</span>
                     </div>
                 </div>
-            </div>
-        </div>
-    </MudDrawer>
 
-    <MudMainContent Class="app-main">
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="app-main-container">
-            <div class="app-page">
-                @Body
+                <div class="info-link-item">
+                    <div class="icon-circle">
+                        <MudIcon Icon="@Icons.Material.Filled.FactCheck" Size="Size.Small" />
+                    </div>
+                    <div>
+                        <span class="lbl">GST Billing</span>
+                        <span class="sub">Available</span>
+                    </div>
+                </div>
+
+                <!-- Cart button -->
+                <button class="btn-cart-nav" @onclick="RedirectToRfq">
+                    <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Size="Size.Small" />
+                    <span>Cart</span>
+                    <span class="cart-count-badge">12</span>
+                </button>
+
+                <!-- Dark / Light Mode Toggle -->
+                <button class="btn-theme-nav" @onclick="ToggleDarkMode" title="Toggle Theme">
+                    <MudIcon Icon="@(DarkModeService.IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Size="Size.Small" />
+                </button>
+
+                <!-- Customer Profile Dropdown -->
+                <MudMenu AnchorOrigin="Origin.BottomRight"
+                         TransformOrigin="Origin.TopRight"
+                         PopoverClass="appbar-profile-popover"
+                         Class="appbar-profile-menu customer-profile-menu"
+                         Dense="true">
+                    <ActivatorContent>
+                        <div class="customer-avatar-trigger">
+                            @if (!string.IsNullOrEmpty(_userProfilePictureUrl))
+                            {
+                                <img src="@_userProfilePictureUrl" class="user-avatar-img customer-avatar-img" alt="Profile" />
+                            }
+                            else
+                            {
+                                <MudAvatar Color="Color.Info" Class="user-avatar customer-avatar">@_userInitials</MudAvatar>
+                            }
+                            <span class="customer-profile-name">@_userName</span>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px; color: #8f9cae; flex-shrink: 0;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <div class="menu-profile-header">
+                            <MudText Typo="Typo.subtitle2" Class="menu-profile-username">@_userName</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Customer Portal</MudText>
+                        </div>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.AccountBalanceWallet" Href="/customer-dashboard?tab=account" Class="menu-item-text">
+                            My Ledger &amp; Credit
+                        </MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Description" Href="/customer-dashboard?tab=rfq" Class="menu-item-text">
+                            Request Bulk Quotation
+                        </MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout"
+                                     Color="Color.Error"
+                                     Class="menu-item-text"
+                                     OnClick="@Logout">
+                            Logout
+                        </MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
             </div>
+        </header>
+
+        <!-- Customer Sub Navigation Bar -->
+        <nav class="portal-subnav">
+            <div class="subnav-left-menu">
+                <button class="btn-all-categories" @onclick="ResetSearchAndGoHome">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; flex-shrink: 0;">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                    <span>All Categories</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 10px; flex-shrink: 0; opacity: 0.8;">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <ul class="nav-links-wrap">
+                    <li>
+                        <a href="/customer-dashboard" class="nav-link-btn @(IsActiveLink("/customer-dashboard", null) ? "active" : "")">
+                            Home
+                        </a>
+                    </li>
+                    <li class="nav-dropdown-item">
+                        <MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" PopoverClass="subnav-products-popover" ActivationEvent="MouseEvent.MouseOver" Dense="true">
+                            <ActivatorContent>
+                                <button class="nav-link-btn">
+                                    <span>Products</span>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 6px; flex-shrink: 0; opacity: 0.8;">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                            </ActivatorContent>
+                            <ChildContent>
+                                <MudMenuItem OnClick='() => FilterByCategory("TMT Bars")'>TMT Bars</MudMenuItem>
+                                <MudMenuItem OnClick='() => FilterByCategory("MS Pipes")'>MS Pipes</MudMenuItem>
+                                <MudMenuItem OnClick='() => FilterByCategory("MS Angles")'>MS Angles</MudMenuItem>
+                                <MudMenuItem OnClick='() => FilterByCategory("CRC Sheets")'>CRC Sheets</MudMenuItem>
+                                <MudMenuItem OnClick='() => FilterByCategory("GI Pipes")'>GI Pipes</MudMenuItem>
+                                <MudMenuItem OnClick='() => FilterByCategory("Wire & Rod")'>Wire &amp; Rod</MudMenuItem>
+                            </ChildContent>
+                        </MudMenu>
+                    </li>
+                    <li>
+                        <a href="/customer-dashboard?tab=about" class="nav-link-btn @(IsActiveLink("/customer-dashboard", "about") ? "active" : "")">
+                            About Us
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/customer-dashboard?tab=services" class="nav-link-btn @(IsActiveLink("/customer-dashboard", "services") ? "active" : "")">
+                            Services
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/customer-dashboard?tab=projects" class="nav-link-btn @(IsActiveLink("/customer-dashboard", "projects") ? "active" : "")">
+                            Projects
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/customer-dashboard?tab=contact" class="nav-link-btn @(IsActiveLink("/customer-dashboard", "contact") ? "active" : "")">
+                            Contact Us
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="subnav-right-info">
+            </div>
+        </nav>
+    }
+
+    <MudMainContent Class="@(string.Equals(_userRole, "Customer", StringComparison.OrdinalIgnoreCase) ? "app-main customer-portal-main" : "app-main")">
+        <MudContainer MaxWidth="@(string.Equals(_userRole, "Customer", StringComparison.OrdinalIgnoreCase) ? MaxWidth.False : MaxWidth.ExtraLarge)" Class="@(string.Equals(_userRole, "Customer", StringComparison.OrdinalIgnoreCase) ? "customer-portal-layout-container" : "app-main-container")">
+            @if (string.Equals(_userRole, "Customer", StringComparison.OrdinalIgnoreCase))
+            {
+                @Body
+            }
+            else
+            {
+                <div class="app-page">
+                    @Body
+                </div>
+            }
         </MudContainer>
     </MudMainContent>
 </MudLayout>

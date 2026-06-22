@@ -167,6 +167,58 @@ public partial class MainLayout : IDisposable
 
     private void Logout() => Navigation.NavigateTo("/account/logout", forceLoad: true);
 
+    // Customer storefront navigation helpers
+    private string _globalSearchQuery = string.Empty;
+
+    private void OnSearchKeyUp(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            Navigation.NavigateTo($"/customer-dashboard?search={Uri.EscapeDataString(_globalSearchQuery)}");
+        }
+    }
+
+    private void ResetSearchAndGoHome()
+    {
+        _globalSearchQuery = string.Empty;
+        Navigation.NavigateTo("/customer-dashboard");
+    }
+
+    private void FilterByCategory(string category)
+    {
+        _globalSearchQuery = category;
+        Navigation.NavigateTo($"/customer-dashboard?search={Uri.EscapeDataString(category)}");
+    }
+
+    private void RedirectToRfq()
+    {
+        Navigation.NavigateTo("/customer-dashboard?tab=rfq");
+    }
+
+    private bool IsActiveLink(string path, string? tab)
+    {
+        var uri = Navigation.Uri;
+        if (path.Equals("/customer-dashboard", StringComparison.OrdinalIgnoreCase))
+        {
+            // Parse base path (ignoring query strings)
+            var absUri = Navigation.ToAbsoluteUri(uri);
+            var isHomePath = absUri.AbsolutePath.Equals("/", StringComparison.OrdinalIgnoreCase) || 
+                             absUri.AbsolutePath.Equals("/customer-dashboard", StringComparison.OrdinalIgnoreCase);
+            
+            if (string.IsNullOrEmpty(tab))
+            {
+                return isHomePath && !uri.Contains("tab=");
+            }
+            else
+            {
+                return isHomePath && uri.Contains($"tab={tab}", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        
+        var checkPath = Navigation.ToAbsoluteUri(uri).AbsolutePath;
+        return checkPath.Equals(path, StringComparison.OrdinalIgnoreCase);
+    }
+
     public void Dispose()
     {
         AuthStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;

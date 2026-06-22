@@ -12,4 +12,8 @@ public interface IBrokerWebService
     Task<BrokerDto?> CreateBrokerAsync(BrokerFormModel model);
     Task<BrokerDto?> UpdateBrokerAsync(Guid id, BrokerFormModel model);
     Task<bool> DeleteBrokerAsync(Guid id);
+    Task<List<BrokerLedgerEntryDto>> GetBrokerLedgerAsync(Guid brokerId);
+    Task<bool> RecordBrokerTransactionAsync(CreateBrokerTransactionDto dto);
+    Task<List<RecentBrokerTransactionDto>> GetRecentBrokerTransactionsAsync();
 }
+

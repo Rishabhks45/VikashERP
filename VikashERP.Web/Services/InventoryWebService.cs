@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using VikashERP.Web.Models;
 using VikashERP.Web.Services.Interfaces;
 
@@ -6,6 +7,11 @@ namespace VikashERP.Web.Services;
 
 public class InventoryWebService : IInventoryWebService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     private readonly HttpClient _httpClient;
 
     public InventoryWebService(IHttpClientFactory httpClientFactory)
@@ -20,7 +26,7 @@ public class InventoryWebService : IInventoryWebService
             var response = await _httpClient.GetAsync("/api/inventory/stock");
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<List<GodownStockDto>>();
+                var result = await response.Content.ReadFromJsonAsync<List<GodownStockDto>>(JsonOptions);
                 return result ?? new List<GodownStockDto>();
             }
             return new List<GodownStockDto>();

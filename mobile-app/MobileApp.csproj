@@ -25,8 +25,6 @@
 		     For individual files, you can override by setting Inflator metadata:
 		       <MauiXaml Update="MyPage.xaml" Inflator="Default" /> (reverts to defaults: Runtime for Debug, XamlC for Release)
 		       <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
-		<MauiXamlInflator>SourceGen</MauiXamlInflator>
-
 		<!-- Display name -->
 		<ApplicationTitle>MobileApp</ApplicationTitle>
 
@@ -68,6 +66,11 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+		<PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.10" />
 	</ItemGroup>
+
+	<PropertyGroup Condition="$(TargetFramework.Contains('-android'))">
+		<AndroidErrorOnCustomJavaObject>false</AndroidErrorOnCustomJavaObject>
+	</PropertyGroup>
 
 </Project>

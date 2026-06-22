@@ -420,54 +420,54 @@
 }
 
 /* Dark mode styling */
-:global(.app-dark-mode) .dashboard-kpi {
+.app-dark-mode .dashboard-kpi {
     background-color: #1e293b;
     border-color: #334155;
 }
 
-:global(.app-dark-mode) .dashboard-kpi strong {
+.app-dark-mode .dashboard-kpi strong {
     color: #f8fafc;
 }
 
-:global(.app-dark-mode) .dashboard-kpi-body span {
+.app-dark-mode .dashboard-kpi-body span {
     color: #94a3b8;
 }
 
-:global(.app-dark-mode) .org-tab-panel {
+.app-dark-mode .org-tab-panel {
     background-color: #1e293b;
     border-color: #334155;
 }
 
-:global(.app-dark-mode) .search-bar-full ::deep .mud-input {
+.app-dark-mode .search-bar-full ::deep .mud-input {
     background-color: #0f172a;
 }
 
-:global(.app-dark-mode) .invoice-table ::deep th {
+.app-dark-mode .invoice-table ::deep th {
     background-color: #0f172a !important;
     color: #94a3b8 !important;
 }
 
-:global(.app-dark-mode) .invoice-table ::deep td {
+.app-dark-mode .invoice-table ::deep td {
     color: #cbd5e1 !important;
     border-bottom-color: #334155;
 }
 
-:global(.app-dark-mode) .drawer-header {
+.app-dark-mode .drawer-header {
     background-color: #0f172a;
     border-bottom-color: #334155;
 }
 
-:global(.app-dark-mode) .drawer-title {
+.app-dark-mode .drawer-title {
     color: #f8fafc !important;
 }
 
-:global(.app-dark-mode) .mode-cash {
+.app-dark-mode .mode-cash {
     background-color: rgba(217, 119, 6, 0.15);
     color: #fbbf24;
     border-color: rgba(245, 158, 11, 0.3);
 }
 
-:global(.app-dark-mode) .mode-upi {
+.app-dark-mode .mode-upi {
     background-color: rgba(5, 150, 105, 0.15);
     color: #34d399;
     border-color: rgba(16, 185, 129, 0.3);

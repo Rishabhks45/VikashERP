@@ -9,6 +9,7 @@ public interface ICustomerWebService
     Task<CustomerListDto?> CreateCustomerAsync(CreateCustomerDto dto);
     Task<bool> RecordCustomerPaymentAsync(CreateCustomerPaymentDto request);
     Task<List<RecentCustomerPaymentDto>> GetRecentPaymentsAsync();
+    Task<List<CustomerLedgerEntryDto>> GetCustomerLedgerAsync(Guid id, DateTime? fromDate = null, DateTime? toDate = null);
 }
 
 public class CustomerWebService : ICustomerWebService
@@ -71,5 +72,18 @@ public class CustomerWebService : ICustomerWebService
         {
             return new List<RecentCustomerPaymentDto>();
         }
+    }
+
+    public async Task<List<CustomerLedgerEntryDto>> GetCustomerLedgerAsync(Guid id, DateTime? fromDate = null, DateTime? toDate = null)
+    {
+        var url = $"api/customers/{id}/ledger";
+        var queryParams = new List<string>();
+        if (fromDate.HasValue) queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+        if (toDate.HasValue) queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+        if (queryParams.Count > 0)
+        {
+            url += "?" + string.Join("&", queryParams);
+        }
+        return await _httpClient.GetFromJsonAsync<List<CustomerLedgerEntryDto>>(url) ?? new List<CustomerLedgerEntryDto>();
     }
 }

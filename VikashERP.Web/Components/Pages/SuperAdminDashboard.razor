@@ -1,0 +1,201 @@
+@using VikashERP.Web.Models
+
+<MudStack Class="dashboard-page" Spacing="3">
+    <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-header">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5" HtmlTag="h1">Executive Dashboard</MudText>
+            <MudText Typo="Typo.body2" Class="dashboard-subtitle">
+                Live operating view for sales, receivables, stock movement, and dispatch priorities.
+            </MudText>
+        </MudStack>
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="dashboard-header-actions">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.FileDownload" Class="dashboard-action-secondary">
+                Export
+            </MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ReceiptLong" Class="dashboard-action-primary">
+                New Invoice
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Spacing="2" Class="dashboard-kpis">
+        @foreach (var metric in Metrics)
+        {
+            <MudItem xs="12" sm="6" lg="3">
+                <MudPaper Elevation="0" Class="dashboard-kpi">
+                    <MudPaper Elevation="0" Class="@($"dashboard-kpi-icon {metric.IconClass}")">
+                        <MudIcon Icon="@metric.Icon" />
+                    </MudPaper>
+                    <MudStack Spacing="0" Class="dashboard-kpi-body">
+                        <MudText Typo="Typo.caption">@metric.Label</MudText>
+                        <MudText Typo="Typo.h5" HtmlTag="strong">@metric.Value</MudText>
+                        <MudText Typo="Typo.caption" Class="@metric.TrendClass">@metric.Trend</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+
+    <MudGrid Spacing="2" Class="dashboard-grid">
+        <MudItem xs="12" lg="8">
+            <MudPaper Elevation="0" Class="dashboard-panel dashboard-panel-wide">
+                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Revenue Flow</MudText>
+                        <MudText Typo="Typo.caption">Daily sales against payment collection</MudText>
+                    </MudStack>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">This week</MudChip>
+                </MudStack>
+
+                <MudStack Row="true" Class="revenue-bars">
+                    @foreach (var item in Revenue)
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Spacing="1" Class="revenue-day">
+                            <div class="revenue-track">
+                                <div class="revenue-bar sales" style="height:@($"{item.Sales}%")"></div>
+                                <div class="revenue-bar collected" style="height:@($"{item.Collected}%")"></div>
+                            </div>
+                            <MudText Typo="Typo.caption">@item.Day</MudText>
+                        </MudStack>
+                    }
+                </MudStack>
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="dashboard-legend">
+                    <MudText Typo="Typo.caption"><i class="legend-dot sales"></i>Sales</MudText>
+                    <MudText Typo="Typo.caption"><i class="legend-dot collected"></i>Collected</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="4">
+            <MudPaper Elevation="0" Class="dashboard-panel">
+                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Dispatch Queue</MudText>
+                        <MudText Typo="Typo.caption">Loads waiting for movement</MudText>
+                    </MudStack>
+                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Class="dashboard-panel-icon" />
+                </MudStack>
+
+                <MudStack Spacing="2" Class="dispatch-list">
+                    @foreach (var dispatch in Dispatches)
+                    {
+                        <MudPaper Elevation="0" Class="dispatch-item">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.subtitle2">@dispatch.Vehicle</MudText>
+                                <MudText Typo="Typo.caption">@dispatch.Customer</MudText>
+                            </MudStack>
+                            <MudChip T="string" Size="Size.Small" Class="@dispatch.StatusClass">@dispatch.Status</MudChip>
+                        </MudPaper>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="4">
+            <MudPaper Elevation="0" Class="dashboard-panel">
+                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Low Stock Alerts</MudText>
+                        <MudText Typo="Typo.caption">Materials below safe level</MudText>
+                    </MudStack>
+                    <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Class="dashboard-panel-icon warning" />
+                </MudStack>
+
+                <MudStack Spacing="0" Class="stock-list">
+                    @foreach (var stock in LowStock)
+                    {
+                        <div class="stock-row">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.subtitle2">@stock.Material</MudText>
+                                <MudText Typo="Typo.caption">@stock.Location</MudText>
+                            </MudStack>
+                            <MudProgressLinear Value="@stock.Percent"
+                                               Rounded="true"
+                                               Size="Size.Small"
+                                               Class="stock-progress" />
+                            <MudText Typo="Typo.caption" Class="stock-count">@stock.Quantity</MudText>
+                        </div>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="8">
+            <MudPaper Elevation="0" Class="dashboard-panel dashboard-panel-wide">
+                <MudStack Row="true" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween" Class="dashboard-panel-header">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Recent Invoices</MudText>
+                        <MudText Typo="Typo.caption">Latest billing activity</MudText>
+                    </MudStack>
+                    <MudButton Variant="Variant.Text" EndIcon="@Icons.Material.Filled.ArrowForward" Size="Size.Small">View all</MudButton>
+                </MudStack>
+
+                <MudTable Items="@Invoices" Dense="true" Hover="true" Elevation="0" Class="invoice-table" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Invoice</MudTh>
+                        <MudTh>Customer</MudTh>
+                        <MudTh>Amount</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="invoice">
+                        <MudTd DataLabel="Invoice">@invoice.Number</MudTd>
+                        <MudTd DataLabel="Customer">@invoice.Customer</MudTd>
+                        <MudTd DataLabel="Amount">
+                            <MudText Typo="Typo.body2" Class="invoice-amount">@invoice.Amount</MudText>
+                        </MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip T="string" Size="Size.Small" Class="@invoice.StatusClass">@invoice.Status</MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>
+
+@code {
+    private static readonly Metric[] Metrics =
+    [
+        new("Today Sale", "Rs 4.82L", "+18.4% from yesterday", Icons.Material.Filled.Payments, "accent-green", "trend-up"),
+        new("Pending Amount", "Rs 12.7L", "8 customers over due", Icons.Material.Filled.AccountBalanceWallet, "accent-red", "trend-down"),
+        new("Low Stock", "14 Items", "3 critical materials", Icons.Material.Filled.Inventory2, "accent-amber", "trend-alert"),
+        new("Delivery Pending", "9 Loads", "5 ready for dispatch", Icons.Material.Filled.LocalShipping, "accent-blue", "trend-neutral")
+    ];
+
+    private static readonly RevenuePoint[] Revenue =
+    [
+        new("Mon", 58, 44),
+        new("Tue", 72, 52),
+        new("Wed", 64, 61),
+        new("Thu", 85, 69),
+        new("Fri", 78, 74),
+        new("Sat", 92, 63),
+        new("Sun", 48, 42)
+    ];
+
+    private static readonly DispatchItem[] Dispatches =
+    [
+        new("JH 05 CK 2841", "Mahadev Traders", "Loading", "chip-info"),
+        new("JH 01 DP 7712", "Sinha Steel Works", "Ready", "chip-success"),
+        new("WB 23 AT 9011", "Eastern Fabricators", "Hold", "chip-warning"),
+        new("JH 09 BA 1190", "Om Construction", "Transit", "chip-info")
+    ];
+
+    private static readonly StockItem[] LowStock =
+    [
+        new("GI Pipe 1 inch 2mm", "Main Godown", 22, "118 pcs"),
+        new("MS Angle 40x40", "Warehouse B", 34, "256 kg"),
+        new("Flat Bar 25mm", "Main Godown", 18, "74 pcs"),
+        new("TMT 12mm", "Yard Stock", 41, "1.2 t")
+    ];
+
+    private static readonly InvoiceItem[] Invoices =
+    [
+        new("INV-2026-0142", "Sinha Steel Works", "Rs 1,42,800", "Paid", "chip-success"),
+        new("INV-2026-0141", "Mahadev Traders", "Rs 87,450", "Partial", "chip-warning"),
+        new("INV-2026-0140", "Om Construction", "Rs 2,18,300", "Due", "chip-danger"),
+        new("INV-2026-0139", "Eastern Fabricators", "Rs 64,920", "Paid", "chip-success")
+    ];
+}
