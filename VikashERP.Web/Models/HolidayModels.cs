@@ -37,4 +37,5 @@ public class HolidayFormModel
     public bool IsRecurring { get; set; }
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
+    public string Category { get; set; } = "Regional";
 }

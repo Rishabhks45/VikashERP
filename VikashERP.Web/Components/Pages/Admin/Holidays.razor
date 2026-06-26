@@ -10,133 +10,459 @@
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
-<PageTitle>Holiday Calendar</PageTitle>
+<PageTitle>Holiday Calendar - The Iron Ledger</PageTitle>
 
 <PageLoader IsVisible="@_loading" Text="Syncing calendar..." />
 
-<MudStack Class="holidays-page" Spacing="4">
-    <!-- Header Hero -->
-    <div class="org-hero">
-        <MudStack Spacing="0" Class="org-hero-copy">
-            <MudText Typo="Typo.h5" HtmlTag="h1">Holiday Calendar</MudText>
-            <MudText Typo="Typo.body2" Class="dashboard-subtitle org-subtitle">
-                Define and manage company holidays, religious festivals, and official closures for payroll and attendance systems.
-            </MudText>
-        </MudStack>
-        <MudButton Variant="Variant.Filled"
-                   Class="dashboard-action-primary org-save-btn"
-                   StartIcon="@Icons.Material.Filled.CalendarToday"
-                   OnClick="OpenAddDrawer"
-                   Disabled="@_loading">
-            Add Holiday
-        </MudButton>
-    </div>
+<style>
+    .calendar-container {
+        border: 1px solid var(--mud-palette-divider);
+        border-radius: 12px;
+        background: var(--mud-palette-surface);
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+    
+    .calendar-title-section {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .calendar-eyebrow {
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #475569;
+        margin-bottom: 4px;
+    }
+    
+    .calendar-month-year {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--mud-palette-text-primary);
+        letter-spacing: -0.5px;
+        margin: 0;
+    }
+    
+    .calendar-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .calendar-nav-btn {
+        border-radius: 8px !important;
+        border: 1px solid var(--mud-palette-lines-default) !important;
+        color: var(--mud-palette-text-primary) !important;
+        background: var(--mud-palette-surface) !important;
+        text-transform: none !important;
+        font-weight: 600 !important;
+    }
+    
+    .calendar-next-btn {
+        background: #00bfa5 !important;
+        color: white !important;
+        border-radius: 8px !important;
+        min-width: 40px !important;
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+    }
+    
+    .calendar-day-header {
+        text-align: center;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--mud-palette-text-secondary);
+        padding: 8px 0;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border-bottom: 2px solid var(--mud-palette-lines-default);
+        margin-bottom: 8px;
+    }
+    
+    .calendar-cell {
+        aspect-ratio: 1.15;
+        border: 1px solid var(--mud-palette-lines-default);
+        border-radius: 8px;
+        padding: 8px;
+        background: var(--mud-palette-surface);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 6px;
+        transition: all 0.2s ease;
+        position: relative;
+        cursor: pointer;
+        min-height: 90px;
+    }
+    
+    .calendar-cell:hover {
+        border-color: var(--mud-palette-primary);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .calendar-cell.today {
+        border: 2px solid var(--mud-palette-primary);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+    }
+    
+    .calendar-cell.empty {
+        background: var(--mud-palette-background-grey);
+        border-color: transparent;
+        cursor: default;
+        pointer-events: none;
+    }
+    
+    .calendar-day-number {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--mud-palette-text-primary);
+    }
+    
+    .calendar-cell.empty .calendar-day-number {
+        color: var(--mud-palette-text-disabled);
+    }
+    
+    .calendar-cell-events {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        overflow-y: auto;
+        flex-grow: 1;
+        max-height: 52px;
+    }
+    
+    .calendar-event-tag {
+        font-size: 0.62rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        text-align: left;
+    }
+    
+    .event-national {
+        background: #fee2e2;
+        color: #ef4444;
+        border: 1px solid #fca5a5;
+    }
+    
+    .event-regional {
+        background: #fef3c7;
+        color: #d97706;
+        border: 1px solid #fcd34d;
+    }
+    
+    .event-company {
+        background: #e0f2fe;
+        color: #0284c7;
+        border: 1px solid #bae6fd;
+    }
+    
+    .calendar-legend {
+        display: flex;
+        gap: 16px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--mud-palette-divider);
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--mud-palette-text-secondary);
+    }
+    
+    .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .legend-dot.national { background: #ef4444; }
+    .legend-dot.regional { background: #d97706; }
+    .legend-dot.company { background: #0284c7; }
+    
+    /* Right Panel Cards */
+    .right-card {
+        border: 1px solid var(--mud-palette-divider);
+        border-radius: 12px;
+        background: var(--mud-palette-surface);
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    
+    .right-card-title {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--mud-palette-text-secondary);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .add-btn {
+        background: #4f46e5 !important;
+        color: white !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        height: 40px !important;
+        text-transform: none !important;
+    }
+    
+    /* Upcoming holidays list */
+    .upcoming-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 480px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+    
+    .upcoming-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid var(--mud-palette-divider);
+        background: var(--mud-palette-surface);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .upcoming-item:hover {
+        background: var(--mud-palette-background-grey);
+        border-color: var(--mud-palette-primary);
+    }
+    
+    .date-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        border: 1px solid var(--mud-palette-divider);
+        background: var(--mud-palette-background-grey);
+        flex-shrink: 0;
+    }
+    
+    .date-badge-day {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--mud-palette-text-primary);
+        line-height: 1.1;
+    }
+    
+    .date-badge-month {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--mud-palette-text-secondary);
+    }
+    
+    .upcoming-info {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        min-width: 0;
+    }
+    
+    .upcoming-name {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--mud-palette-text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .upcoming-chip {
+        display: inline-block;
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 4px;
+        margin-top: 4px;
+        width: fit-content;
+    }
+    
+    .upcoming-chip.national {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+    
+    .upcoming-chip.regional {
+        background: #fef3c7;
+        color: #d97706;
+    }
+    
+    .upcoming-chip.company {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+</style>
 
+<MudStack Spacing="4">
     @if (!_loading)
     {
-        <!-- KPI Cards -->
-        <MudGrid Spacing="2" Class="dashboard-kpis">
-            <MudItem xs="12" sm="6" lg="3">
-                <MudPaper Elevation="0" Class="dashboard-kpi">
-                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-blue">
-                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" />
-                    </MudPaper>
-                    <MudStack Spacing="0" Class="dashboard-kpi-body">
-                        <MudText Typo="Typo.caption">Total Holidays (This Year)</MudText>
-                        <MudText Typo="Typo.h5" HtmlTag="strong">@TotalHolidaysThisYear</MudText>
-                        <MudText Typo="Typo.caption" Class="trend-neutral">Current calendar</MudText>
-                    </MudStack>
-                </MudPaper>
+        <MudGrid Spacing="3">
+            <!-- Left Side: Calendar Grid -->
+            <MudItem xs="12" lg="8">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <div class="calendar-title-section">
+                            <span class="calendar-eyebrow">Holiday Calendar</span>
+                            <h1 class="calendar-month-year">@_currentMonth.ToString("MMMM yyyy")</h1>
+                        </div>
+                        <div class="calendar-nav">
+                            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Class="calendar-nav-btn" OnClick="PrevMonth" />
+                            <MudButton Variant="Variant.Outlined" Class="calendar-nav-btn" OnClick="GoToToday">Today</MudButton>
+                            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Class="calendar-next-btn" OnClick="NextMonth" />
+                        </div>
+                    </div>
+                    
+                    <div class="calendar-grid">
+                        <!-- Day Headers -->
+                        <div class="calendar-day-header">Sun</div>
+                        <div class="calendar-day-header">Mon</div>
+                        <div class="calendar-day-header">Tue</div>
+                        <div class="calendar-day-header">Wed</div>
+                        <div class="calendar-day-header">Thu</div>
+                        <div class="calendar-day-header">Fri</div>
+                        <div class="calendar-day-header">Sat</div>
+                        
+                        <!-- Day Cells -->
+                        @foreach (var cell in GetCalendarDays())
+                        {
+                            @if (cell.IsEmpty)
+                            {
+                                <div class="calendar-cell empty">
+                                    <span class="calendar-day-number"></span>
+                                </div>
+                            }
+                            else
+                            {
+                                var isToday = cell.Date.Date == DateTime.Today.Date;
+                                <div class="calendar-cell @(isToday ? "today" : "")" @onclick="() => OnDayClick(cell)">
+                                    <span class="calendar-day-number">@cell.DayNumber</span>
+                                    <div class="calendar-cell-events">
+                                        @foreach (var h in cell.Holidays)
+                                        {
+                                            var cat = GetCategory(h);
+                                            <div class="calendar-event-tag @($"event-{cat.ToLowerInvariant()}")" title="@h.Name - @cat Holiday">
+                                                @h.Name
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                    
+                    <div class="calendar-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot national"></span> National
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot regional"></span> Regional
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot company"></span> Company
+                        </div>
+                    </div>
+                </div>
             </MudItem>
             
-            <MudItem xs="12" sm="6" lg="3">
-                <MudPaper Elevation="0" Class="dashboard-kpi">
-                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-green">
-                        <MudIcon Icon="@Icons.Material.Filled.EventRepeat" />
-                    </MudPaper>
-                    <MudStack Spacing="0" Class="dashboard-kpi-body">
-                        <MudText Typo="Typo.caption">Recurring Holidays</MudText>
-                        <MudText Typo="Typo.h5" HtmlTag="strong">@RecurringHolidaysCount</MudText>
-                        <MudText Typo="Typo.caption" Class="trend-neutral">Repeated annually</MudText>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-
-            <MudItem xs="12" sm="6" lg="3">
-                <MudPaper Elevation="0" Class="dashboard-kpi">
-                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-amber">
-                        <MudIcon Icon="@Icons.Material.Filled.HourglassTop" />
-                    </MudPaper>
-                    <MudStack Spacing="0" Class="dashboard-kpi-body">
-                        <MudText Typo="Typo.caption">Upcoming Holidays</MudText>
-                        <MudText Typo="Typo.h5" HtmlTag="strong">@UpcomingHolidaysCount</MudText>
-                        <MudText Typo="Typo.caption" Class="trend-neutral">Left in the year</MudText>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-
-            <MudItem xs="12" sm="6" lg="3">
-                <MudPaper Elevation="0" Class="dashboard-kpi">
-                    <MudPaper Elevation="0" Class="dashboard-kpi-icon accent-purple">
-                        <MudIcon Icon="@Icons.Material.Filled.Upcoming" />
-                    </MudPaper>
-                    <MudStack Spacing="0" Class="dashboard-kpi-body">
-                        <MudText Typo="Typo.caption">Next Holiday</MudText>
-                        <MudText Typo="Typo.h5" HtmlTag="strong" Style="font-size: 1.05rem; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@NextHolidayText</MudText>
-                        <MudText Typo="Typo.caption" Class="trend-neutral">Next event</MudText>
-                    </MudStack>
-                </MudPaper>
+            <!-- Right Side: Form and Upcoming List -->
+            <MudItem xs="12" lg="4">
+                <!-- Add Holiday Card -->
+                <div class="right-card">
+                    <div class="right-card-title">
+                        <MudIcon Icon="@Icons.Material.Outlined.AddCircleOutline" Size="Size.Small" Color="Color.Primary" />
+                        <span>Add Holiday</span>
+                    </div>
+                    <EditForm Model="@_inlineModel" OnValidSubmit="SaveInlineHolidayAsync" novalidate>
+                        <FluentValidationValidator />
+                        <MudStack Spacing="3">
+                            <MudDatePicker @bind-Date="_inlineModel.Date" Label="Date" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _inlineModel.Date)" />
+                            <MudTextField @bind-Value="_inlineModel.Name" Label="Holiday Name" Placeholder="Holiday name" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _inlineModel.Name)" />
+                            
+                            <MudSelect T="string" Label="Category" @bind-Value="_inlineModel.Category" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
+                                <MudSelectItem Value="@("National")" />
+                                <MudSelectItem Value="@("Regional")" />
+                                <MudSelectItem Value="@("Company")" />
+                            </MudSelect>
+                            
+                            <MudSwitch T="bool" @bind-Value="_inlineModel.IsRecurring" Label="Repeats Annually" Color="Color.Primary" />
+                            
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Class="add-btn mt-2" FullWidth="true" Disabled="_inlineSaving" StartIcon="@Icons.Material.Filled.Add">
+                                @(_inlineSaving ? "Adding..." : "Add to calendar")
+                            </MudButton>
+                        </MudStack>
+                    </EditForm>
+                </div>
+                
+                <!-- Upcoming List Card -->
+                <div class="right-card">
+                    <div class="right-card-title">
+                        <MudIcon Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" Color="Color.Primary" />
+                        <span>Upcoming This Year</span>
+                    </div>
+                    <div class="upcoming-list">
+                        @if (!UpcomingHolidays.Any())
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-center py-4">No upcoming holidays this year</MudText>
+                        }
+                        else
+                        {
+                            @foreach (var h in UpcomingHolidays)
+                            {
+                                var cat = GetCategory(h);
+                                <div class="upcoming-item" @onclick="() => OpenEditDrawer(h)">
+                                    <div class="date-badge">
+                                        <span class="date-badge-day">@h.Date.Day</span>
+                                        <span class="date-badge-month">@h.Date.ToString("MMM")</span>
+                                    </div>
+                                    <div class="upcoming-info">
+                                        <span class="upcoming-name">@h.Name</span>
+                                        <span class="upcoming-chip @cat.ToLowerInvariant()">@cat</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
             </MudItem>
         </MudGrid>
-
-        <!-- Main Datagrid Panel -->
-        <MudPaper Elevation="0" Class="org-tab-panel pa-6">
-            <MudGrid Class="mb-4 d-flex align-center">
-                <MudItem xs="12" md="6">
-                    <MudTextField @bind-Value="_searchQuery"
-                                   Placeholder="Search by holiday name or remarks..."
-                                   Adornment="Adornment.Start"
-                                   AdornmentIcon="@Icons.Material.Filled.Search"
-                                   Variant="Variant.Outlined"
-                                   Margin="Margin.Dense"
-                                   Class="search-bar-full"
-                                   Immediate="true" />
-                </MudItem>
-                <MudItem xs="12" md="6">
-                    <MudDateRangePicker Label="Filter by Date Range" @bind-DateRange="_dateRange" AutoClose="true" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
-                </MudItem>
-            </MudGrid>
-
-            <MudDataGrid Items="@FilteredHolidays" Hover="true" Elevation="0" Style="background: transparent;" Dense="true" Filterable="true" Loading="@_loading" Class="invoice-table">
-                <Columns>
-                    <PropertyColumn Property="x => x.Date" Title="Date">
-                        <CellTemplate>
-                            <div style="font-weight: 500;">@context.Item.Date.ToKolkataTime().ToString("dd MMM yyyy")</div>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Item.Date.ToKolkataTime().ToString("dddd")</MudText>
-                        </CellTemplate>
-                    </PropertyColumn>
-                    <PropertyColumn Property="x => x.Name" Title="Holiday Name">
-                        <CellTemplate>
-                            <span style="font-weight: 700; color: var(--mud-palette-text-primary);">@context.Item.Name</span>
-                        </CellTemplate>
-                    </PropertyColumn>
-                    <PropertyColumn Property="x => x.IsRecurring" Title="Type">
-                        <CellTemplate>
-                            <span class="@($"payment-mode-chip {(context.Item.IsRecurring ? "mode-upi" : "mode-cash")}")">
-                                @(context.Item.IsRecurring ? "Annual Recurring" : "One-Time")
-                            </span>
-                        </CellTemplate>
-                    </PropertyColumn>
-                    <PropertyColumn Property="x => x.Description" Title="Description" />
-                    <TemplateColumn Title="Actions" HeaderStyle="text-align: right;" CellStyle="text-align: right;">
-                        <CellTemplate>
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => OpenEditDrawer(context.Item))" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => ConfirmDeleteAsync(context.Item))" />
-                        </CellTemplate>
-                    </TemplateColumn>
-                </Columns>
-            </MudDataGrid>
-        </MudPaper>
     }
 </MudStack>
 
@@ -172,6 +498,12 @@
 
                                 <MudDatePicker @bind-Date="_editModel.Date" Label="Holiday Date *" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => _editModel.Date)" />
 
+                                <MudSelect T="string" Label="Category" @bind-Value="_editModel.Category" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
+                                    <MudSelectItem Value="@("National")" />
+                                    <MudSelectItem Value="@("Regional")" />
+                                    <MudSelectItem Value="@("Company")" />
+                                </MudSelect>
+
                                 <MudSwitch T="bool" @bind-Value="_editModel.IsRecurring" Label="Repeats Annually (Recurring)" Color="Color.Primary" />
 
                                 <MudTextField @bind-Value="_editModel.Description" Label="Remarks / Descriptions" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" For="@(() => _editModel.Description)" />
@@ -183,6 +515,10 @@
                         <div class="email-slide-panel-footer">
                             <MudStack Row="true" Spacing="2">
                                 <MudButton Variant="Variant.Text" Disabled="_saving" OnClick="CloseDrawer">Cancel</MudButton>
+                                @if (!_isNewHoliday)
+                                {
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Disabled="_saving" OnClick="@(() => ConfirmDeleteAsync())">Delete</MudButton>
+                                }
                                 <MudSpacer />
                                 <MudButton Variant="Variant.Filled"
                                            Class="dashboard-action-primary save-btn"
@@ -202,7 +538,7 @@
 <ConfirmationModal IsVisible="@_showDeleteModal"
                    Title="Delete Holiday"
                    Message="Are you sure you want to permanently delete this holiday?"
-                   SubMessage="@($"{_holidayToDelete?.Name} on {_holidayToDelete?.Date.ToKolkataTime().ToString("dd MMM yyyy")}")"
+                   SubMessage="@($"{_holidayToDelete?.Name} on {_holidayToDelete?.Date.ToString("dd MMM yyyy")}")"
                    ConfirmButtonText="Delete Holiday"
                    CancelButtonText="Cancel"
                    IsProcessing="@_deletingProcess"
@@ -212,59 +548,27 @@
 
 @code {
     private List<HolidayDto> _holidays = [];
-    private string _searchQuery = string.Empty;
-    private DateRange _dateRange = new DateRange(new DateTime(DateTime.Today.Year, 1, 1), new DateTime(DateTime.Today.Year, 12, 31));
+    private DateTime _currentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
     private bool _loading = true;
     private bool _saving = false;
+    private bool _inlineSaving = false;
 
     private bool _drawerOpen = false;
     private bool _drawerClosing = false;
     private bool _bodyScrollLocked = false;
     private bool _isNewHoliday = true;
     private HolidayFormModel _editModel = new();
+    private HolidayFormModel _inlineModel = new() { Date = DateTime.Today, Category = "Regional" };
     private Guid _editingHolidayId;
 
     private bool _showDeleteModal = false;
     private bool _deletingProcess = false;
     private HolidayDto? _holidayToDelete = null;
 
-    private IEnumerable<HolidayDto> FilteredHolidays
-    {
-        get
-        {
-            var query = _holidays.AsEnumerable();
-
-            if (!string.IsNullOrWhiteSpace(_searchQuery))
-            {
-                query = query.Where(h =>
-                    h.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    (h.Description != null && h.Description.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)));
-            }
-
-            if (_dateRange?.Start.HasValue == true)
-            {
-                query = query.Where(h => h.Date.Date >= _dateRange.Start.Value.Date);
-            }
-
-            if (_dateRange?.End.HasValue == true)
-            {
-                query = query.Where(h => h.Date.Date <= _dateRange.End.Value.Date);
-            }
-
-            return query;
-        }
-    }
-
-    private int TotalHolidaysThisYear => _holidays
-        .Count(h => h.Date.Year == DateTime.Today.Year);
-
-    private int RecurringHolidaysCount => _holidays
-        .Count(h => h.IsRecurring);
-
-    private int UpcomingHolidaysCount => _holidays
-        .Count(h => h.Date.Date >= DateTime.Today.Date);
-
-    private string NextHolidayText => GetNextHolidayText();
+    private IEnumerable<HolidayDto> UpcomingHolidays => _holidays
+        .Where(h => h.Date.Date >= DateTime.Today.Date)
+        .OrderBy(h => h.Date)
+        .Take(15);
 
     protected override async Task OnInitializedAsync()
     {
@@ -290,28 +594,109 @@
         }
     }
 
-    private string GetNextHolidayText()
+    private List<CalendarDay> GetCalendarDays()
     {
-        var next = _holidays
-            .Where(h => h.Date.Date >= DateTime.Today.Date)
-            .OrderBy(h => h.Date)
-            .FirstOrDefault();
-
-        return next != null 
-            ? $"{next.Name} ({next.Date.ToKolkataTime().ToString("dd MMM")})" 
-            : "No upcoming holidays";
+        var days = new List<CalendarDay>();
+        var firstDayOfMonth = new DateTime(_currentMonth.Year, _currentMonth.Month, 1);
+        int firstDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
+        int daysInMonth = DateTime.DaysInMonth(_currentMonth.Year, _currentMonth.Month);
+        
+        for (int i = 0; i < firstDayOfWeek; i++)
+        {
+            days.Add(new CalendarDay { IsEmpty = true });
+        }
+        
+        for (int day = 1; day <= daysInMonth; day++)
+        {
+            var date = new DateTime(_currentMonth.Year, _currentMonth.Month, day);
+            var dayHolidays = _holidays.Where(h => h.Date.Date == date.Date).ToList();
+            
+            days.Add(new CalendarDay
+            {
+                IsEmpty = false,
+                DayNumber = day,
+                Date = date,
+                Holidays = dayHolidays
+            });
+        }
+        
+        while (days.Count % 7 != 0)
+        {
+            days.Add(new CalendarDay { IsEmpty = true });
+        }
+        
+        return days;
     }
 
-    private void OpenAddDrawer()
+    private void PrevMonth()
     {
-        _editModel = new HolidayFormModel
+        _currentMonth = _currentMonth.AddMonths(-1);
+    }
+
+    private void NextMonth()
+    {
+        _currentMonth = _currentMonth.AddMonths(1);
+    }
+
+    private void GoToToday()
+    {
+        _currentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    }
+
+    private void OnDayClick(CalendarDay cell)
+    {
+        if (cell.IsEmpty) return;
+        
+        if (cell.Holidays.Any())
         {
-            Date = DateTime.Today,
-            IsRecurring = false,
-            IsActive = true
-        };
-        _isNewHoliday = true;
-        _drawerOpen = true;
+            OpenEditDrawer(cell.Holidays.First());
+        }
+        else
+        {
+            _inlineModel.Date = cell.Date;
+            NotificationService.Success($"Selected date: {cell.Date.ToString("dd MMM yyyy")}. Fill name and click Add on the right.");
+        }
+    }
+
+    private string GetCategory(HolidayDto h)
+    {
+        if (h.Description != null && h.Description.StartsWith("["))
+        {
+            var closeIndex = h.Description.IndexOf("]");
+            if (closeIndex > 1)
+            {
+                return h.Description.Substring(1, closeIndex - 1);
+            }
+        }
+        return GetHolidayCategory(h.Name);
+    }
+
+    private string GetDisplayDescription(HolidayDto h)
+    {
+        if (h.Description != null && h.Description.StartsWith("["))
+        {
+            var closeIndex = h.Description.IndexOf("]");
+            if (closeIndex > 1)
+            {
+                return h.Description.Substring(closeIndex + 1).Trim();
+            }
+        }
+        return h.Description ?? "";
+    }
+
+    private string GetHolidayCategory(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "Regional";
+
+        var n = name.ToLowerInvariant();
+        if (n.Contains("audit") || n.Contains("company") || n.Contains("maintenance") || n.Contains("shutdown") || n.Contains("office") || n.Contains("meeting"))
+            return "Company";
+
+        if (n.Contains("republic") || n.Contains("independence") || n.Contains("gandhi") || n.Contains("holi") || n.Contains("diwali") || n.Contains("eid") || n.Contains("christmas") || n.Contains("national"))
+            return "National";
+
+        return "Regional";
     }
 
     private void OpenEditDrawer(HolidayDto holiday)
@@ -321,8 +706,9 @@
             Name = holiday.Name,
             Date = holiday.Date,
             IsRecurring = holiday.IsRecurring,
-            Description = holiday.Description,
-            IsActive = holiday.IsActive
+            Description = GetDisplayDescription(holiday),
+            IsActive = holiday.IsActive,
+            Category = GetCategory(holiday)
         };
         _editingHolidayId = holiday.Id;
         _isNewHoliday = false;
@@ -342,12 +728,62 @@
         _editModel = new HolidayFormModel();
     }
 
+    private async Task SaveInlineHolidayAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_inlineModel.Name))
+        {
+            NotificationService.Warning("Holiday name is required.");
+            return;
+        }
+        if (!_inlineModel.Date.HasValue)
+        {
+            NotificationService.Warning("Holiday date is required.");
+            return;
+        }
+
+        _inlineSaving = true;
+        StateHasChanged();
+        try
+        {
+            var request = new CreateHolidayDto
+            {
+                Name = _inlineModel.Name,
+                Date = _inlineModel.Date.Value,
+                IsRecurring = _inlineModel.IsRecurring,
+                Description = $"[{_inlineModel.Category}]".Trim()
+            };
+
+            var response = await HolidayWebService.CreateHolidayAsync(request);
+            if (response != null)
+            {
+                NotificationService.Success("Holiday added successfully.");
+                _inlineModel = new HolidayFormModel { Date = DateTime.Today, Category = "Regional" };
+                await LoadHolidaysAsync();
+            }
+            else
+            {
+                NotificationService.Error("Failed to record holiday.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error($"API Error: {ex.Message}");
+        }
+        finally
+        {
+            _inlineSaving = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task SaveHolidayAsync()
     {
         _saving = true;
         StateHasChanged();
         try
         {
+            var desc = $"[{_editModel.Category}] {(_editModel.Description ?? "")}".Trim();
+            
             if (_isNewHoliday)
             {
                 var request = new CreateHolidayDto
@@ -355,7 +791,7 @@
                     Name = _editModel.Name,
                     Date = _editModel.Date ?? DateTime.Today,
                     IsRecurring = _editModel.IsRecurring,
-                    Description = _editModel.Description
+                    Description = desc
                 };
 
                 var response = await HolidayWebService.CreateHolidayAsync(request);
@@ -367,7 +803,7 @@
                 }
                 else
                 {
-                    NotificationService.Error("Failed to record holiday. Please try again.");
+                    NotificationService.Error("Failed to record holiday.");
                 }
             }
             else
@@ -377,7 +813,7 @@
                     Name = _editModel.Name,
                     Date = _editModel.Date ?? DateTime.Today,
                     IsRecurring = _editModel.IsRecurring,
-                    Description = _editModel.Description,
+                    Description = desc,
                     IsActive = _editModel.IsActive
                 };
 
@@ -405,6 +841,16 @@
         }
     }
 
+    private void ConfirmDeleteAsync()
+    {
+        var h = _holidays.FirstOrDefault(x => x.Id == _editingHolidayId);
+        if (h != null)
+        {
+            _holidayToDelete = h;
+            _showDeleteModal = true;
+        }
+    }
+
     private void ConfirmDeleteAsync(HolidayDto holiday)
     {
         _holidayToDelete = holiday;
@@ -429,6 +875,7 @@
             {
                 NotificationService.Success("Holiday removed from calendar.");
                 _showDeleteModal = false;
+                _drawerOpen = false; // Close drawer if deleting from within it
                 _holidayToDelete = null;
                 await LoadHolidaysAsync();
             }
@@ -473,5 +920,13 @@
         {
             // Ignored if JS runtime is disconnected during disposal
         }
+    }
+
+    private class CalendarDay
+    {
+        public bool IsEmpty { get; set; }
+        public int DayNumber { get; set; }
+        public DateTime Date { get; set; }
+        public List<HolidayDto> Holidays { get; set; } = new();
     }
 }
