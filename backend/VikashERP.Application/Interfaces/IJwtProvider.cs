@@ -4,7 +4,7 @@ namespace VikashERP.Application.Interfaces;
 
 public interface IJwtProvider
 {
-    string GenerateToken(Guid userId, string email, string userName, string role, string? profilePictureUrl = null, Guid? customerId = null);
+    string GenerateToken(Guid userId, string email, string userName, string role, string? profilePictureUrl = null, Guid? customerId = null, string? timezoneIana = null);
     string GenerateRefreshToken();
     ClaimsPrincipal? ValidateToken(string token, bool validateLifetime = true);
 }

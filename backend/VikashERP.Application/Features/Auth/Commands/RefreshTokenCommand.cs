@@ -16,15 +16,18 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, U
 {
     private readonly IUserRepository _userRepository;
     private readonly IUserCustomerMappingRepository _userCustomerMappingRepository;
+    private readonly IOrganizationRepository _organizationRepository;
     private readonly IJwtProvider _jwtProvider;
 
     public RefreshTokenCommandHandler(
         IUserRepository userRepository,
         IUserCustomerMappingRepository userCustomerMappingRepository,
+        IOrganizationRepository organizationRepository,
         IJwtProvider jwtProvider)
     {
         _userRepository = userRepository;
         _userCustomerMappingRepository = userCustomerMappingRepository;
+        _organizationRepository = organizationRepository;
         _jwtProvider = jwtProvider;
     }
 
@@ -54,7 +57,11 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, U
         var roleName = user.Role.ToFriendlyName();
         var mapping = await _userCustomerMappingRepository.GetByUserIdAsync(user.Id, cancellationToken);
         var customerId = mapping?.CustomerId;
-        var token = _jwtProvider.GenerateToken(user.Id, user.Email, userName, roleName, user.ProfilePictureUrl, customerId);
+        
+        var org = await _organizationRepository.GetAsync(cancellationToken);
+        var timezoneIana = org?.TimeZone;
+
+        var token = _jwtProvider.GenerateToken(user.Id, user.Email, userName, roleName, user.ProfilePictureUrl, customerId, timezoneIana);
         var refreshToken = _jwtProvider.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;

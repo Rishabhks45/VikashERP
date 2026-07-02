@@ -43,23 +43,26 @@ public class JwtProvider : IJwtProvider
         };
     }
 
-    public string GenerateToken(Guid userId, string email, string userName, string role, string? profilePictureUrl = null, Guid? customerId = null)
+    public string GenerateToken(Guid userId, string email, string userName, string role, string? profilePictureUrl = null, Guid? customerId = null, string? timezoneIana = null)
     {
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new(JwtRegisteredClaimNames.Email, email),
             new("name", userName),
+            new(ClaimTypes.NameIdentifier, userId.ToString()),
             new("roles", role),
-            new(ClaimTypes.Role, role),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        if (!string.IsNullOrWhiteSpace(profilePictureUrl))
+        if (!string.IsNullOrEmpty(profilePictureUrl))
             claims.Add(new Claim("picture", profilePictureUrl));
 
         if (customerId.HasValue)
             claims.Add(new Claim("customer_id", customerId.Value.ToString()));
+
+        if (!string.IsNullOrEmpty(timezoneIana))
+            claims.Add(new Claim("timezone_iana", timezoneIana));
 
         var credentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
 

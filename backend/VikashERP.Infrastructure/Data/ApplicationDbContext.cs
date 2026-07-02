@@ -46,6 +46,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<PurchaseEntryItem> PurchaseEntryItems => Set<PurchaseEntryItem>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Holiday> Holidays => Set<Holiday>();
+    public DbSet<Timezone> Timezones => Set<Timezone>();
 
     public override int SaveChanges()
     {

@@ -17,6 +17,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, UserLoginRespon
 {
     private readonly IUserRepository _userRepository;
     private readonly IUserCustomerMappingRepository _userCustomerMappingRepository;
+    private readonly IOrganizationRepository _organizationRepository;
     private readonly IEncryptionService _encryptionService;
     private readonly IJwtProvider _jwtProvider;
     private readonly EncryptionSettings _encryptionSettings;
@@ -24,12 +25,14 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, UserLoginRespon
     public LoginCommandHandler(
         IUserRepository userRepository,
         IUserCustomerMappingRepository userCustomerMappingRepository,
+        IOrganizationRepository organizationRepository,
         IEncryptionService encryptionService,
         IJwtProvider jwtProvider,
         Microsoft.Extensions.Options.IOptions<EncryptionSettings> options)
     {
         _userRepository = userRepository;
         _userCustomerMappingRepository = userCustomerMappingRepository;
+        _organizationRepository = organizationRepository;
         _encryptionService = encryptionService;
         _jwtProvider = jwtProvider;
         _encryptionSettings = options.Value;
@@ -50,7 +53,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, UserLoginRespon
         var roleName = user.Role.ToFriendlyName();
         var mapping = await _userCustomerMappingRepository.GetByUserIdAsync(user.Id, cancellationToken);
         var customerId = mapping?.CustomerId;
-        var token = _jwtProvider.GenerateToken(user.Id, user.Email, userName, roleName, user.ProfilePictureUrl, customerId);
+        
+        var org = await _organizationRepository.GetAsync(cancellationToken);
+        var timezoneIana = org?.TimeZone;
+
+        var token = _jwtProvider.GenerateToken(user.Id, user.Email, userName, roleName, user.ProfilePictureUrl, customerId, timezoneIana);
         var refreshToken = _jwtProvider.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;
