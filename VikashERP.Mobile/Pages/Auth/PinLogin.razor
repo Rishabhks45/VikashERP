@@ -1,0 +1,267 @@
+@page "/pin-login"
+@using MudBlazor
+@using VikashERP.Mobile.Services.Interfaces
+@using Plugin.Fingerprint
+@using Plugin.Fingerprint.Abstractions
+@layout VikashERP.Mobile.Components.Layout.EmptyLayout
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
+@inject VikashERP.Mobile.State.AppStateService AppState
+
+<div class="pin-login-page-container d-flex flex-column">
+    <div class="d-flex px-4 py-2" style="position: relative; z-index: 10;">
+        <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack" Color="Color.Inherit" OnClick="@GoBack" />
+    </div>
+
+    <div class="brand-block d-flex flex-column align-center">
+        <div class="profile-img-container mb-2">
+            <MudAvatar Style="height: 64px; width: 64px; font-size: 1.5rem; font-weight: 600; background-color: #185FA5; color: white;">@Initials</MudAvatar>
+        </div>
+        
+        <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1a2530;" Class="mb-1">
+            Welcome Back <span style="font-size: 1.2rem;">👋</span>
+        </MudText>
+        <MudText Typo="Typo.h5" Style="font-weight: 800; color: #0D3B66; letter-spacing: -0.5px;" Class="mb-1">@UserName</MudText>
+        <MudChip T="string" Size="Size.Small" Style="background-color: #f0f5ff; color: #0066ff; font-weight: 600; border-radius: 16px;">@UserRole</MudChip>
+    </div>
+
+    <div class="content-block d-flex flex-column align-center px-6">
+        
+        <div class="header-block d-flex flex-column align-center">
+            <MudText Typo="Typo.body2" Style="color: #666; font-weight: 600;" Class="mb-2">Enter your 4-digit PIN</MudText>
+        </div>
+
+        <div class="pin-block d-flex flex-column align-center">
+            <div class="d-flex gap-4">
+                @for (int i = 0; i < 4; i++)
+                {
+                    var idx = i;
+                    <div class="pin-dot @(EnteredPin.Length > idx ? "filled" : "")"></div>
+                }
+            </div>
+        </div>
+
+        <div class="keypad-block d-flex flex-column align-center mt-2">
+            <div class="keypad-container">
+                @for (int i = 1; i <= 9; i++)
+                {
+                    var num = i;
+                    <MudButton Variant="Variant.Text" Class="keypad-btn" OnClick="@(() => KeyPressed(num))">@num</MudButton>
+                }
+                <MudButton Variant="Variant.Text" Class="keypad-btn action-btn" OnClick="@LockApp">
+                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Medium" Style="color: #0066ff;" />
+                </MudButton>
+                <MudButton Variant="Variant.Text" Class="keypad-btn" OnClick="@(() => KeyPressed(0))">0</MudButton>
+                <MudButton Variant="Variant.Text" Class="keypad-btn action-btn" OnClick="@Backspace">
+                    <MudIcon Icon="@Icons.Material.Outlined.Backspace" Size="Size.Medium" />
+                </MudButton>
+            </div>
+        </div>
+
+        <div class="footer-block d-flex flex-column align-center mt-2">
+            <MudButton Variant="Variant.Filled" FullWidth="true" Class="biometric-btn mb-4" OnClick="@LoginWithFingerprint" Style="max-width: 300px;">
+                <MudIcon Icon="@Icons.Material.Outlined.Fingerprint" Class="mr-3" Style="font-size: 1.6rem;" />
+                Login with Fingerprint
+            </MudButton>
+
+            <MudLink Href="/forgot-pin" Underline="Underline.Always" Style="color: #005ce6; font-weight: 600; font-size: 0.85rem;">
+                Forgot PIN?
+            </MudLink>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pin-login-page-container {
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        background-color: #fafbfc;
+        position: relative;
+        overflow-y: hidden; /* prevents scrolling */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .brand-block {
+        padding-top: clamp(4px, 1vh, 8px);
+        padding-bottom: 4px;
+        flex-shrink: 0;
+    }
+
+    .profile-img-container {
+        border-radius: 50%; padding: 4px;
+        background: transparent; border: 1.5px solid #0066ff;
+    }
+
+    .content-block {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(10px, 2.2vh, 18px);
+        padding-top: 4px;
+        padding-bottom: 12px;
+    }
+
+    .header-block { margin-bottom: 2px; }
+
+    .pin-dot {
+        width: 18px; height: 18px;
+        border-radius: 50%;
+        border: 2.5px solid #1a2530;
+        background-color: transparent;
+        transition: all 0.2s ease;
+    }
+    .pin-dot.filled {
+        background-color: #0066ff;
+        border-color: #0066ff;
+    }
+
+    .keypad-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        width: 100%;
+        max-width: 350px;
+    }
+    .keypad-btn {
+        background-color: white !important;
+        border: none !important;
+        border-radius: 50% !important;
+        height: 75px !important;
+        width: 75px !important;
+        margin: 0 auto !important;
+        min-width: 0 !important;
+        font-size: 1.8rem !important;
+        font-weight: 700 !important;
+        color: #1a2530 !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important;
+        text-transform: none !important;
+    }
+    .action-btn {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .footer-block { width: 100%; }
+    
+    .biometric-btn {
+        background-color: #e6f0ff !important;
+        color: #005ce6 !important;
+        border-radius: 10px !important;
+        height: 48px;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        font-size: 0.95rem !important;
+        box-shadow: none !important;
+    }
+</style>
+
+@code {
+    private string EnteredPin { get; set; } = "";
+    private string UserName { get; set; } = "User";
+    private string UserRole { get; set; } = "";
+    private string Initials { get; set; } = "U";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load user info from SecureStorage
+        var name = await SecureStorage.Default.GetAsync("user_name");
+        var role = await SecureStorage.Default.GetAsync("user_role");
+
+        if (!string.IsNullOrEmpty(name))
+        {
+            UserName = name;
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            Initials = parts.Length >= 2
+                ? $"{parts[0][0]}{parts[1][0]}"
+                : name[..1].ToUpper();
+        }
+
+        UserRole = role ?? "";
+
+        // Restore auth state from saved token
+        var token = await SecureStorage.Default.GetAsync("jwt_token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            ((VikashERP.Mobile.State.CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(token);
+        }
+    }
+
+    private void KeyPressed(int num)
+    {
+        if (EnteredPin.Length < 4)
+            EnteredPin += num.ToString();
+        
+        if (EnteredPin.Length == 4)
+            _ = AttemptPinLogin();
+    }
+
+    private void Backspace()
+    {
+        if (EnteredPin.Length > 0)
+            EnteredPin = EnteredPin[..^1];
+    }
+
+    private void LockApp() => EnteredPin = "";
+
+    private async Task LoginWithFingerprint()
+    {
+        try
+        {
+            var isAvailable = await CrossFingerprint.Current.IsAvailableAsync(true);
+            if (!isAvailable)
+            {
+                Snackbar.Add("Biometric authentication is not available on this device.", Severity.Error);
+                return;
+            }
+
+            var request = new AuthenticationRequestConfiguration("Login", "Please authenticate to login.");
+            var result = await CrossFingerprint.Current.AuthenticateAsync(request);
+
+            if (result.Authenticated)
+            {
+                AppState.IsPinUnlocked = true;
+                Navigation.NavigateTo("/manager-dashboard");
+            }
+            else
+            {
+                Snackbar.Add("Biometric authentication failed or was canceled.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task AttemptPinLogin()
+    {
+        var isValid = await AuthService.VerifyPinAsync(EnteredPin);
+        if (isValid)
+        {
+            AppState.IsPinUnlocked = true;
+            Navigation.NavigateTo("/manager-dashboard");
+        }
+        else
+        {
+            Snackbar.Add("Incorrect PIN", Severity.Error);
+            EnteredPin = "";
+            StateHasChanged();
+        }
+    }
+
+    private async Task GoBack()
+    {
+        await AuthService.LogoutAsync();
+        ((VikashERP.Mobile.State.CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
+        Navigation.NavigateTo("/login", true);
+    }
+}

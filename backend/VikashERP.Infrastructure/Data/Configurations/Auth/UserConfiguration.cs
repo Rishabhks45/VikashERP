@@ -15,7 +15,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.HasIndex(e => e.Email).IsUnique().HasFilter("\"IsDeleted\" = false");
-            entity.Property(e => e.ProfilePictureUrl).HasMaxLength(500);
+            entity.Property(e => e.ProfilePictureUrl);
             entity.Property(e => e.Role)
                   .HasConversion(
                       role => role.ToFriendlyName(),

@@ -1,6 +1,93 @@
-<MudBottomNavigation>
-    <MudBottomNavigationItem Icon="@Icons.Material.Filled.Dashboard" Title="Dashboard" />
-    <MudBottomNavigationItem Icon="@Icons.Material.Filled.Receipt" Title="Sales" />
-    <MudBottomNavigationItem Icon="@Icons.Material.Filled.People" Title="Labour" />
-    <MudBottomNavigationItem Icon="@Icons.Material.Filled.Person" Title="Profile" />
-</MudBottomNavigation>
+@implements IDisposable
+
+<MudPaper Elevation="8" Class="d-flex justify-space-around align-center py-2" Style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000; padding-bottom: max(env(safe-area-inset-bottom), 12px) !important; border-radius: 0; border-top: 1px solid var(--mud-palette-lines-default); background-color: var(--mud-palette-surface);">
+    <div class="nav-item @( _selected == 0 ? "selected" : "" )" @onclick="@(() => NavigateTo("/"))">
+        <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Medium" />
+        <span>Home</span>
+    </div>
+
+    <div class="nav-item @( _selected == 1 ? "selected" : "" )" @onclick="@(() => NavigateTo("/sales"))">
+        <MudIcon Icon="@Icons.Material.Outlined.Assignment" Size="Size.Medium" />
+        <span>Orders</span>
+    </div>
+
+    <div class="nav-item @( _selected == 2 ? "selected" : "" )" @onclick="@(() => NavigateTo("/material-catalog"))">
+        <MudIcon Icon="@Icons.Material.Outlined.Inventory2" Size="Size.Medium" />
+        <span>Stock</span>
+    </div>
+
+    <div class="nav-item @( _selected == 3 ? "selected" : "" )" @onclick="@(() => NavigateTo("/reports"))">
+        <MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Medium" />
+        <span>Reports</span>
+    </div>
+
+    <div class="nav-item @( _selected == 4 ? "selected" : "" )" @onclick="@(() => NavigateTo("/profile"))">
+        <MudIcon Icon="@Icons.Material.Outlined.Person" Size="Size.Medium" />
+        <span>Profile</span>
+    </div>
+</MudPaper>
+
+<style>
+    .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--mud-palette-action-default);
+        cursor: pointer;
+        transition: color 0.2s;
+        flex: 1;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+    .nav-item span {
+        font-size: 0.7rem;
+        margin-top: 2px;
+        font-weight: 500;
+    }
+    .nav-item.selected {
+        color: var(--mud-palette-primary);
+    }
+    .nav-item.selected .mud-icon-root {
+        color: var(--mud-palette-primary) !important;
+    }
+</style>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private int _selected = 0;
+
+    protected override void OnInitialized()
+    {
+        UpdateSelected(Navigation.Uri);
+        Navigation.LocationChanged += HandleLocationChanged;
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        UpdateSelected(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateSelected(string uri)
+    {
+        var path = "/" + Navigation.ToBaseRelativePath(uri).Split('?')[0];
+        _selected = path switch
+        {
+            "/" => 0,
+            "/sales" => 1,
+            "/material-catalog" => 2,
+            "/reports" => 3,
+            "/profile" => 4,
+            _ => 0
+        };
+    }
+
+    private void NavigateTo(string url) => Navigation.NavigateTo(url);
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= HandleLocationChanged;
+    }
+}

@@ -1,12 +1,65 @@
-<Router AppAssembly="@typeof(App).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Components.Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <PageTitle>Not found</PageTitle>
-        <LayoutView Layout="@typeof(Components.Layout.MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+@implements IDisposable
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(Components.Layout.MainLayout)">
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated == true)
+                    {
+                        <PageTitle>Access Denied</PageTitle>
+                        <LayoutView Layout="@typeof(Components.Layout.MainLayout)">
+                            <div class="d-flex flex-column align-center justify-center pa-4" style="height: 70vh; text-align: center;">
+                                <MudIcon Icon="@Icons.Material.Filled.SecurityUpdateWarning" Style="font-size: 5rem; color: var(--mud-palette-error);" Class="mb-4" />
+                                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1a2530;" Class="mb-2">Access Denied</MudText>
+                                <MudText Typo="Typo.body1" Style="color: #666;" Class="mb-6">You don't have the required permissions to view this page.</MudText>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.ArrowBack" Href="/" Style="border-radius: 8px; font-weight: 600; padding: 10px 24px;">
+                                    Go Back
+                                </MudButton>
+                            </div>
+                        </LayoutView>
+                    }
+                    else
+                    {
+                        <RedirectToLogin />
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(Components.Layout.MainLayout)">
+                <div class="d-flex flex-column align-center justify-center pa-4" style="height: 70vh; text-align: center;">
+                    <MudIcon Icon="@Icons.Material.Filled.ExploreOff" Style="font-size: 5rem; color: var(--mud-palette-action-disabled);" Class="mb-4" />
+                    <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1a2530;" Class="mb-2">Oops! Lost in space?</MudText>
+                    <MudText Typo="Typo.body1" Style="color: #666;" Class="mb-6">We can't seem to find the page you're looking for.</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" StartIcon="@Icons.Material.Filled.Home" Href="/" Style="border-radius: 8px; font-weight: 600; padding: 10px 24px;">
+                        Go to Dashboard
+                    </MudButton>
+                </div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+
+<VikashERP.Mobile.Components.Shared.AdvanceLoader 
+    Visible="AppState.IsLoading" 
+    Text="@AppState.LoadingText" 
+    SubText="@AppState.LoadingSubText" 
+    Type="@AppState.LoadingType" />
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private VikashERP.Mobile.State.AppStateService AppState { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        AppState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AppState.OnChange -= StateHasChanged;
+    }
+}
+

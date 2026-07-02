@@ -1,0 +1,15 @@
+@inherits LayoutComponentBase
+@using VikashERP.Mobile.Components.Layout
+
+<MudThemeProvider IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout Style="background-color: #0f1011; min-height: 100vh;">
+    <MudMainContent Style="padding-top: env(safe-area-inset-top); padding-bottom: calc(64px + env(safe-area-inset-bottom));">
+        @Body
+    </MudMainContent>
+
+    <BottomNav />
+</MudLayout>

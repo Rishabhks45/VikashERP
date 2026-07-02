@@ -1,0 +1,617 @@
+@page "/profile"
+@using MudBlazor
+@using Microsoft.AspNetCore.Authorization
+@using VikashERP.Mobile.Components.Layout
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@using Plugin.Fingerprint
+@using Plugin.Fingerprint.Abstractions
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Forms
+@inject VikashERP.Mobile.State.AppStateService AppState
+@attribute [Authorize(Roles = "Super Admin,Back Office User,Manager,Employee,Customer")]
+
+@if (_isLoading)
+{
+    <!-- Page is loading, the global AdvanceLoader is displayed via AppState -->
+}
+else if (_profile == null)
+{
+    <div class="d-flex flex-column justify-center align-center" style="height: 100vh;">
+        <MudText Typo="Typo.h6" Color="Color.Error">Could not load profile.</MudText>
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudText Typo="Typo.body2" Color="Color.Error" Class="mb-4">@_errorMessage</MudText>
+        }
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="LoadProfile">Retry</MudButton>
+    </div>
+}
+else
+{
+    @* ---- Header Section ---- *@
+    <MudPaper Class="hero-card mb-4 mt-2" Elevation="0">
+        <div class="d-flex flex-column align-center pa-4" style="position: relative;">
+            
+            <div class="avatar-container mb-3" style="position: relative;">
+                <label for="fileInput" style="@(_isEditing ? "cursor: pointer;" : "cursor: default;")">
+                    @if (!string.IsNullOrEmpty(_profile.ProfilePictureUrl))
+                    {
+                        <MudAvatar Style="height: 72px; width: 72px; font-size: 1.5rem; font-weight: 600; background-color: white; color: #185FA5;">
+                            <MudImage Src="@GetImageUrl(_profile.ProfilePictureUrl)" Style="width: 100%; height: 100%; object-fit: cover;" />
+                        </MudAvatar>
+                    }
+                    else
+                    {
+                        <MudAvatar Style="height: 72px; width: 72px; font-size: 1.5rem; font-weight: 600; background-color: white; color: #185FA5;">
+                            @GetInitials()
+                        </MudAvatar>
+                    }
+                    @if (_isEditing)
+                    {
+                        <div class="edit-badge">
+                            <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" Style="color: white; font-size: 14px;" />
+                        </div>
+                    }
+                </label>
+                <InputFile id="fileInput" OnChange="UploadProfilePicture" style="display:none;" accept="image/*" disabled="@(!_isEditing)" />
+            </div>
+
+            <MudText Typo="Typo.h6" Style="font-weight: 700; color: white; line-height: 1.2;">@_profile.FirstName @_profile.LastName</MudText>
+            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.9);" Class="mb-2">@_profile.Role</MudText>
+            <MudChip T="string" Size="Size.Small" Style="background-color: rgba(255,255,255,0.2); color: white; font-weight: 600; border-radius: 16px;">User ID: @_profile.Id.ToString().Substring(0, 8).ToUpper()</MudChip>
+        </div>
+    </MudPaper>
+
+    @* ---- Stats Grid ---- *@
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="6">
+            <MudPaper Class="stat-card d-flex flex-column align-center justify-center pa-4" Elevation="0">
+                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;">Since</MudText>
+                <MudText Typo="Typo.caption" Style="color: #666;">@_profile.CreatedAt.ToString("MMM yyyy")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card d-flex flex-column align-center justify-center pa-4" Elevation="0">
+                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;">Status</MudText>
+                <MudText Typo="Typo.caption" Style="color: #666;">@(_profile.IsActive ? "Active" : "Inactive")</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* ---- Edit Profile Form ---- *@
+    <div class="d-flex align-center justify-space-between mb-2 px-1">
+        <MudText Typo="Typo.caption" Style="color: #888; font-weight: 600; letter-spacing: 0.5px;">PROFILE INFO</MudText>
+        @if (!_isEditing)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="EnableEditMode" />
+        }
+    </div>
+
+    <MudPaper Class="settings-card mb-6 pa-4" Elevation="0">
+        <MudForm @ref="_form" @bind-IsValid="@_success" @bind-Errors="@_errors">
+            <MudTextField @bind-Value="_profile.FirstName" Label="First Name" Required="true" RequiredError="First name is required!" Variant="Variant.Outlined" Class="mb-3" ReadOnly="!_isEditing" />
+            <MudTextField @bind-Value="_profile.LastName" Label="Last Name" Required="true" RequiredError="Last name is required!" Variant="Variant.Outlined" Class="mb-3" ReadOnly="!_isEditing" />
+            <MudTextField @bind-Value="_profile.Email" Label="Email" Required="true" RequiredError="Email is required!" Variant="Variant.Outlined" Class="mb-4" ReadOnly="!_isEditing" />
+            
+            @if (_isEditing)
+            {
+                <div class="d-flex gap-3">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" OnClick="CancelEditMode" Class="py-3" Style="border-radius: 8px;">
+                        Cancel
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SaveProfile" Disabled="@_isSaving" Class="py-3" Style="border-radius: 8px;">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/> <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span>Save Changes</span>
+                        }
+                    </MudButton>
+                </div>
+            }
+        </MudForm>
+    </MudPaper>
+
+    @* ---- Account Settings ---- *@
+    <MudText Typo="Typo.caption" Style="color: #888; font-weight: 600; letter-spacing: 0.5px;" Class="mb-2 d-block px-1">ACCOUNT</MudText>
+    <MudPaper Class="settings-card mb-6" Elevation="0">
+        <MudList T="string" Padding="false">
+            <MudListItem OnClick="OpenPasswordDialog">
+                <div class="d-flex align-center justify-space-between py-2">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Outlined.Lock" Size="Size.Small" Style="color: #666;" Class="mr-4" />
+                        <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 600;">Change password</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="color: #999;" />
+                </div>
+            </MudListItem>
+            <MudDivider />
+            <MudListItem OnClick='@(() => Navigation.NavigateTo("/create-pin"))'>
+                <div class="d-flex align-center justify-space-between py-2">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Outlined.Pin" Size="Size.Small" Style="color: #666;" Class="mr-4" />
+                        <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 600;">Change PIN</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="color: #999;" />
+                </div>
+            </MudListItem>
+            <MudDivider />
+            <MudListItem>
+                <div class="d-flex align-center justify-space-between py-1 w-100">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Outlined.Fingerprint" Size="Size.Small" Style="color: #666;" Class="mr-4" />
+                        <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 600;">Enable Biometric</MudText>
+                    </div>
+                    <MudSwitch T="bool" Value="@_isBiometricEnabled" ValueChanged="ToggleBiometric" Color="Color.Primary" />
+                </div>
+            </MudListItem>
+        </MudList>
+    </MudPaper>
+
+    @* ---- Log out ---- *@
+    <MudButton Variant="Variant.Filled" FullWidth="true" Class="logout-btn mb-4 py-3" StartIcon="@Icons.Material.Outlined.Logout" OnClick="Logout">
+        Log out
+    </MudButton>
+}
+
+@* ---- Password Change Dialog Overlay ---- *@
+@if (_isPasswordDialogOpen)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+        <MudPaper Class="pa-6" Style="width: 320px; max-width: 90vw; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+            <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;" Class="mb-2">Change Password</MudText>
+            <MudText Typo="Typo.body2" Style="color: #666;" Class="mb-4">Enter your new password below.</MudText>
+            
+            <MudTextField @bind-Value="_newPassword" Label="New Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" />
+            <MudTextField @bind-Value="_confirmPassword" Label="Confirm Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" />
+            
+            <div class="d-flex justify-end gap-2">
+                <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ClosePasswordDialog">Cancel</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitPasswordChange" Disabled="@_isChangingPassword">
+                    @if(_isChangingPassword){ <MudProgressCircular Size="Size.Small" Indeterminate="true"/> } else { <span>Update</span> }
+                </MudButton>
+            </div>
+        </MudPaper>
+    </div>
+}
+
+@* ---- Image Cropper Overlay ---- *@
+@if (_isCropperOpen)
+{
+    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.85); z-index: 10001; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="width: 90vw; height: 60vh; background: #000; position: relative; border-radius: 8px; overflow: hidden;">
+            <CropperComponent @ref="_cropperComponent" Src="@_tempImageUrl" Options="_cropperOptions" />
+        </div>
+        <div class="d-flex justify-center gap-4 mt-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="CancelCropper" Style="border-radius: 8px; font-weight: 600;">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveCroppedImage" Style="border-radius: 8px; font-weight: 600;">Crop & Save</MudButton>
+        </div>
+    </div>
+}
+
+<style>
+    .hero-card {
+        background: linear-gradient(135deg, #185FA5 0%, #4A90E2 100%) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 15px rgba(24, 95, 165, 0.15) !important;
+    }
+    .stat-card {
+        background-color: white !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+    }
+    .settings-card {
+        background-color: white !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+        overflow: hidden;
+    }
+    .mud-list-item {
+        padding: 10px 16px !important;
+    }
+    .logout-btn {
+        background-color: #ffebee !important;
+        color: #d32f2f !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: none !important;
+    }
+    .logout-btn .mud-icon-root {
+        color: #d32f2f !important;
+    }
+    .edit-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background-color: #4A90E2;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #185FA5;
+    }
+</style>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IAuthService AuthService { get; set; } = default!;
+    [Inject] private IUserProfileService UserProfileService { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private HttpClient Http { get; set; } = default!;
+
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private bool _isEditing = false;
+    private UserAccountDto? _profile;
+    private UserAccountDto? _originalProfile;
+    private Guid _currentUserId;
+
+    private MudForm? _form;
+    private bool _success;
+    private string[] _errors = { };
+
+    // Password Dialog State
+    private bool _isPasswordDialogOpen = false;
+    private bool _isChangingPassword = false;
+    private string _newPassword = "";
+    private string _confirmPassword = "";
+
+    // Cropper State
+    private bool _isCropperOpen = false;
+    private string _tempImageUrl = "";
+    private CropperComponent _cropperComponent = default!;
+    private Options _cropperOptions = new Options
+    {
+        AspectRatio = 1,
+        ViewMode = ViewMode.Vm1,
+        DragMode = "move",
+        AutoCropArea = 0.8m,
+        Restore = false,
+        Guides = true,
+        Center = true,
+        Highlight = true,
+        CropBoxMovable = true,
+        CropBoxResizable = true,
+        ToggleDragModeOnDblclick = false
+    };
+
+    private bool _isBiometricEnabled = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isBiometricEnabled = await AuthService.IsBiometricEnabledAsync();
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            var nameIdentifier = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(nameIdentifier, out Guid parsedId))
+            {
+                _currentUserId = parsedId;
+                await LoadProfile();
+            }
+            else
+            {
+                _isLoading = false;
+                Snackbar.Add("Failed to parse user ID from token.", Severity.Error);
+            }
+        }
+        else
+        {
+            Navigation.NavigateTo("/login", true);
+        }
+    }
+
+    private string? _errorMessage;
+
+    private async Task LoadProfile()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        AppState.ShowLoader();
+        
+        try 
+        {
+            _profile = await UserProfileService.GetProfileAsync(_currentUserId);
+            if (_profile == null)
+            {
+                _errorMessage = "The service returned null. Check API endpoint or token.";
+            }
+            else
+            {
+                CloneOriginalProfile();
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            _profile = null;
+        }
+        finally
+        {
+            _isLoading = false;
+            AppState.HideLoader();
+        }
+    }
+
+    private void EnableEditMode()
+    {
+        _isEditing = true;
+    }
+
+    private void CancelEditMode()
+    {
+        _isEditing = false;
+        // Restore original profile values
+        if (_profile != null && _originalProfile != null)
+        {
+            _profile.FirstName = _originalProfile.FirstName;
+            _profile.LastName = _originalProfile.LastName;
+            _profile.Email = _originalProfile.Email;
+            _profile.ProfilePictureUrl = _originalProfile.ProfilePictureUrl;
+        }
+    }
+
+    private void CloneOriginalProfile()
+    {
+        if (_profile != null)
+        {
+            _originalProfile = new UserAccountDto
+            {
+                Id = _profile.Id,
+                FirstName = _profile.FirstName,
+                LastName = _profile.LastName,
+                Email = _profile.Email,
+                Role = _profile.Role,
+                IsActive = _profile.IsActive,
+                ProfilePictureUrl = _profile.ProfilePictureUrl,
+                CreatedAt = _profile.CreatedAt
+            };
+        }
+    }
+
+    private async Task SaveProfile()
+    {
+        if (_form != null)
+        {
+            await _form.ValidateAsync();
+            if (!_success || _profile == null) return;
+
+            AppState.ShowLoader();
+            _isSaving = true;
+
+            var updateDto = new UpdateUserAccountDto
+            {
+                FirstName = _profile.FirstName,
+                LastName = _profile.LastName,
+                Email = _profile.Email,
+                Role = _profile.Role,
+                IsActive = _profile.IsActive,
+                ProfilePictureUrl = _profile.ProfilePictureUrl
+            };
+
+            var success = await UserProfileService.UpdateProfileAsync(_currentUserId, updateDto);
+
+            _isSaving = false;
+            AppState.HideLoader();
+
+            if (success)
+            {
+                Snackbar.Add("Profile updated successfully!", Severity.Success);
+                _isEditing = false;
+                CloneOriginalProfile();
+            }
+            else
+            {
+                Snackbar.Add("Failed to update profile.", Severity.Error);
+            }
+        }
+    }
+
+    private async Task UploadProfilePicture(InputFileChangeEventArgs e)
+    {
+        if (!_isEditing || _profile == null) return;
+
+        var file = e.File;
+        if (file != null)
+        {
+            try
+            {
+
+                AppState.ShowLoader(type: VikashERP.Mobile.Components.Shared.AdvanceLoader.LoaderType.Dots);
+
+
+                await Task.Yield();
+                
+                // Reduced from 1024x1024 to 800x800 to significantly speed up processing on mobile devices
+                var resizedImage = await file.RequestImageFileAsync("image/jpeg", 800, 800);
+                
+                using var stream = resizedImage.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                using var memoryStream = new System.IO.MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                
+                _tempImageUrl = $"data:image/jpeg;base64,{base64}";
+                _isCropperOpen = true;
+                
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                AppState.HideLoader();
+            }
+        }
+    }
+
+    private async Task SaveCroppedImage()
+    {
+        try
+        {
+            if (_cropperComponent != null)
+            {
+                var options = new GetCroppedCanvasOptions
+                {
+                    Width = 300,
+                    Height = 300,
+                    ImageSmoothingEnabled = true,
+                    ImageSmoothingQuality = "high"
+                };
+                
+                var croppedBase64 = await _cropperComponent.GetCroppedCanvasDataURLAsync(options, "image/jpeg", 0.85f);
+                
+                if (!string.IsNullOrEmpty(croppedBase64) && _profile != null)
+                {
+                    _profile.ProfilePictureUrl = croppedBase64;
+                    Snackbar.Add("Image cropped! Click 'Save Changes' to upload.", Severity.Info);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Cropping failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            CancelCropper();
+        }
+    }
+
+    private void CancelCropper()
+    {
+        _isCropperOpen = false;
+        _tempImageUrl = "";
+        StateHasChanged();
+    }
+
+    private string GetInitials()
+    {
+        if (_profile == null) return "U";
+        var first = !string.IsNullOrWhiteSpace(_profile.FirstName) ? _profile.FirstName.Substring(0, 1).ToUpper() : "";
+        var last = !string.IsNullOrWhiteSpace(_profile.LastName) ? _profile.LastName.Substring(0, 1).ToUpper() : "";
+        return $"{first}{last}";
+    }
+
+    private void OpenPasswordDialog()
+    {
+        _newPassword = "";
+        _confirmPassword = "";
+        _isPasswordDialogOpen = true;
+    }
+
+    private void ClosePasswordDialog()
+    {
+        _isPasswordDialogOpen = false;
+    }
+
+    private async Task SubmitPasswordChange()
+    {
+        if (string.IsNullOrWhiteSpace(_newPassword))
+        {
+            Snackbar.Add("Password cannot be empty.", Severity.Warning);
+            return;
+        }
+
+        if (_newPassword != _confirmPassword)
+        {
+            Snackbar.Add("Passwords do not match.", Severity.Error);
+            return;
+        }
+
+        _isChangingPassword = true;
+
+        if (_profile != null)
+        {
+            var updateDto = new UpdateUserAccountDto
+            {
+                FirstName = _profile.FirstName,
+                LastName = _profile.LastName,
+                Email = _profile.Email,
+                Role = _profile.Role,
+                IsActive = _profile.IsActive,
+                Password = _newPassword,
+                ProfilePictureUrl = _profile.ProfilePictureUrl
+            };
+
+            var success = await UserProfileService.UpdateProfileAsync(_currentUserId, updateDto);
+            
+            if (success)
+            {
+                Snackbar.Add("Password updated successfully!", Severity.Success);
+                _isPasswordDialogOpen = false;
+            }
+            else
+            {
+                Snackbar.Add("Failed to update password.", Severity.Error);
+            }
+        }
+        
+        _isChangingPassword = false;
+    }
+
+    private async Task ToggleBiometric(bool value)
+    {
+        if (value)
+        {
+            try
+            {
+                var isAvailable = await CrossFingerprint.Current.IsAvailableAsync(true);
+                if (!isAvailable)
+                {
+                    Snackbar.Add("Biometric authentication is not available on this device.", Severity.Error);
+                    return;
+                }
+
+                var request = new AuthenticationRequestConfiguration("Enable Biometric", "Please authenticate to enable biometric login.");
+                var result = await CrossFingerprint.Current.AuthenticateAsync(request);
+
+                if (!result.Authenticated)
+                {
+                    Snackbar.Add("Biometric authentication failed or was canceled.", Severity.Warning);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+                return;
+            }
+        }
+
+        _isBiometricEnabled = value;
+        await AuthService.EnableBiometricAsync(value);
+        Snackbar.Add(value ? "Biometric enabled." : "Biometric disabled.", Severity.Success);
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        ((VikashERP.Mobile.State.CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
+        Navigation.NavigateTo("/login", true);
+    }
+    
+    private string GetImageUrl(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        if (path.StartsWith("http") || path.StartsWith("data:")) return path;
+        
+        // Remove leading slash if any
+        if (path.StartsWith("/"))
+            path = path.Substring(1);
+            
+        return $"{Http.BaseAddress}{path}";
+    }
+}

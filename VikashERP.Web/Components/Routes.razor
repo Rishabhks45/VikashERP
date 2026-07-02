@@ -4,7 +4,20 @@
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
                 <NotAuthorized>
-                    <RedirectToLogin />
+                    @if (context.User.Identity?.IsAuthenticated == true)
+                    {
+                        <LayoutView Layout="typeof(Layout.MainLayout)">
+                            <div style="padding: 2rem; text-align: center;">
+                                <h2>Access Denied</h2>
+                                <p>You do not have permission to view this page.</p>
+                                <a href="/account/logout">Logout</a>
+                            </div>
+                        </LayoutView>
+                    }
+                    else
+                    {
+                        <RedirectToLogin />
+                    }
                 </NotAuthorized>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="routeData" Selector="h1" />

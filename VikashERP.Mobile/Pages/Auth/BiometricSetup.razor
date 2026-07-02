@@ -1,0 +1,302 @@
+@page "/biometric-setup"
+@using MudBlazor
+@using VikashERP.Mobile.Services.Interfaces
+@using Plugin.Fingerprint
+@using Plugin.Fingerprint.Abstractions
+@layout VikashERP.Mobile.Components.Layout.EmptyLayout
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject VikashERP.Mobile.State.AppStateService AppState
+
+<div class="biometric-page-container d-flex flex-column">
+    @* Background Image Decoration Top *@
+    <div class="bg-decoration-top"></div>
+    <div class="bg-decoration-bottom"></div>
+
+    @* Top Bar *@
+    <div class="d-flex px-4 py-2" style="position: relative; z-index: 10; flex-shrink: 0;">
+        <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack" Color="Color.Inherit" OnClick="GoBack" />
+    </div>
+
+    @* Logo Section *@
+    <div class="brand-block d-flex flex-column align-center" style="position: relative; z-index: 10;">
+        <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="mb-1">
+            <path d="M15 25 L50 85 L38 85 L15 35 Z" fill="#144b82" />
+            <path d="M15 25 L35 25 L50 85 L15 25" fill="#1e73be" />
+            <path d="M85 25 L50 85 L62 85 L85 35 Z" fill="#9ea7b0" />
+            <path d="M85 25 L65 25 L50 85 L85 25" fill="#3a4047" />
+            <polygon points="35,25 65,25 50,55" fill="white" />
+        </svg>
+        <div style="text-align: center; line-height: 1.15;">
+            <span class="brand-name">VIKASH</span><br/>
+            <span class="brand-sub">— IRON & STEEL —</span>
+        </div>
+    </div>
+
+    @* Content Section *@
+    <div class="content-block d-flex flex-column align-center px-6" style="position: relative; z-index: 10;">
+        
+        @* Fingerprint Icon *@
+        <div class="fingerprint-icon-container" style="position: relative;">
+            <div class="icon-circle">
+                <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color: #0066ff; font-size: 2.2rem;" />
+            </div>
+            <div class="shield-badge">
+                <MudIcon Icon="@Icons.Material.Filled.Security" Style="color: white; font-size: 0.9rem;" />
+            </div>
+        </div>
+
+        <MudText Typo="Typo.h5" Style="font-weight: 800; color: #1a2530;" Class="mt-2 mb-1">Biometric Setup</MudText>
+        <MudText Typo="Typo.body2" Style="color: #666; text-align: center; max-width: 280px;" Class="mb-1">
+            Secure your account with your fingerprint for faster and safer login
+        </MudText>
+
+        @* Benefits Card *@
+        <MudPaper Class="benefits-card" Elevation="0">
+            <MudList T="string" Padding="false">
+                <MudListItem>
+                    <div class="d-flex align-center py-1">
+                        <div class="benefit-icon mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Style="color: #0066ff;" Size="Size.Small" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #1a2530;">Enhanced Security</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.2; display: block;">Your biometric data is encrypted<br/>and stored securely</MudText>
+                        </div>
+                    </div>
+                </MudListItem>
+                <MudDivider />
+                <MudListItem>
+                    <div class="d-flex align-center py-1">
+                        <div class="benefit-icon mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Style="color: #0066ff;" Size="Size.Small" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #1a2530;">Faster Access</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.2; display: block;">Login quickly using your fingerprint</MudText>
+                        </div>
+                    </div>
+                </MudListItem>
+                <MudDivider />
+                <MudListItem>
+                    <div class="d-flex align-center py-1">
+                        <div class="benefit-icon mr-3">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Style="color: #0066ff;" Size="Size.Small" />
+                        </div>
+                        <div>
+                            <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #1a2530;">Unique to You</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.2; display: block;">Only your fingerprint can access<br/>your account</MudText>
+                        </div>
+                    </div>
+                </MudListItem>
+            </MudList>
+        </MudPaper>
+
+        @* Agreement Checkbox *@
+        <div class="d-flex align-start mt-1 mb-1">
+            <MudCheckBox @bind-Value="Agreed" Color="Color.Primary" Class="mr-2" Style="margin-top: -8px;" />
+            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.4;">
+                I agree to use my fingerprint to login to<br/>
+                <span style="color: #0066ff; font-weight: 600;">Vikash Iron & Steel</span> app.
+            </MudText>
+        </div>
+
+        <div class="footer-block d-flex flex-column align-center" style="width: 100%;">
+            @* Enable Button *@
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="enable-btn mb-1" OnClick="EnableBiometric" Disabled="!Agreed" Style="max-width: 320px;">
+                <MudIcon Icon="@Icons.Material.Outlined.Fingerprint" Class="mr-2" />
+                Enable Fingerprint
+            </MudButton>
+
+            @* Set up later *@
+            <MudButton Variant="Variant.Text" Color="Color.Primary" Class="setup-later-btn" OnClick="SkipBiometric">
+                Set up later
+            </MudButton>
+        </div>
+    </div>
+</div>
+
+<style>
+    .biometric-page-container {
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        background-color: #fafbfc;
+        position: relative;
+        overflow-y: hidden;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .brand-block {
+        padding-top: clamp(4px, 1vh, 8px);
+        padding-bottom: 4px;
+        flex-shrink: 0;
+    }
+    .brand-name {
+        font-weight: 800;
+        font-size: 1.15rem;
+        color: #144b82;
+        letter-spacing: 1px;
+    }
+    .brand-sub {
+        font-size: 0.55rem;
+        font-weight: 600;
+        color: #666;
+        letter-spacing: 2px;
+    }
+
+    .content-block {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(6px, 1.5vh, 12px);
+        padding-top: 4px;
+        padding-bottom: 12px;
+    }
+    
+    .bg-decoration-top {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(circle, rgba(200, 220, 240, 0.5) 0%, rgba(250, 251, 252, 0) 70%);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .bg-decoration-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 150px;
+        /* Using a stylized gradient/pattern to mimic the steel skyline */
+        background: linear-gradient(to top, rgba(200, 220, 240, 0.4) 0%, rgba(250, 251, 252, 0) 100%);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .icon-circle {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background-color: #e6f0ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .shield-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 24px;
+        height: 24px;
+        background-color: #0066ff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #fafbfc;
+    }
+
+    .benefits-card {
+        background-color: white;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        width: 100%;
+        padding: 8px;
+    }
+
+    .benefit-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f0f5ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mud-list-item {
+        padding: 8px 12px !important;
+    }
+
+    .enable-btn {
+        background-color: #005ce6 !important;
+        border-radius: 8px !important;
+        height: 50px;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        font-size: 1rem !important;
+    }
+    .enable-btn.mud-button-disabled {
+        background-color: #b3d1ff !important;
+        color: white !important;
+        opacity: 0.7;
+    }
+
+    .setup-later-btn {
+        font-weight: 700 !important;
+        text-transform: none !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 0px !important;
+    }
+</style>
+
+@code {
+    [Inject] private IAuthService AuthService { get; set; } = default!;
+
+    private bool Agreed { get; set; } = true;
+
+    private async Task EnableBiometric()
+    {
+        try
+        {
+            var isAvailable = await CrossFingerprint.Current.IsAvailableAsync(true);
+            if (!isAvailable)
+            {
+                Snackbar.Add("Biometric authentication is not available on this device.", Severity.Error);
+                return;
+            }
+
+            var request = new AuthenticationRequestConfiguration("Enable Biometric", "Please authenticate to enable biometric login.");
+            var result = await CrossFingerprint.Current.AuthenticateAsync(request);
+
+            if (result.Authenticated)
+            {
+                await AuthService.EnableBiometricAsync(true);
+                Snackbar.Add("Biometric enabled successfully!", Severity.Success);
+                AppState.IsPinUnlocked = true;
+                Navigation.NavigateTo("/manager-dashboard");
+            }
+            else
+            {
+                Snackbar.Add("Biometric authentication failed or was canceled.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void SkipBiometric()
+    {
+        AppState.IsPinUnlocked = true;
+        Navigation.NavigateTo("/manager-dashboard");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/create-pin"); // or previous auth screen
+    }
+}

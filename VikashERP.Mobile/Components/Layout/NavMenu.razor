@@ -1,7 +1,179 @@
-<MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-    <MudNavLink Href="/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-    <MudNavLink Href="/sales" Icon="@Icons.Material.Filled.Receipt">Sales</MudNavLink>
-    <MudNavLink Href="/labour" Icon="@Icons.Material.Filled.People">Labour</MudNavLink>
-    <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Person">Profile</MudNavLink>
-</MudNavMenu>
+@*
+    Save this file to:
+    D:\NewVikash\VikashERP\VikashERP.Mobile\Components\Layout\NavMenu.razor
+*@
+
+<MudDrawer Open="@Open" OpenChanged="@OnDrawerOpenChanged" Elevation="0" Variant="@DrawerVariant.Temporary" Width="260px">
+
+    @* ===== User profile header ===== *@
+    <div style="padding: 20px 16px 16px; border-bottom: 0.5px solid var(--mud-palette-lines-default);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 42px; height: 42px; border-radius: 50%; background: #185FA5; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #fff;">
+                @GetInitials(CurrentUserName)
+            </div>
+            <div>
+                <p style="margin: 0; font-size: 13.5px; font-weight: 500;">@CurrentUserName</p>
+                <span style="font-size: 9px; background: #E6F1FB; color: #0C447C; padding: 2px 8px; border-radius: 20px;">@CurrentUserRole</span>
+            </div>
+        </div>
+    </div>
+
+    @* ===== Scrollable menu sections ===== *@
+    <div style="flex: 1; overflow-y: auto; padding: 14px 12px;">
+
+        @* ---- Dashboard section (visible to Manager, Admin, SuperAdmin) ---- *@
+        <AuthorizeView Roles="Manager,Super Admin">
+            <Authorized>
+                <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary" Style="letter-spacing:0.5px;">DASHBOARD</MudText>
+                <MudNavMenu Class="mb-3">
+                    <MudNavLink Href="/manager-dashboard" Icon="@Icons.Material.Filled.Dashboard" Match="NavLinkMatch.All">
+                        Manager dashboard
+                    </MudNavLink>
+                    <MudNavLink Href="/godown-dashboard" Icon="@Icons.Material.Filled.Warehouse">
+                        Godown dashboard
+                    </MudNavLink>
+                </MudNavMenu>
+            </Authorized>
+        </AuthorizeView>
+
+        @* ---- Employee-only dashboard link ---- *@
+        <AuthorizeView Roles="Employee">
+            <Authorized>
+                <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary" Style="letter-spacing:0.5px;">DASHBOARD</MudText>
+                <MudNavMenu Class="mb-3">
+                    <MudNavLink Href="/employee-dashboard" Icon="@Icons.Material.Filled.Dashboard">
+                        My dashboard
+                    </MudNavLink>
+                </MudNavMenu>
+            </Authorized>
+        </AuthorizeView>
+
+        @* ---- Sales section ---- *@
+        <AuthorizeView Roles="Manager,Super Admin">
+            <Authorized>
+                <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary" Style="letter-spacing:0.5px;">SALES</MudText>
+                <MudNavMenu Class="mb-3">
+                    <MudNavLink Href="/sales" Icon="@Icons.Material.Filled.ReceiptLong">
+                        Sales invoices
+                    </MudNavLink>
+                    <MudNavLink Href="/quick-payments" Icon="@Icons.Material.Filled.Payments">
+                        Quick payments
+                    </MudNavLink>
+                    <MudNavLink Href="/broker-payments" Icon="@Icons.Material.Filled.Groups">
+                        Broker payments
+                    </MudNavLink>
+                </MudNavMenu>
+            </Authorized>
+        </AuthorizeView>
+
+        @* ---- Inventory section ---- *@
+        <AuthorizeView Roles="Manager,Super Admin,Back Office User">
+            <Authorized>
+                <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary" Style="letter-spacing:0.5px;">INVENTORY</MudText>
+                <MudNavMenu Class="mb-3">
+                    <MudNavLink Href="/purchases" Icon="@Icons.Material.Filled.LocalShipping">
+                        Purchases
+                    </MudNavLink>
+                    <MudNavLink Href="/material-catalog" Icon="@Icons.Material.Filled.Inventory2">
+                        Material catalog
+                    </MudNavLink>
+                </MudNavMenu>
+            </Authorized>
+        </AuthorizeView>
+
+        @* ---- Team section ---- *@
+        <AuthorizeView Roles="Manager,Super Admin">
+            <Authorized>
+                <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary" Style="letter-spacing:0.5px;">TEAM</MudText>
+                <MudNavMenu Class="mb-3">
+                    <MudNavLink Href="/labour-attendance" Icon="@Icons.Material.Filled.People">
+                        Labour attendance
+                    </MudNavLink>
+                    <AuthorizeView Roles="Super Admin" Context="innerCtx">
+                        <Authorized>
+                            <MudNavLink Href="/admin/staff" Icon="@Icons.Material.Filled.Badge">
+                                Staff accounts
+                            </MudNavLink>
+                        </Authorized>
+                    </AuthorizeView>
+                </MudNavMenu>
+            </Authorized>
+        </AuthorizeView>
+
+        @* ---- Employee quick links ---- *@
+        <AuthorizeView Roles="Employee">
+            <Authorized>
+                <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary" Style="letter-spacing:0.5px;">MY WORK</MudText>
+                <MudNavMenu Class="mb-3">
+                    <MudNavLink Href="/attendance" Icon="@Icons.Material.Filled.EventAvailable">
+                        My attendance
+                    </MudNavLink>
+                    <MudNavLink Href="/salary-slip" Icon="@Icons.Material.Filled.ReceiptLong">
+                        Salary slip
+                    </MudNavLink>
+                    <MudNavLink Href="/tasks" Icon="@Icons.Material.Filled.Checklist">
+                        My tasks
+                    </MudNavLink>
+                </MudNavMenu>
+            </Authorized>
+        </AuthorizeView>
+
+    </div>
+
+    @* ===== Bottom pinned actions ===== *@
+    <div style="border-top: 0.5px solid var(--mud-palette-lines-default); padding: 10px 12px;">
+        <MudNavMenu>
+            <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">
+                Settings
+            </MudNavLink>
+            <MudNavLink OnClick="LogoutAsync" Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error"
+                        Style="color: var(--mud-palette-error);">
+                Log out
+            </MudNavLink>
+        </MudNavMenu>
+    </div>
+
+</MudDrawer>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    private Task OnDrawerOpenChanged(bool value)
+    {
+        return OpenChanged.InvokeAsync(value);
+    }
+
+    [Parameter] public string CurrentUserName { get; set; } = "User";
+    [Parameter] public string CurrentUserRole { get; set; } = "Role";
+
+    [Inject] private IAuthService AuthService { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            CurrentUserName = user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "User";
+            CurrentUserRole = user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Employee";
+        }
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "U";
+        var parts = name.Trim().Split(' ');
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+            : parts[0][0].ToString().ToUpper();
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+}

@@ -1,0 +1,238 @@
+@using MudBlazor
+
+<MudOverlay Visible="Visible" DarkBackground="true" Absolute="Absolute" ZIndex="9999" AutoClose="false">
+    <div class="loader-container d-flex flex-column align-center justify-center">
+        
+        @if (Type == LoaderType.Spinner)
+        {
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-4" />
+        }
+        else if (Type == LoaderType.DoubleBounce)
+        {
+            <div class="custom-spinner mb-4">
+                <div class="double-bounce1"></div>
+                <div class="double-bounce2"></div>
+            </div>
+        }
+        else if (Type == LoaderType.Pulse)
+        {
+            <div class="pulse-spinner mb-4"></div>
+        }
+        else if (Type == LoaderType.Dots)
+        {
+            <div class="dots-spinner mb-4">
+                <div class="bounce1"></div>
+                <div class="bounce2"></div>
+                <div class="bounce3"></div>
+            </div>
+        }
+        else if (Type == LoaderType.ColorfulBars)
+        {
+            <div class="colorful-bars-loading mb-4">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+        }
+        
+        @if (!string.IsNullOrEmpty(Text))
+        {
+            <MudText Typo="Typo.h6" Style="color: white; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.5); text-align: center;">
+                @Text
+            </MudText>
+        }
+        
+        @if (!string.IsNullOrEmpty(SubText))
+        {
+            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.7); margin-top: 8px; text-align: center; max-width: 200px;">
+                @SubText
+            </MudText>
+        }
+    </div>
+</MudOverlay>
+
+<style>
+    .loader-container {
+        padding: 0;
+        background: transparent;
+        border-radius: 0;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        border: none;
+        animation: loaderFadeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @@keyframes loaderFadeIn {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Double Bounce */
+    .custom-spinner {
+        width: 50px;
+        height: 50px;
+        position: relative;
+    }
+
+    .double-bounce1, .double-bounce2 {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: var(--mud-palette-primary);
+        opacity: 0.6;
+        position: absolute;
+        top: 0;
+        left: 0;
+        animation: sk-bounce 2.0s infinite ease-in-out;
+    }
+
+    .double-bounce2 {
+        animation-delay: -1.0s;
+    }
+
+    @@keyframes sk-bounce {
+        0%, 100% { 
+            transform: scale(0.0);
+            -webkit-transform: scale(0.0);
+        } 50% { 
+            transform: scale(1.0);
+            -webkit-transform: scale(1.0);
+        }
+    }
+
+    /* Pulse */
+    .pulse-spinner {
+        width: 50px;
+        height: 50px;
+        background-color: var(--mud-palette-primary);
+        border-radius: 100%;  
+        animation: sk-pulseScaleOut 1.0s infinite ease-in-out;
+    }
+
+    @@keyframes sk-pulseScaleOut {
+        0% { 
+            transform: scale(0);
+            -webkit-transform: scale(0);
+        } 100% {
+            transform: scale(1.0);
+            -webkit-transform: scale(1.0);
+            opacity: 0;
+        }
+    }
+
+    /* Dots */
+    .dots-spinner {
+        width: 70px;
+        text-align: center;
+    }
+
+    .dots-spinner > div {
+        width: 14px;
+        height: 14px;
+        background-color: var(--mud-palette-primary);
+        border-radius: 100%;
+        display: inline-block;
+        animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+        margin: 0 2px;
+    }
+
+    .dots-spinner .bounce1 {
+        animation-delay: -0.32s;
+    }
+
+    .dots-spinner .bounce2 {
+        animation-delay: -0.16s;
+    }
+
+    @@keyframes sk-bouncedelay {
+        0%, 80%, 100% { 
+            transform: scale(0);
+            -webkit-transform: scale(0);
+        } 40% { 
+            transform: scale(1.0);
+            -webkit-transform: scale(1.0);
+        }
+    }
+
+    /* Colorful Bars */
+    .colorful-bars-loading {
+     --speed-of-animation: 0.9s;
+     --gap: 6px;
+     --first-color: #4c86f9;
+     --second-color: #49a84c;
+     --third-color: #f6bb02;
+     --fourth-color: #f6bb02;
+     --fifth-color: #2196f3;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     width: 100px;
+     gap: 6px;
+     height: 50px;
+    }
+
+    .colorful-bars-loading span {
+     width: 4px;
+     height: 50px;
+     background: var(--first-color);
+     animation: colorful-bars-scale var(--speed-of-animation) ease-in-out infinite;
+    }
+
+    .colorful-bars-loading span:nth-child(2) {
+     background: var(--second-color);
+     animation-delay: -0.8s;
+    }
+
+    .colorful-bars-loading span:nth-child(3) {
+     background: var(--third-color);
+     animation-delay: -0.7s;
+    }
+
+    .colorful-bars-loading span:nth-child(4) {
+     background: var(--fourth-color);
+     animation-delay: -0.6s;
+    }
+
+    .colorful-bars-loading span:nth-child(5) {
+     background: var(--fifth-color);
+     animation-delay: -0.5s;
+    }
+
+    @@keyframes colorful-bars-scale {
+     0%, 40%, 100% {
+      transform: scaleY(0.05);
+     }
+     20% {
+      transform: scaleY(1);
+     }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public string? Text { get; set; }
+
+    [Parameter]
+    public string? SubText { get; set; }
+
+    [Parameter]
+    public bool Absolute { get; set; } = true;
+
+    [Parameter]
+    public LoaderType Type { get; set; } = LoaderType.DoubleBounce;
+    
+    public enum LoaderType
+    {
+        Spinner,
+        DoubleBounce,
+        Pulse,
+        Dots,
+        ColorfulBars
+    }
+}

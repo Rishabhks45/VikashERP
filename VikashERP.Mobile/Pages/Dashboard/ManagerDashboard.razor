@@ -1,0 +1,146 @@
+@page "/manager-dashboard"
+@using MudBlazor
+@using Microsoft.AspNetCore.Authorization
+@using VikashERP.Mobile.Components.Layout
+@attribute [Authorize(Roles = "Super Admin,Back Office User,Manager,Employee,Customer")]
+
+@* ---- Hero Section ---- *@
+<MudPaper Class="hero-card mb-4" Elevation="0">
+    <div class="hero-content">
+        <MudText Typo="Typo.body2" Class="mb-1" Style="font-weight: 500; opacity: 0.9;">Welcome Back,</MudText>
+        <MudText Typo="Typo.h5" Class="mb-1" Style="font-weight: 700;">Rishabh Kumar</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="opacity: 0.9;">Store Manager</MudText>
+        
+        <div class="employee-badge">
+            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-2" />
+            <span style="font-size: 0.75rem; font-weight: 500;">Employee ID: EMP1024</span>
+        </div>
+    </div>
+    <div class="hero-bg-image"></div>
+</MudPaper>
+
+@* ---- Quick Actions ---- *@
+<div class="d-flex justify-space-between align-center mb-3">
+    <MudText Typo="Typo.subtitle1" Style="font-weight: 700; color: #1a2530;">Quick Actions</MudText>
+    <MudLink Href="/actions" Color="Color.Primary" Typo="Typo.body2" Style="font-weight: 600;">View All <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="vertical-align: middle;"/></MudLink>
+</div>
+
+<MudGrid Spacing="2" Class="mb-5">
+    <MudItem xs="3">
+        <MudPaper Class="quick-action-card d-flex flex-column align-center justify-center pa-2" Elevation="0" @onclick='() => NavigateTo("/sales")'>
+            <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Color="Color.Primary" Size="Size.Medium" Class="mb-1" />
+            <MudText Typo="Typo.caption" Align="Align.Center" Style="font-weight: 600; line-height: 1.2;">Sales<br/>Orders</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="3">
+        <MudPaper Class="quick-action-card d-flex flex-column align-center justify-center pa-2" Elevation="0" @onclick='() => NavigateTo("/material-catalog")'>
+            <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Success" Size="Size.Medium" Class="mb-1" />
+            <MudText Typo="Typo.caption" Align="Align.Center" Style="font-weight: 600; line-height: 1.2;">Stock<br/>Overview</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="3">
+        <MudPaper Class="quick-action-card d-flex flex-column align-center justify-center pa-2" Elevation="0" @onclick='() => NavigateTo("/dispatches")'>
+            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Secondary" Size="Size.Medium" Class="mb-1" />
+            <MudText Typo="Typo.caption" Align="Align.Center" Style="font-weight: 600; line-height: 1.2;">Dispatches</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="3">
+        <MudPaper Class="quick-action-card d-flex flex-column align-center justify-center pa-2" Elevation="0" @onclick='() => NavigateTo("/reports")'>
+            <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Warning" Size="Size.Medium" Class="mb-1" />
+            <MudText Typo="Typo.caption" Align="Align.Center" Style="font-weight: 600; line-height: 1.2;">Reports</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@* ---- Key Metrics ---- *@
+<div class="d-flex justify-space-between align-center mb-3">
+    <MudText Typo="Typo.subtitle1" Style="font-weight: 700; color: #1a2530;">Key Metrics</MudText>
+    <MudChip T="string" Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default" Class="date-chip">Today, 16 May 2024</MudChip>
+</div>
+
+<MudGrid Spacing="3" Class="mb-5">
+    <MudItem xs="6">
+        <MudPaper Class="metric-card pa-3" Elevation="0">
+            <div class="d-flex align-center mb-2">
+                <div class="icon-wrapper icon-blue mr-2">
+                    <MudIcon Icon="@Icons.Material.Filled.CurrencyRupee" Size="Size.Small" Color="Color.Primary" />
+                </div>
+                <MudText Typo="Typo.caption" Style="color: #666; font-weight: 500;">Total Sales</MudText>
+            </div>
+            <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;" Class="mb-1">₹ 24,75,000</MudText>
+            <div class="trend trend-up">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" Style="font-size: 0.7rem; margin-right: 2px;" />
+                <span style="font-size: 0.65rem; font-weight: 600;">12.5% vs Yesterday</span>
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudPaper Class="metric-card pa-3" Elevation="0">
+            <div class="d-flex align-center mb-2">
+                <div class="icon-wrapper icon-green mr-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small" Color="Color.Success" />
+                </div>
+                <MudText Typo="Typo.caption" Style="color: #666; font-weight: 500;">Total Orders</MudText>
+            </div>
+            <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;" Class="mb-1">128</MudText>
+            <div class="trend trend-up">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" Style="font-size: 0.7rem; margin-right: 2px;" />
+                <span style="font-size: 0.65rem; font-weight: 600;">8.3% vs Yesterday</span>
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudPaper Class="metric-card pa-3" Elevation="0">
+            <div class="d-flex align-center mb-2">
+                <div class="icon-wrapper icon-purple mr-2">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" Color="Color.Secondary" />
+                </div>
+                <MudText Typo="Typo.caption" Style="color: #666; font-weight: 500;">Dispatches</MudText>
+            </div>
+            <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;" Class="mb-1">96</MudText>
+            <div class="trend trend-up">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" Style="font-size: 0.7rem; margin-right: 2px;" />
+                <span style="font-size: 0.65rem; font-weight: 600;">6.1% vs Yesterday</span>
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudPaper Class="metric-card pa-3" Elevation="0">
+            <div class="d-flex align-center mb-2">
+                <div class="icon-wrapper icon-orange mr-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Widgets" Size="Size.Small" Color="Color.Warning" />
+                </div>
+                <MudText Typo="Typo.caption" Style="color: #666; font-weight: 500;">Low Stock Items</MudText>
+            </div>
+            <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;" Class="mb-1">12</MudText>
+            <div class="trend trend-down">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" Style="font-size: 0.7rem; margin-right: 2px;" />
+                <span style="font-size: 0.65rem; font-weight: 600;">2 vs Yesterday</span>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@* ---- System Status ---- *@
+<MudPaper Class="status-alert-card d-flex align-center px-3 py-2" Elevation="0">
+    <div class="status-icon mr-3">
+        <MudIcon Icon="@Icons.Material.Outlined.Security" Color="Color.Primary" />
+    </div>
+    <div class="flex-grow-1">
+        <MudText Typo="Typo.body2" Style="font-weight: 700; color: #1a2530;">All systems operational</MudText>
+        <MudText Typo="Typo.caption" Style="color: #666;">Last updated at 09:30 AM</MudText>
+    </div>
+    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="color: #999;" />
+</MudPaper>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private void NavigateTo(string url)
+    {
+        Navigation.NavigateTo(url);
+    }
+}

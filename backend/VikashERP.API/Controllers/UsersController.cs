@@ -162,7 +162,39 @@ public class UsersController : ControllerBase
         user.LastName = dto.LastName.Trim();
         user.Email = dto.Email.Trim().ToLowerInvariant();
         user.Role = role;
-        user.ProfilePictureUrl = dto.ProfilePictureUrl;
+        if (!string.IsNullOrEmpty(dto.ProfilePictureUrl) && dto.ProfilePictureUrl.StartsWith("data:image"))
+        {
+            try
+            {
+                var base64Data = dto.ProfilePictureUrl.Substring(dto.ProfilePictureUrl.IndexOf(",") + 1);
+                var imageBytes = Convert.FromBase64String(base64Data);
+                
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+                
+                var fileName = $"{Guid.NewGuid()}.jpg";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+                
+                await System.IO.File.WriteAllBytesAsync(filePath, imageBytes, cancellationToken);
+                
+                user.ProfilePictureUrl = $"/uploads/profiles/{fileName}";
+            }
+            catch
+            {
+                user.ProfilePictureUrl = null;
+            }
+        }
+        else if (!string.IsNullOrEmpty(dto.ProfilePictureUrl))
+        {
+            user.ProfilePictureUrl = dto.ProfilePictureUrl;
+        }
+        else
+        {
+            user.ProfilePictureUrl = null;
+        }
         user.IsActive = dto.IsActive;
         user.UpdatedAt = DateTime.UtcNow;
         user.UpdatedBy = User.GetAuthenticatedUserId();

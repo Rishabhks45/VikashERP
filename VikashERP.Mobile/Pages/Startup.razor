@@ -1,0 +1,54 @@
+@page "/"
+@using VikashERP.Mobile.Services.Interfaces
+@layout VikashERP.Mobile.Components.Layout.EmptyLayout
+
+<div class="d-flex flex-column align-center justify-center" style="height: 100vh; background-color: #fafbfc;">
+    <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2009/svg" class="mb-4">
+        <path d="M15 25 L50 85 L38 85 L15 35 Z" fill="#144b82" />
+        <path d="M15 25 L35 25 L50 85 L15 25" fill="#1e73be" />
+        <path d="M85 25 L50 85 L62 85 L85 35 Z" fill="#9ea7b0" />
+        <path d="M85 25 L65 25 L50 85 L85 25" fill="#3a4047" />
+        <polygon points="35,25 65,25 50,55" fill="white" />
+    </svg>
+    <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+</div>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IAuthService AuthService { get; set; } = default!;
+    [Inject] private VikashERP.Mobile.State.AppStateService AppState { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        var token = await SecureStorage.Default.GetAsync("jwt_token");
+
+        if (string.IsNullOrEmpty(token))
+        {
+            Navigation.NavigateTo("/login", true);
+            return;
+        }
+
+        // If the PIN is already unlocked for this session, go straight to dashboard
+        if (AppState.IsPinUnlocked)
+        {
+            // Note: In a real app with multiple roles, you'd extract the role from the token 
+            // and navigate to the respective dashboard. Hardcoding to manager-dashboard for now 
+            // based on existing navigation logic.
+            Navigation.NavigateTo("/manager-dashboard", true);
+            return;
+        }
+
+        var hasPin = await AuthService.HasPinSetupAsync();
+
+        if (hasPin)
+        {
+            Navigation.NavigateTo("/pin-login", true);
+        }
+        else
+        {
+            Navigation.NavigateTo("/create-pin", true);
+        }
+    }
+}

@@ -1,0 +1,22 @@
+@using MudBlazor
+
+<div class="d-flex flex-column align-center justify-center pa-4" style="height: @Height; text-align: center; width: 100%;">
+    <MudIcon Icon="@Icons.Material.Filled.WifiOff" Style="font-size: 5rem; color: #ff9800;" Class="mb-4" />
+    <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1a2530;" Class="mb-2">No Internet Connection</MudText>
+    <MudText Typo="Typo.body1" Style="color: #666;" Class="mb-6">Please check your network settings and try again.</MudText>
+    
+    @if (OnRetry.HasDelegate)
+    {
+        <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Large" StartIcon="@Icons.Material.Filled.Refresh" OnClick="OnRetry" Style="border-radius: 8px; font-weight: 600; padding: 8px 24px;">
+            Retry Connection
+        </MudButton>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Height { get; set; } = "70vh";
+
+    [Parameter]
+    public EventCallback OnRetry { get; set; }
+}

@@ -1,0 +1,211 @@
+@page "/login"
+@using MudBlazor
+@using VikashERP.Mobile.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using VikashERP.Mobile.State
+@layout VikashERP.Mobile.Components.Layout.EmptyLayout
+
+<div class="login-page-container">
+    <div class="bg-decoration-top"></div>
+
+    <div class="d-flex flex-column align-start px-6 pt-12 pb-4" style="position: relative; z-index: 10;">
+        <svg width="70" height="70" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="mb-2">
+            <path d="M15 25 L50 85 L38 85 L15 35 Z" fill="#144b82" />
+            <path d="M15 25 L35 25 L50 85 L15 25" fill="#1e73be" />
+            <path d="M85 25 L50 85 L62 85 L85 35 Z" fill="#9ea7b0" />
+            <path d="M85 25 L65 25 L50 85 L85 25" fill="#3a4047" />
+            <polygon points="35,25 65,25 50,55" fill="white" />
+        </svg>
+        <div style="line-height: 1.1;">
+            <span style="font-weight: 800; font-size: 1.6rem; color: #144b82; letter-spacing: 1px;">VIKASH</span><br/>
+            <span style="font-size: 0.65rem; font-weight: 600; color: #666; letter-spacing: 2px;">— IRON & STEEL —</span>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column px-6" style="position: relative; z-index: 10;">
+
+        <MudText Typo="Typo.h5" Style="font-weight: 800; color: #1a2530;" Class="mb-1">Welcome Back!</MudText>
+        <MudText Typo="Typo.body2" Style="color: #666;" Class="mb-8">Login to continue to your account</MudText>
+
+        <MudText Typo="Typo.caption" Style="font-weight: 700; color: #1a2530;" Class="mb-2">Email or Phone</MudText>
+        <MudTextField T="string" @bind-Value="Email"
+                      Placeholder="Enter your email or phone"
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Outlined.Mail"
+                      Immediate="true"
+                      Class="mb-4 custom-textfield" />
+
+        <MudText Typo="Typo.caption" Style="font-weight: 700; color: #1a2530;" Class="mb-2">Password</MudText>
+        <MudTextField T="string" @bind-Value="Password"
+                      Placeholder="Enter your password"
+                      Variant="Variant.Outlined"
+                      InputType="@(ShowPassword ? InputType.Text : InputType.Password)"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Outlined.Lock"
+                      Immediate="true"
+                      Class="mb-2 custom-textfield">
+            <AppendAdornment>
+                <MudIconButton Icon="@(ShowPassword ? Icons.Material.Outlined.Visibility : Icons.Material.Outlined.VisibilityOff)"
+                               OnClick="TogglePasswordVisibility"
+                               Class="password-toggle" Size="Size.Small" />
+            </AppendAdornment>
+        </MudTextField>
+
+        <div class="d-flex justify-end mb-6">
+            <MudLink Href="/forgot-password" Style="color: #005ce6; font-weight: 600; font-size: 0.85rem;" Underline="Underline.None">
+                Forgot Password?
+            </MudLink>
+        </div>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="login-btn mb-6" OnClick="@PerformLogin" Disabled="@IsLoading">
+            @if (IsLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="color: white;" Class="mr-2" />
+                <span>Logging in...</span>
+            }
+            else
+            {
+                <span>Login</span>
+            }
+        </MudButton>
+
+        <div class="d-flex justify-center mb-8">
+            <MudText Typo="Typo.body2" Style="color: #666;">
+                Don't have an account?
+                <MudLink Href="/signup" Style="color: #005ce6; font-weight: 600;" Underline="Underline.None">Sign up</MudLink>
+            </MudText>
+        </div>
+    </div>
+
+    <div class="d-flex align-center justify-center security-footer">
+        <MudIcon Icon="@Icons.Material.Outlined.Security" Size="Size.Small" Style="color: #0066ff;" Class="mr-2" />
+        <MudText Typo="Typo.caption" Style="color: #666;">Your information is secure with us</MudText>
+    </div>
+
+    <div class="bg-decoration-bottom"></div>
+</div>
+
+<style>
+    .login-page-container {
+        min-height: 100vh;
+        background-color: #fafbfc;
+        position: relative;
+        overflow-x: hidden;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .bg-decoration-top {
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(200, 220, 240, 0.6) 0%, rgba(250, 251, 252, 0) 70%);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .bg-decoration-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 150px;
+        background: linear-gradient(to top, rgba(200, 220, 240, 0.4) 0%, rgba(250, 251, 252, 0) 100%);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .custom-textfield .mud-input-outlined {
+        background-color: white;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .custom-textfield .mud-input-outlined-border {
+        border-color: rgba(0, 0, 0, 0.08) !important;
+    }
+    .custom-textfield .mud-input-slot {
+        height: 52px;
+        font-size: 0.95rem;
+        color: #1a2530;
+    }
+    .custom-textfield .mud-input-adornment-icon {
+        color: #999;
+    }
+
+    .password-toggle {
+        color: #999 !important;
+    }
+
+    .login-btn {
+        background-color: #005ce6 !important;
+        border-radius: 8px !important;
+        height: 52px;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        font-size: 1.05rem !important;
+        box-shadow: 0 4px 10px rgba(0, 92, 230, 0.2) !important;
+    }
+
+    .security-footer {
+        margin-top: auto;
+        padding-bottom: 24px;
+        position: relative;
+        z-index: 10;
+    }
+</style>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IAuthService AuthService { get; set; } = default!;
+    [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+    [Inject] private ISnackbar Snackbar { get; set; } = default!;
+    [Inject] private AppStateService AppState { get; set; } = default!;
+
+    private string Email { get; set; } = "";
+    private string Password { get; set; } = "";
+    private bool ShowPassword { get; set; } = false;
+    private bool IsLoading { get; set; } = false;
+
+    private void TogglePasswordVisibility()
+    {
+        ShowPassword = !ShowPassword;
+    }
+
+    private async Task PerformLogin()
+    {
+        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+        {
+            Snackbar.Add("Please enter both email and password", Severity.Warning);
+            return;
+        }
+
+        AppState.ShowLoader();
+        try
+        {
+            var result = await AuthService.LoginAsync(Email, Password);
+            if (result != null)
+            {
+                // Assuming you use the AuthState.cs implementation
+                ((VikashERP.Mobile.State.CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(result.Token);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                Snackbar.Add("Invalid email or password", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            AppState.HideLoader();
+        }
+    }
+}
