@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
 using VikashERP.Application.Features.Sales.Commands;
 using VikashERP.Application.Features.Sales.DTOs;
 using VikashERP.Application.Features.Sales.Queries;
@@ -39,6 +41,23 @@ public class SalesController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
         if (result == null) return NotFound();
         return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/pdf")]
+    [AllowAnonymous] // Allow viewing PDF without auth for easy share links, or keep authenticated based on security requirements
+    public async Task<IActionResult> GetInvoicePdf(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new GetInvoiceByIdQuery(id);
+        var invoice = await _mediator.Send(query, cancellationToken);
+        if (invoice == null) return NotFound("Invoice not found.");
+
+        var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Id == invoice.CustomerId, cancellationToken);
+        
+        var document = new VikashERP.Application.Features.Sales.Documents.InvoiceDocument(invoice, customer);
+        var pdfBytes = document.GeneratePdf();
+
+        var filename = $"Invoice_{invoice.InvoiceNumber}.pdf";
+        return File(pdfBytes, "application/pdf", filename);
     }
 
     [HttpPost]
