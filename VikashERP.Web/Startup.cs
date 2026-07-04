@@ -8,6 +8,7 @@ using VikashERP.Web.Auth;
 using VikashERP.Web.Components;
 using VikashERP.Web.Services;
 using VikashERP.Web.Services.Interfaces;
+using Cropper.Blazor.Extensions;
 
 namespace VikashERP.Web;
 
@@ -26,6 +27,7 @@ public static class DependencyInjection
 
         builder.Services.AddControllers();
         builder.Services.AddMudServices();
+        builder.Services.AddCropper();
         builder.Services.AddHttpContextAccessor();
 
         var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7013";

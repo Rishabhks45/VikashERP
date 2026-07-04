@@ -2,23 +2,22 @@
 @layout BlankLayout
 @using VikashERP.Web.Models
 @using VikashERP.Web.Services
-@using VikashERP.Web.Utils
 @inject ISalesWebService SalesService
-@inject ICustomerWebService CustomerService
-@inject IOrganizationBrandingService BrandingService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 @if (_isLoading)
 {
     <div class="loading-state">
-        <MudText>Loading Invoice for Printing...</MudText>
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        <MudText Class="mt-3">Loading Invoice PDF...</MudText>
     </div>
 }
-else if (_invoice == null)
+else if (_pdfBase64Url == null)
 {
     <div class="error-state">
-        <MudText Color="Color.Error">Invoice not found.</MudText>
+        <MudText Color="Color.Error">Invoice PDF could not be generated or found.</MudText>
     </div>
 }
 else
@@ -28,7 +27,7 @@ else
             <div class="control-actions">
                 <button class="btn-control btn-print" @onclick="PrintInvoice">
                     <MudIcon Icon="@Icons.Material.Filled.Print" Size="Size.Small" />
-                    <span>Print Invoice</span>
+                    <span>Print</span>
                 </button>
                 <button class="btn-control btn-download" @onclick="DownloadPdf">
                     <MudIcon Icon="@Icons.Material.Filled.Download" Size="Size.Small" />
@@ -38,342 +37,18 @@ else
         </div>
     </div>
 
-    <div class="print-container">
-        <!-- Header Section -->
-        <div class="header-section">
-            <div class="tax-invoice-title">TAX INVOICE</div>
-        </div>
-
-        <!-- IRN Details -->
-        <div class="irn-details">
-            <div class="row">
-                <div class="label">IRN</div>
-                <div class="value">: -</div>
-            </div>
-            <div class="row">
-                <div class="label">Ack No.</div>
-                <div class="value">: -</div>
-            </div>
-            <div class="row">
-                <div class="label">Ack Date</div>
-                <div class="value">: -</div>
-            </div>
-        </div>
-
-        <table class="main-table">
-            <tr>
-                <td rowspan="2" class="col-half border-right border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div style="display: flex; gap: 10px;">
-                        @if (!string.IsNullOrEmpty(BrandingService.Current.LogoUrl))
-                        {
-                            <img src="@BrandingService.Current.LogoUrl" style="width: 80px; object-fit: contain;" />
-                        }
-                        <div>
-                            <div class="bold-text" style="font-size: 16px;">@(!string.IsNullOrEmpty(BrandingService.Current.DisplayName) ? BrandingService.Current.DisplayName : "VIKASH IRON & STEEL")</div>
-                            <div class="small-text">Reg Office :- @BrandingService.Current.AddressLine1, @BrandingService.Current.City, @BrandingService.Current.State - @BrandingService.Current.PinCode</div>
-                            <div class="small-text">GSTIN/UIN: @(_invoice.Items.FirstOrDefault()?.RateOn != null ? "10CTHPS4609D2ZY" : "10CTHPS4609D2ZY")</div>
-                            <div class="small-text">State Name : Bihar, Code : 10</div>
-                            <div class="small-text">E-Mail : @BrandingService.Current.Email</div>
-                        </div>
-                    </div>
-                </td>
-                <td class="col-quarter border-right border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Invoice No.</div>
-                    <div class="bold-text">@_invoice.InvoiceNumber</div>
-                </td>
-                <td class="col-quarter border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Dated</div>
-                    <div class="bold-text">@_invoice.InvoiceDate.ToKolkataTime().ToString("dd-MMM-yy")</div>
-                </td>
-            </tr>
-            <tr>
-                <td class="col-quarter border-right border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Delivery Note</div>
-                    <div class="bold-text">E-WAY BILL</div>
-                </td>
-                <td class="col-quarter border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Mode/Terms of Payment</div>
-                    <div class="bold-text">@_invoice.PaymentMode</div>
-                </td>
-            </tr>
-            <tr>
-                <td class="col-half border-right border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Consignee (Ship to)</div>
-                    <div class="bold-text" style="font-size: 14px;">@(_customer?.CompanyName ?? $"{_customer?.FirstName} {_customer?.LastName}")</div>
-                    <div class="small-text">@_customer?.Address</div>
-                    <div class="small-text">GSTIN/UIN : @_customer?.Gstin</div>
-                    @{
-                        string stateCode = !string.IsNullOrEmpty(_customer?.Gstin) && _customer.Gstin.Length >= 2 ? _customer.Gstin.Substring(0, 2) : "10";
-                    }
-                    <div class="small-text">State Name : Bihar, Code : @stateCode</div>
-                </td>
-                <td class="col-quarter border-right border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Dispatch Doc No.</div>
-                    <div class="bold-text">@_invoice.InvoiceNumber</div>
-                </td>
-                <td class="col-quarter border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Delivery Note Date</div>
-                    <div class="bold-text">@_invoice.InvoiceDate.ToKolkataTime().ToString("dd-MMM-yy")</div>
-                </td>
-            </tr>
-            <tr>
-                <td class="col-half border-right border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Buyer (Bill to)</div>
-                    <div class="bold-text" style="font-size: 14px;">@(_customer?.CompanyName ?? $"{_customer?.FirstName} {_customer?.LastName}")</div>
-                    <div class="small-text">@_customer?.Address</div>
-                    <div class="small-text">GSTIN/UIN : @_customer?.Gstin</div>
-                    <div class="small-text">State Name : Bihar, Code : @stateCode</div>
-                    <div class="small-text">Place of Supply : Bihar</div>
-                </td>
-                <td class="col-quarter border-right border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Dispatched through</div>
-                    <div class="bold-text">BY ROAD</div>
-                </td>
-                <td class="col-quarter border-bottom" style="vertical-align: top; padding: 5px;">
-                    <div class="small-text">Motor Vehicle No.</div>
-                    <div class="bold-text">@_invoice.VehicleNumber</div>
-                </td>
-            </tr>
-        </table>
-
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th style="width: 30px;">Sl<br>No.</th>
-                    <th style="text-align: left;">Description of Goods and Services</th>
-                    <th>HSN/SAC</th>
-                    <th style="text-align: right;">Quantity</th>
-                    <th style="text-align: right;">Rate</th>
-                    <th style="text-align: center;">per</th>
-                    <th style="text-align: right;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                @{
-                    int slNo = 1;
-                    decimal totalQty = 0;
-                    decimal totalTaxable = 0;
-                }
-                @foreach (var item in _invoice.Items)
-                {
-                    totalQty += item.WeightKg; // Assuming WeightKg is the primary quantity measure as per PDF
-                    totalTaxable += item.TotalPrice;
-                    <tr>
-                        <td style="text-align: center;">@slNo</td>
-                        <td><b>@item.CategoryName @item.VariantName</b></td>
-                        <td style="text-align: center;">@item.HsnCode</td>
-                        <td style="text-align: right;"><b>@item.WeightKg.ToString("0.000") @item.RateOn</b></td>
-                        <td style="text-align: right;">@item.Rate.ToString("0.00")</td>
-                        <td style="text-align: center;">@item.RateOn</td>
-                        <td style="text-align: right;"><b>@item.TotalPrice.ToString("0.00")</b></td>
-                    </tr>
-                    slNo++;
-                }
-
-                <!-- Empty space filler -->
-                <tr style="height: 150px;">
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td style="vertical-align: bottom; text-align: right;"><b>@totalTaxable.ToString("N2")</b></td>
-                </tr>
-
-                <!-- Tax Summary Area -->
-                @if (_invoice.LoadingCharge > 0)
-                {
-                    <tr>
-                        <td></td>
-                        <td style="text-align: right;"><b>Loading Charges ( With Tax )</b></td>
-                        <td style="text-align: center;">996511</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right;"><b>@_invoice.LoadingCharge.ToString("N2")</b></td>
-                    </tr>
-                }
-                @if (_invoice.FreightCharge > 0)
-                {
-                    <tr>
-                        <td></td>
-                        <td style="text-align: right;"><b>Freight Charges</b></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right;"><b>@_invoice.FreightCharge.ToString("N2")</b></td>
-                    </tr>
-                }
-                @if (_invoice.CgstAmount > 0)
-                {
-                    <tr>
-                        <td></td>
-                        <td style="text-align: right;"><b>CGST</b></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right;"><b>@_invoice.CgstAmount.ToString("N2")</b></td>
-                    </tr>
-                }
-                @if (_invoice.SgstAmount > 0)
-                {
-                    <tr>
-                        <td></td>
-                        <td style="text-align: right;"><b>SGST</b></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right;"><b>@_invoice.SgstAmount.ToString("N2")</b></td>
-                    </tr>
-                }
-                @if (_invoice.IgstAmount > 0)
-                {
-                    <tr>
-                        <td></td>
-                        <td style="text-align: right;"><b>IGST</b></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right;"><b>@_invoice.IgstAmount.ToString("N2")</b></td>
-                    </tr>
-                }
-                @if (_invoice.RoundingAmount != 0)
-                {
-                    <tr>
-                        <td></td>
-                        <td style="text-align: right;"><b>R/off</b></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align: right;"><b>@_invoice.RoundingAmount.ToString("N2")</b></td>
-                    </tr>
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3" style="text-align: right; border-top: 1px solid black;"><b>Total</b></td>
-                    <td style="text-align: right; border-top: 1px solid black;"><b>@totalQty.ToString("0.000") Kg</b></td>
-                    <td colspan="2" style="border-top: 1px solid black;"></td>
-                    <td style="text-align: right; border-top: 1px solid black;"><b>₹ @_invoice.TotalAmount.ToString("N2")</b></td>
-                </tr>
-            </tfoot>
-        </table>
-
-        <div class="words-section border-bottom border-left border-right" style="padding: 5px;">
-            <div class="small-text">Amount Chargeable (in words) <span style="float: right;">E. & O.E</span></div>
-            <div class="bold-text">@NumberToWordsConverter.ConvertToWords(_invoice.TotalAmount)</div>
-        </div>
-
-        <table class="tax-breakdown-table border-left border-right border-bottom" style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr>
-                    <th rowspan="2" class="border-right border-bottom">HSN/SAC</th>
-                    <th rowspan="2" class="border-right border-bottom">Taxable<br>Value</th>
-                    <th colspan="2" class="border-right border-bottom">CGST</th>
-                    <th colspan="2" class="border-right border-bottom">SGST/UTGST</th>
-                    <th rowspan="2" class="border-bottom">Total<br>Tax Amount</th>
-                </tr>
-                <tr>
-                    <th class="border-right border-bottom">Rate</th>
-                    <th class="border-right border-bottom">Amount</th>
-                    <th class="border-right border-bottom">Rate</th>
-                    <th class="border-bottom border-right">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                @{
-                    var hsnGroups = _invoice.Items.GroupBy(i => i.HsnCode).ToList();
-                    decimal totalHsnTaxable = 0;
-                    decimal totalHsnCgst = 0;
-                    decimal totalHsnSgst = 0;
-                    decimal totalHsnTax = 0;
-
-                    foreach (var group in hsnGroups)
-                    {
-                        var hsnTaxable = group.Sum(i => i.TotalPrice);
-                        var hsnCgst = hsnTaxable * (group.First().CgstRate / 100m);
-                        var hsnSgst = hsnTaxable * (group.First().SgstRate / 100m);
-                        var hsnTotalTax = hsnCgst + hsnSgst;
-                        
-                        totalHsnTaxable += hsnTaxable;
-                        totalHsnCgst += hsnCgst;
-                        totalHsnSgst += hsnSgst;
-                        totalHsnTax += hsnTotalTax;
-
-                        <tr>
-                            <td class="border-right" style="text-align: center;">@group.Key</td>
-                            <td class="border-right" style="text-align: right;">@hsnTaxable.ToString("N2")</td>
-                            <td class="border-right" style="text-align: right;">@group.First().CgstRate.ToString("0")%</td>
-                            <td class="border-right" style="text-align: right;">@hsnCgst.ToString("N2")</td>
-                            <td class="border-right" style="text-align: right;">@group.First().SgstRate.ToString("0")%</td>
-                            <td class="border-right" style="text-align: right;">@hsnSgst.ToString("N2")</td>
-                            <td style="text-align: right;">@hsnTotalTax.ToString("N2")</td>
-                        </tr>
-                    }
-                    
-                    if (_invoice.LoadingCharge > 0)
-                    {
-                        var loadingCgst = _invoice.LoadingCharge * 0.09m;
-                        var loadingSgst = _invoice.LoadingCharge * 0.09m;
-                        totalHsnTaxable += _invoice.LoadingCharge;
-                        totalHsnCgst += loadingCgst;
-                        totalHsnSgst += loadingSgst;
-                        totalHsnTax += (loadingCgst + loadingSgst);
-                        <tr>
-                            <td class="border-right" style="text-align: center;">996511</td>
-                            <td class="border-right" style="text-align: right;">@_invoice.LoadingCharge.ToString("N2")</td>
-                            <td class="border-right" style="text-align: right;">9%</td>
-                            <td class="border-right" style="text-align: right;">@loadingCgst.ToString("N2")</td>
-                            <td class="border-right" style="text-align: right;">9%</td>
-                            <td class="border-right" style="text-align: right;">@loadingSgst.ToString("N2")</td>
-                            <td style="text-align: right;">@((loadingCgst + loadingSgst).ToString("N2"))</td>
-                        </tr>
-                    }
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td class="border-right border-top" style="text-align: right;"><b>Total</b></td>
-                    <td class="border-right border-top" style="text-align: right;"><b>@totalHsnTaxable.ToString("N2")</b></td>
-                    <td class="border-right border-top"></td>
-                    <td class="border-right border-top" style="text-align: right;"><b>@totalHsnCgst.ToString("N2")</b></td>
-                    <td class="border-right border-top"></td>
-                    <td class="border-right border-top" style="text-align: right;"><b>@totalHsnSgst.ToString("N2")</b></td>
-                    <td class="border-top" style="text-align: right;"><b>@totalHsnTax.ToString("N2")</b></td>
-                </tr>
-            </tfoot>
-        </table>
-
-        <div class="tax-words-section border-left border-right border-bottom" style="padding: 5px;">
-            Tax Amount (in words) : <b>@NumberToWordsConverter.ConvertToWords(totalHsnTax)</b>
-        </div>
-
-        <div class="footer-section border-left border-right border-bottom">
-            <div class="declaration" style="width: 50%; float: left; padding: 5px;">
-                <div class="small-text" style="text-decoration: underline;">Declaration</div>
-                <div class="small-text">We declare that this invoice shows the actual price of the<br>goods described and that all particulars are true and</div>
-            </div>
-            <div class="signature" style="width: 50%; float: right; text-align: right; padding: 5px; border-left: 1px solid black;">
-                <div class="bold-text">for @(!string.IsNullOrEmpty(BrandingService.Current.DisplayName) ? BrandingService.Current.DisplayName : "VIKASH IRON & STEEL")</div>
-                <br><br><br>
-                <div class="small-text">Authorised Signatory</div>
-            </div>
-            <div style="clear: both;"></div>
-            <div class="small-text" style="text-align: center; margin-top: 10px; border-top: 1px solid black; padding: 5px;">
-                SUBJECT TO PATNA JURISDICTION<br>
-                This is a Computer Generated Invoice
-            </div>
-        </div>
-
+    <div class="pdf-container">
+        <iframe src="@_pdfBase64Url" title="Invoice PDF" width="100%" height="100%" style="border: none;"></iframe>
     </div>
-    <!-- Print styling injected via CSS -->
+
     <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #525659; /* Standard PDF viewer background */
+        }
+
         .no-print {
             display: flex;
         }
@@ -390,13 +65,14 @@ else
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             font-family: 'Roboto', sans-serif;
             width: 100%;
+            height: 64px;
         }
 
         .control-bar-content {
             width: 100%;
             max-width: 800px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
         }
 
@@ -422,16 +98,6 @@ else
             background: rgba(255, 255, 255, 0.1);
         }
 
-        .btn-back {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        .btn-back:hover {
-            background: rgba(255, 255, 255, 0.18);
-            transform: translateX(-2px);
-        }
-
         .btn-print {
             background: #4f46e5;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
@@ -440,7 +106,6 @@ else
         .btn-print:hover {
             background: #4338ca;
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.45);
         }
 
         .btn-download {
@@ -451,132 +116,22 @@ else
         .btn-download:hover {
             background: #0284c7;
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(14, 165, 233, 0.45);
         }
 
         .loading-state, .error-state {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 200px;
-            font-family: Arial, sans-serif;
+            height: 100vh;
+            background-color: white;
         }
 
-        .print-container {
+        .pdf-container {
             width: 100%;
-            max-width: 800px;
-            margin: 30px auto 50px auto;
-            padding: 35px;
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            color: black;
-            background: white;
-            line-height: 1.2;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-        }
-
-        .print-container * {
-            box-sizing: border-box;
-        }
-
-        .header-section {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .tax-invoice-title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .irn-details {
-            font-size: 10px;
-            margin-bottom: 10px;
-        }
-
-        .irn-details .row {
+            height: calc(100vh - 64px);
             display: flex;
-        }
-
-        .irn-details .label {
-            width: 60px;
-        }
-
-        .main-table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid black;
-        }
-
-        .main-table td {
-            border: none; /* Borders applied manually */
-        }
-
-        .border-right { border-right: 1px solid black !important; }
-        .border-bottom { border-bottom: 1px solid black !important; }
-        .border-left { border-left: 1px solid black !important; }
-        .border-top { border-top: 1px solid black !important; }
-
-        .col-half { width: 50%; }
-        .col-quarter { width: 25%; }
-
-        .small-text { font-size: 10px; }
-        .bold-text { font-weight: bold; }
-
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            border-left: 1px solid black;
-            border-right: 1px solid black;
-            border-bottom: 1px solid black;
-        }
-
-        .items-table th {
-            border-bottom: 1px solid black;
-            border-right: 1px solid black;
-            padding: 5px;
-            font-weight: normal;
-            font-size: 11px;
-        }
-        .items-table th:last-child {
-            border-right: none;
-        }
-
-        .items-table td {
-            border-right: 1px solid black;
-            padding: 3px 5px;
-        }
-        .items-table td:last-child {
-            border-right: none;
-        }
-
-        .tax-breakdown-table th {
-            font-weight: normal;
-            font-size: 11px;
-            text-align: center;
-            padding: 3px;
-        }
-
-        .tax-breakdown-table td {
-            padding: 3px;
-        }
-
-        @@media print {
-            body { margin: 0; padding: 0; background: #fff; }
-            @@page { size: A4; margin: 10mm; }
-            nav, header, aside, .mud-appbar, .sidebar, .no-print { display: none !important; }
-            .mud-main-content { margin: 0 !important; padding: 0 !important; }
-            .print-container {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                box-shadow: none !important;
-                border: none !important;
-                border-radius: 0 !important;
-            }
+            justify-content: center;
         }
     </style>
 }
@@ -585,9 +140,9 @@ else
     [Parameter]
     public Guid Id { get; set; }
 
-    private InvoiceDetailDto? _invoice;
-    private CustomerListDto? _customer;
     private bool _isLoading = true;
+    private string? _pdfBase64Url;
+    private string _invoiceNumber = "Invoice";
 
     protected override async Task OnInitializedAsync()
     {
@@ -595,12 +150,25 @@ else
         
         try
         {
-            _invoice = await SalesService.GetInvoiceByIdAsync(Id);
-            if (_invoice != null)
+            var invoice = await SalesService.GetInvoiceByIdAsync(Id);
+            if (invoice != null)
             {
-                var customers = await CustomerService.GetCustomersAsync();
-                _customer = customers.FirstOrDefault(c => c.Id == _invoice.CustomerId);
+                _invoiceNumber = invoice.InvoiceNumber;
             }
+
+            var bytes = await SalesService.GetInvoicePdfAsync(Id);
+            if (bytes != null)
+            {
+                _pdfBase64Url = $"data:application/pdf;base64,{Convert.ToBase64String(bytes)}";
+            }
+            else
+            {
+                Snackbar.Add("Could not load PDF from the server.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading PDF: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -610,13 +178,34 @@ else
 
     private async Task PrintInvoice()
     {
-        await JSRuntime.InvokeVoidAsync("window.print");
+        if (_pdfBase64Url == null) return;
+
+        var js = @"
+            var printWindow = window.open("""", ""_blank"");
+            printWindow.document.write('<html><head><title>Print PDF</title></head><body style=""margin:0;padding:0;""><embed src=""" + _pdfBase64Url + @""" type=""application/pdf"" width=""100%"" height=""100%"" id=""pdfEmbed""></embed></body></html>');
+            printWindow.document.close();
+            setTimeout(function() {
+                printWindow.print();
+            }, 500);
+        ";
+        await JSRuntime.InvokeVoidAsync("eval", js);
     }
 
     private async Task DownloadPdf()
     {
-        var filename = $"Invoice_{_invoice?.InvoiceNumber ?? "Bill"}.pdf";
-        await JSRuntime.InvokeVoidAsync("downloadInvoicePdf", "print-container", filename);
+        if (_pdfBase64Url == null) return;
+
+        var safeInvoiceNumber = _invoiceNumber.Replace("/", "-").Replace("\\", "-");
+        var filename = $"Invoice_{safeInvoiceNumber}.pdf";
+
+        var js = @"
+            var link = document.createElement('a');
+            link.href = '" + _pdfBase64Url + @"';
+            link.download = '" + filename + @"';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        ";
+        await JSRuntime.InvokeVoidAsync("eval", js);
     }
-}
 }

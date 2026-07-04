@@ -16,6 +16,7 @@ public partial class MainLayout : IDisposable
     [Inject] private IOrganizationBrandingService OrganizationBranding { get; set; } = default!;
     [Inject] private IUserProfileService UserProfileService { get; set; } = default!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
 
     private bool _drawerOpen;
     private string _userName = "User";
@@ -151,14 +152,23 @@ public partial class MainLayout : IDisposable
 
     private static string GetInitials(string name)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            return "U";
+        if (string.IsNullOrEmpty(name)) return "U";
 
         var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1)
-            return parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant();
+        if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+        return (parts[0][0].ToString() + parts[parts.Length - 1][0].ToString()).ToUpper();
+    }
 
-        return $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
+    private string GetImageUrl(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        if (path.StartsWith("http") || path.StartsWith("data:")) return path;
+        
+        if (path.StartsWith("/"))
+            path = path.Substring(1);
+            
+        var client = HttpClientFactory.CreateClient("VikashERP.Api");
+        return $"{client.BaseAddress}{path}";
     }
 
     private void DrawerToggle() => _drawerOpen = !_drawerOpen;

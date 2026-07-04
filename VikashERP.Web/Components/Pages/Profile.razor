@@ -7,11 +7,10 @@
 
 @using VikashERP.Web.Services.Interfaces
 @inject AuthenticationStateProvider AuthStateProvider
-@inject IFileUploadService FileUploadService
 @inject INotificationService NotificationService
-@inject IJSRuntime JSRuntime
 @inject IUserProfileService UserProfileService
 @inject ICustomerShopService CustomerShopService
+@inject IHttpClientFactory HttpClientFactory
 @rendermode InteractiveServer
 
 <PageLoader IsVisible="_loading" Text="Loading profile..." />
@@ -37,7 +36,7 @@
                     <div class="avatar-container" @onclick="ViewProfileImage">
                         @if (!string.IsNullOrEmpty(_profilePictureUrl))
                         {
-                            <img src="@_profilePictureUrl" class="avatar-image-el" alt="Profile picture" />
+                            <img src="@GetImageUrl(_profilePictureUrl)" class="avatar-image-el" alt="Profile picture" />
                         }
                         else
                         {
@@ -317,8 +316,8 @@
         </MudGrid>
     </div>
 
-    <!-- Image Crop Modal -->
-    @if (showCropModal)
+    <!-- Image Cropper Overlay (Cropper.Blazor - same as mobile) -->
+    @if (_isCropperOpen)
     {
         <div class="crop-modal-overlay">
             <div class="crop-modal-content">
@@ -327,11 +326,11 @@
                         <MudIcon Icon="@Icons.Material.Filled.Crop" Class="mr-2" Color="Color.Primary" />
                         Crop Profile Picture
                     </span>
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="HideCropModal" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CancelCropper" />
                 </div>
                 
                 <div class="crop-modal-body">
-                    @if (isCropping)
+                    @if (_isCropping)
                     {
                         <div class="crop-loading-container">
                             <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
@@ -339,25 +338,17 @@
                         </div>
                     }
                     
-                    <div class="cropper-wrapper @(isCropping ? "hidden" : "")">
-                        <div id="cropper-container">
-                            <img id="imageToCrop" alt="Source image to crop" />
+                    <div class="cropper-wrapper @(_isCropping ? "hidden" : "")">
+                        <div style="width: 100%; height: 400px; background: #000; position: relative; border-radius: 8px; overflow: hidden;">
+                            <CropperComponent @ref="_cropperComponent" Src="@_tempImageUrl" Options="_cropperOptions" />
                         </div>
-                        
-                        @if (!string.IsNullOrEmpty(cropImageError))
-                        {
-                            <div class="crop-error-box mt-3">
-                                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Class="mr-2" />
-                                <span>@cropImageError</span>
-                            </div>
-                        }
                     </div>
                 </div>
                 
                 <div class="crop-modal-footer">
-                    <MudButton Variant="Variant.Outlined" OnClick="HideCropModal" Style="border-radius: 8px; text-transform: none;">Cancel</MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CropImageAsync" Disabled="isCropping" Style="border-radius: 8px; text-transform: none; font-weight: 800;">
-                        @if (isCropping)
+                    <MudButton Variant="Variant.Outlined" OnClick="CancelCropper" Style="border-radius: 8px; text-transform: none;">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CropAndSaveAsync" Disabled="_isCropping" Style="border-radius: 8px; text-transform: none; font-weight: 800;">
+                        @if (_isCropping)
                         {
                             <span>Cropping...</span>
                         }
@@ -377,7 +368,7 @@
         <div class="view-image-overlay" @onclick="() => showViewImageModal = false">
             <div class="view-image-content" @onclick:stopPropagation="true">
                 <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => showViewImageModal = false" Class="view-close-btn" />
-                <img src="@_profilePictureUrl" class="view-full-image" alt="Profile Picture" />
+                <img src="@GetImageUrl(_profilePictureUrl)" class="view-full-image" alt="Profile Picture" />
             </div>
         </div>
     }
@@ -395,10 +386,26 @@
 
     private UserProfileModel _profileModel = new();
 
-    private bool showCropModal = false;
-    private bool isCropping = false;
-    private string cropImageError = string.Empty;
-    private byte[]? croppedImageBytes;
+    // Cropper.Blazor State (same as mobile)
+    private bool _isCropperOpen = false;
+    private bool _isCropping = false;
+    private string _tempImageUrl = "";
+    private CropperComponent _cropperComponent = default!;
+    private Options _cropperOptions = new Options
+    {
+        AspectRatio = 1,
+        ViewMode = ViewMode.Vm1,
+        DragMode = "move",
+        AutoCropArea = 0.8m,
+        Restore = false,
+        Guides = true,
+        Center = true,
+        Highlight = true,
+        CropBoxMovable = true,
+        CropBoxResizable = true,
+        ToggleDragModeOnDblclick = false
+    };
+
     private bool showViewImageModal = false;
 
     // Password variables
@@ -636,83 +643,77 @@
     {
         try
         {
-            isCropping = true;
-            showCropModal = true;
-            cropImageError = string.Empty;
+            _isCropping = true;
+            _isCropperOpen = true;
             StateHasChanged();
-            
-            var base64Image = await JSRuntime.InvokeAsync<string>("compressAndReturnImageBase64", "avatar-file-input");
-            isCropping = false;
-            
-            if (!string.IsNullOrEmpty(base64Image))
+
+            var file = e.File;
+            if (file != null)
             {
-                await JSRuntime.InvokeVoidAsync("showCropper", base64Image);
+                var resizedImage = await file.RequestImageFileAsync("image/jpeg", 1024, 1024);
+                using var stream = resizedImage.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                using var memoryStream = new System.IO.MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                _tempImageUrl = $"data:image/jpeg;base64,{base64}";
             }
-            else
-            {
-                cropImageError = "Could not read image file.";
-            }
+
+            _isCropping = false;
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            cropImageError = $"Client-side error: {ex.Message}";
-            isCropping = false;
+            NotificationService.Error($"Failed to load image: {ex.Message}");
+            _isCropping = false;
+            _isCropperOpen = false;
             StateHasChanged();
         }
     }
 
-    private async Task CropImageAsync()
+    private async Task CropAndSaveAsync()
     {
         try
         {
-            isCropping = true;
-            cropImageError = string.Empty;
+            _isCropping = true;
             StateHasChanged();
 
-            string? croppedImageBase64 = await JSRuntime.InvokeAsync<string>("getCroppedImageBase64");
-
-            if (string.IsNullOrEmpty(croppedImageBase64))
+            if (_cropperComponent != null)
             {
-                cropImageError = "Failed to get cropped image data.";
-                isCropping = false;
-                StateHasChanged();
-                return;
-            }
+                var options = new GetCroppedCanvasOptions
+                {
+                    Width = 300,
+                    Height = 300,
+                    ImageSmoothingEnabled = true,
+                    ImageSmoothingQuality = "high"
+                };
 
-            // Preview instantly
-            _profilePictureUrl = croppedImageBase64;
-            _profileModel.ProfilePictureUrl = croppedImageBase64;
+                var croppedBase64 = await _cropperComponent.GetCroppedCanvasDataURLAsync(options, "image/jpeg", 0.85f);
 
-            if (croppedImageBase64.Contains(","))
-            {
-                croppedImageBytes = Convert.FromBase64String(croppedImageBase64.Split(',')[1]);
+                if (!string.IsNullOrEmpty(croppedBase64))
+                {
+                    // Set base64 as profile picture URL — API will handle saving to disk
+                    _profilePictureUrl = croppedBase64;
+                    _profileModel.ProfilePictureUrl = croppedBase64;
+                    await SaveProfileDataSilentAsync();
+                    NotificationService.Success("Profile picture updated successfully!");
+                }
             }
-            
-            if (croppedImageBytes != null && croppedImageBytes.Length > 0)
-            {
-                var relativeUrl = await FileUploadService.HandleFileUploadInByteAsync(croppedImageBytes);
-                _profilePictureUrl = relativeUrl;
-                _profileModel.ProfilePictureUrl = relativeUrl;
-                await SaveProfileDataSilentAsync();
-            }
-
-            HideCropModal();
-            NotificationService.Success("Profile picture updated successfully!");
         }
         catch (Exception ex)
         {
-            cropImageError = $"Error cropping image: {ex.Message}";
-            isCropping = false;
-            StateHasChanged();
+            NotificationService.Error($"Error cropping image: {ex.Message}");
+        }
+        finally
+        {
+            _isCropping = false;
+            CancelCropper();
         }
     }
 
-    private void HideCropModal()
+    private void CancelCropper()
     {
-        showCropModal = false;
-        cropImageError = string.Empty;
-        _ = JSRuntime.InvokeVoidAsync("destroyCropper");
+        _isCropperOpen = false;
+        _tempImageUrl = "";
         StateHasChanged();
     }
 
@@ -720,9 +721,21 @@
     {
         _profilePictureUrl = null;
         _profileModel.ProfilePictureUrl = null;
-        croppedImageBytes = null;
         await SaveProfileDataSilentAsync();
         NotificationService.Success("Profile picture removed.");
+    }
+
+    private string GetImageUrl(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        if (path.StartsWith("http") || path.StartsWith("data:")) return path;
+        
+        // Remove leading slash if any
+        if (path.StartsWith("/"))
+            path = path.Substring(1);
+            
+        var client = HttpClientFactory.CreateClient("VikashERP.Api");
+        return $"{client.BaseAddress}{path}";
     }
 
     private async Task LoadShopDataAsync()

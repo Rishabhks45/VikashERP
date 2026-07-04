@@ -31,11 +31,10 @@ public class InvoiceDocument : IDocument
                 page.Margin(10, Unit.Millimetre);
                 page.Size(PageSizes.A4);
                 page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(9).FontFamily(Fonts.Arial));
+                page.DefaultTextStyle(x => x.FontSize(9));
 
                 page.Header().Element(ComposeHeader);
                 page.Content().Element(ComposeContent);
-                page.Footer().Element(ComposeFooter);
             });
     }
 
@@ -44,12 +43,13 @@ public class InvoiceDocument : IDocument
         container.Column(column =>
         {
             column.Item().AlignCenter().Text(_isGstBill ? "TAX INVOICE" : "INVOICE").FontSize(14).Bold();
-            column.Item().PaddingTop(5).Text(text =>
-            {
-                text.Span("IRN: -\n").FontSize(8);
-                text.Span("Ack No.: -\n").FontSize(8);
-                text.Span("Ack Date: -").FontSize(8);
-            });
+            // Removed IRN/Ack Date since we don't have e-Invoice data yet
+            // column.Item().PaddingTop(5).Text(text =>
+            // {
+            //     text.Span("IRN: -\n").FontSize(8);
+            //     text.Span("Ack No.: -\n").FontSize(8);
+            //     text.Span("Ack Date: -").FontSize(8);
+            // });
         });
     }
 
@@ -134,13 +134,17 @@ public class InvoiceDocument : IDocument
             {
                 column.Item().Element(ComposeTaxBreakdownTable);
             }
+
+            column.Item().Element(ComposeFooter);
         });
     }
 
     void ComposeItemsTable(IContainer container)
     {
-        container.Table(table =>
+        container.Column(col => 
         {
+            col.Item().Table(table =>
+            {
             table.ColumnsDefinition(columns =>
             {
                 columns.ConstantColumn(25); // Sl No
@@ -179,7 +183,10 @@ public class InvoiceDocument : IDocument
                 totalTaxable += item.TotalPrice;
 
                 table.Cell().BorderLeft(1).BorderRight(1).Padding(3).AlignCenter().Text(slNo.ToString());
-                table.Cell().BorderRight(1).Padding(3).Text($"{item.CategoryName} {item.VariantName}").Bold();
+                var itemName = string.Equals(item.CategoryName, "N/A", StringComparison.OrdinalIgnoreCase) 
+                    ? item.VariantName 
+                    : $"{item.CategoryName} {item.VariantName}";
+                table.Cell().BorderRight(1).Padding(3).Text(itemName).Bold();
                 if (_isGstBill)
                 {
                     table.Cell().BorderRight(1).Padding(3).AlignCenter().Text(item.HsnCode);
@@ -193,13 +200,13 @@ public class InvoiceDocument : IDocument
             }
 
             // Filler
-            table.Cell().BorderLeft(1).BorderRight(1).Padding(3).MinHeight(100).Text("");
+            table.Cell().BorderLeft(1).BorderRight(1).Padding(3).Text("");
             table.Cell().BorderRight(1).Padding(3).Text("");
             if (_isGstBill) table.Cell().BorderRight(1).Padding(3).Text("");
             table.Cell().BorderRight(1).Padding(3).Text("");
             table.Cell().BorderRight(1).Padding(3).Text("");
             table.Cell().BorderRight(1).Padding(3).Text("");
-            table.Cell().BorderRight(1).Padding(3).AlignBottom().AlignRight().Text($"{totalTaxable:N2}").Bold();
+            table.Cell().BorderRight(1).Padding(3).AlignRight().Text($"{totalTaxable:N2}").Bold();
 
             // Charges and Taxes
             if (_invoice.LoadingCharge > 0)
@@ -276,14 +283,15 @@ public class InvoiceDocument : IDocument
             table.Cell().BorderRight(1).BorderTop(1).BorderBottom(1).Padding(3).AlignRight().Text($"Rs {_invoice.TotalAmount:N2}").Bold();
         });
 
-        container.BorderLeft(1).BorderRight(1).BorderBottom(1).Padding(5).Row(row =>
+        col.Item().BorderLeft(1).BorderRight(1).BorderBottom(1).Padding(5).Row(row =>
         {
             row.RelativeItem().Column(c =>
             {
                 c.Item().Text("Amount Chargeable (in words)").FontSize(8);
-                c.Item().Text($"INR {_invoice.TotalAmount:N2}").Bold();
+                c.Item().Text($"INR {AmountToWords(_invoice.TotalAmount)}").Bold();
             });
             row.ConstantItem(50).AlignRight().Text("E. & O.E").FontSize(8);
+        });
         });
     }
 
@@ -386,7 +394,9 @@ public class InvoiceDocument : IDocument
 
     void ComposeFooter(IContainer container)
     {
-        container.BorderLeft(1).BorderRight(1).BorderBottom(1).Row(row =>
+        container.Column(col => 
+        {
+            col.Item().BorderLeft(1).BorderRight(1).BorderBottom(1).Row(row =>
         {
             row.RelativeItem().Padding(5).Column(c =>
             {
@@ -401,10 +411,80 @@ public class InvoiceDocument : IDocument
             });
         });
         
-        container.Padding(5).Column(c =>
+        col.Item().Padding(5).Column(c =>
         {
             c.Item().AlignCenter().Text("SUBJECT TO PATNA JURISDICTION").FontSize(8);
             c.Item().AlignCenter().Text("This is a Computer Generated Invoice").FontSize(8);
         });
+        });
+    }
+
+    private string AmountToWords(decimal amount)
+    {
+        if (amount == 0) return "Zero";
+        
+        long number = (long)Math.Floor(amount);
+        int decimalPart = (int)Math.Round((amount - number) * 100);
+
+        string words = NumberToWords(number);
+        
+        if (decimalPart > 0)
+        {
+            words += $" and {NumberToWords(decimalPart)} Paise";
+        }
+        
+        return words + " Only";
+    }
+
+    private string NumberToWords(long number)
+    {
+        if (number == 0) return "Zero";
+
+        if (number < 0) return "Minus " + NumberToWords(Math.Abs(number));
+
+        string words = "";
+
+        if ((number / 10000000) > 0)
+        {
+            words += NumberToWords(number / 10000000) + " Crore ";
+            number %= 10000000;
+        }
+
+        if ((number / 100000) > 0)
+        {
+            words += NumberToWords(number / 100000) + " Lakh ";
+            number %= 100000;
+        }
+
+        if ((number / 1000) > 0)
+        {
+            words += NumberToWords(number / 1000) + " Thousand ";
+            number %= 1000;
+        }
+
+        if ((number / 100) > 0)
+        {
+            words += NumberToWords(number / 100) + " Hundred ";
+            number %= 100;
+        }
+
+        if (number > 0)
+        {
+            if (words != "") words += "and ";
+
+            var unitsMap = new[] { "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen" };
+            var tensMap = new[] { "Zero", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety" };
+
+            if (number < 20)
+                words += unitsMap[number];
+            else
+            {
+                words += tensMap[number / 10];
+                if ((number % 10) > 0)
+                    words += " " + unitsMap[number % 10];
+            }
+        }
+
+        return words;
     }
 }

@@ -11,6 +11,7 @@ public interface ISalesWebService
     Task<Guid> UpdateInvoiceAsync(Guid id, CreateInvoiceModel model);
     Task<bool> ApproveInvoiceAsync(Guid id);
     Task<bool> UpdateInvoicePaymentAsync(Guid id, decimal cashAmount, decimal bankAmount);
+    Task<byte[]?> GetInvoicePdfAsync(Guid id);
 }
 
 public class SalesWebService : ISalesWebService
@@ -59,5 +60,15 @@ public class SalesWebService : ISalesWebService
         var dto = new { CashAmount = cashAmount, BankAmount = bankAmount };
         var response = await _httpClient.PutAsJsonAsync($"api/sales/{id}/payment", dto);
         return response.IsSuccessStatusCode;
+    }
+
+    public async Task<byte[]?> GetInvoicePdfAsync(Guid id)
+    {
+        var response = await _httpClient.GetAsync($"api/sales/invoices/{id}/pdf");
+        if (response.IsSuccessStatusCode)
+        {
+            return await response.Content.ReadAsByteArrayAsync();
+        }
+        return null;
     }
 }

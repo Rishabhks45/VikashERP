@@ -45,7 +45,7 @@
                         <div class="user-avatar-trigger">
                             @if (!string.IsNullOrEmpty(_userProfilePictureUrl))
                             {
-                                <img src="@_userProfilePictureUrl" class="user-avatar-img" alt="Profile" />
+                                <img src="@GetImageUrl(_userProfilePictureUrl)" class="user-avatar-img" alt="Profile" />
                             }
                             else
                             {
@@ -208,7 +208,7 @@
                         <div class="customer-avatar-trigger">
                             @if (!string.IsNullOrEmpty(_userProfilePictureUrl))
                             {
-                                <img src="@_userProfilePictureUrl" class="user-avatar-img customer-avatar-img" alt="Profile" />
+                                <img src="@GetImageUrl(_userProfilePictureUrl)" class="user-avatar-img customer-avatar-img" alt="Profile" />
                             }
                             else
                             {

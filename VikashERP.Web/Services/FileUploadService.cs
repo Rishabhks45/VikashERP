@@ -11,13 +11,15 @@ namespace VikashERP.Web.Services;
 public class FileUploadService : IFileUploadService
 {
     private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly HttpClient _httpClient;
     private const long MaxFileSize = 2 * 1024 * 1024;
     private static readonly string[] AllowedTypes = { ".jpg", ".jpeg", ".png", ".svg" };
     private const string ImagePath = "images";
 
-    public FileUploadService(IWebHostEnvironment webHostEnvironment)
+    public FileUploadService(IWebHostEnvironment webHostEnvironment, System.Net.Http.IHttpClientFactory httpClientFactory)
     {
         _webHostEnvironment = webHostEnvironment;
+        _httpClient = httpClientFactory.CreateClient("VikashERP.Api");
     }
 
     public async Task<FileValidationResult> ValidateFileAsync(IBrowserFile file)
@@ -84,51 +86,47 @@ public class FileUploadService : IFileUploadService
 
     public async Task<string> HandleFileUploadAsync(IBrowserFile file, string subFolder = "")
     {
-        var safeSubFolder = string.IsNullOrWhiteSpace(subFolder) ? "" : string.Join("_", subFolder.Split(Path.GetInvalidFileNameChars()));
-        var basePath = string.IsNullOrWhiteSpace(safeSubFolder) ? ImagePath : Path.Combine(ImagePath, safeSubFolder);
-        var imagesDir = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", basePath);
+        using var content = new MultipartFormDataContent();
+        using var stream = file.OpenReadStream(MaxFileSize);
+        var fileContent = new StreamContent(stream);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
         
-        if (!Directory.Exists(imagesDir))
+        content.Add(fileContent, "File", file.Name);
+        if (!string.IsNullOrWhiteSpace(subFolder))
         {
-            Directory.CreateDirectory(imagesDir);
+            content.Add(new StringContent(subFolder), "CategoryName");
         }
 
-        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}";
-        var filePath = Path.Combine(imagesDir, fileName);
+        var response = await _httpClient.PostAsync("api/upload/file", content);
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await System.Net.Http.Json.HttpContentJsonExtensions.ReadFromJsonAsync<System.Text.Json.JsonElement>(response.Content);
+            return result.GetProperty("url").GetString()!;
+        }
 
-        await using var fileStream = new FileStream(filePath, FileMode.Create);
-        await using Stream uploadStream = file.OpenReadStream(MaxFileSize);
-        await uploadStream.CopyToAsync(fileStream);
-
-        return $"/uploads/{basePath.Replace("\\", "/")}/{fileName}";
+        throw new Exception("Failed to upload file to the server.");
     }
 
     public async Task<string> HandleFileUploadInByteAsync(byte[] file)
     {
-        if (file == null || file.Length == 0)
+        if (file == null || file.Length == 0) return "File data is empty.";
+        if (file.Length > MaxFileSize) return $"File size {file.Length} bytes exceeds the maximum allowed size of {MaxFileSize} bytes.";
+
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(file);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        
+        content.Add(fileContent, "File", $"{Guid.NewGuid()}.png");
+        content.Add(new StringContent("profiles"), "CategoryName");
+
+        var response = await _httpClient.PostAsync("api/upload/file", content);
+        if (response.IsSuccessStatusCode)
         {
-            return "File data is empty.";
+            var result = await System.Net.Http.Json.HttpContentJsonExtensions.ReadFromJsonAsync<System.Text.Json.JsonElement>(response.Content);
+            return result.GetProperty("url").GetString()!;
         }
 
-        if (file.Length > MaxFileSize)
-        {
-            return $"File size {file.Length} bytes exceeds the maximum allowed size of {MaxFileSize} bytes.";
-        }
-
-        var fileName = $"{Guid.NewGuid()}.png";
-        var imagesDir = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", ImagePath);
-
-        if (!Directory.Exists(imagesDir))
-        {
-            Directory.CreateDirectory(imagesDir);
-        }
-
-        var filePath = Path.Combine(imagesDir, fileName);
-
-        await using var fileStream = new FileStream(filePath, FileMode.Create);
-        await fileStream.WriteAsync(file, 0, file.Length);
-
-        return $"/uploads/{ImagePath}/{fileName}";
+        return string.Empty;
     }
 
     public Task<bool> DeleteFileAsync(string relativePath)
