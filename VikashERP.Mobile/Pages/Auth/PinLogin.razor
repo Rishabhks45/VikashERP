@@ -9,28 +9,42 @@
 @inject ISnackbar Snackbar
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
 @inject VikashERP.Mobile.State.AppStateService AppState
+@inject IHttpClientFactory HttpClientFactory
 
 <div class="pin-login-page-container d-flex flex-column">
+    @* Background Image Decorations *@
+    <div class="bg-decoration-top"></div>
+    <div class="bg-decoration-bottom"></div>
+
     <div class="d-flex px-4 py-2" style="position: relative; z-index: 10;">
-        <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack" Color="Color.Inherit" OnClick="@GoBack" />
+        <MudIconButton Icon="@Icons.Material.Rounded.ArrowBack" Color="Color.Inherit" OnClick="@GoBack" />
     </div>
 
-    <div class="brand-block d-flex flex-column align-center">
+    <div class="brand-block d-flex flex-column align-center" style="position: relative; z-index: 10;">
         <div class="profile-img-container mb-2">
-            <MudAvatar Style="height: 64px; width: 64px; font-size: 1.5rem; font-weight: 600; background-color: #185FA5; color: white;">@Initials</MudAvatar>
+            @if (!string.IsNullOrEmpty(_profilePictureUrl))
+            {
+                <MudAvatar Style="height: 72px; width: 72px; background-color: white;">
+                    <MudImage Src="@GetImageUrl(_profilePictureUrl)" Style="width: 100%; height: 100%; object-fit: cover;" fetchpriority="high" />
+                </MudAvatar>
+            }
+            else
+            {
+                <MudAvatar Style="height: 72px; width: 72px; font-size: 1.8rem; font-weight: 700; background-color: white; color: #6450f3;">@Initials</MudAvatar>
+            }
         </div>
         
-        <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1a2530;" Class="mb-1">
+        <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1a2530;" Class="mb-1 mt-2">
             Welcome Back <span style="font-size: 1.2rem;">👋</span>
         </MudText>
-        <MudText Typo="Typo.h5" Style="font-weight: 800; color: #0D3B66; letter-spacing: -0.5px;" Class="mb-1">@UserName</MudText>
-        <MudChip T="string" Size="Size.Small" Style="background-color: #f0f5ff; color: #0066ff; font-weight: 600; border-radius: 16px;">@UserRole</MudChip>
+        <MudText Typo="Typo.h5" Style="font-weight: 800; color: #1a2530; letter-spacing: -0.5px;" Class="mb-2">@UserName</MudText>
+        <MudChip T="string" Size="Size.Small" Style="background-color: #f3f0ff; color: #6450f3; font-weight: 700; border-radius: 16px; border: 1px solid rgba(100, 80, 243, 0.2);">@UserRole</MudChip>
     </div>
 
-    <div class="content-block d-flex flex-column align-center px-6">
+    <div class="content-block d-flex flex-column align-center px-6" style="position: relative; z-index: 10;">
         
-        <div class="header-block d-flex flex-column align-center">
-            <MudText Typo="Typo.body2" Style="color: #666; font-weight: 600;" Class="mb-2">Enter your 4-digit PIN</MudText>
+        <div class="header-block d-flex flex-column align-center mt-2">
+            <MudText Typo="Typo.body2" Style="color: #666; font-weight: 600;" Class="mb-4">Enter your 4-digit PIN</MudText>
         </div>
 
         <div class="pin-block d-flex flex-column align-center">
@@ -43,7 +57,7 @@
             </div>
         </div>
 
-        <div class="keypad-block d-flex flex-column align-center mt-2">
+        <div class="keypad-block d-flex flex-column align-center mt-4">
             <div class="keypad-container">
                 @for (int i = 1; i <= 9; i++)
                 {
@@ -51,22 +65,25 @@
                     <MudButton Variant="Variant.Text" Class="keypad-btn" OnClick="@(() => KeyPressed(num))">@num</MudButton>
                 }
                 <MudButton Variant="Variant.Text" Class="keypad-btn action-btn" OnClick="@LockApp">
-                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Medium" Style="color: #0066ff;" />
+                    <MudIcon Icon="@Icons.Material.Rounded.Lock" Size="Size.Medium" Style="color: #6450f3;" />
                 </MudButton>
                 <MudButton Variant="Variant.Text" Class="keypad-btn" OnClick="@(() => KeyPressed(0))">0</MudButton>
                 <MudButton Variant="Variant.Text" Class="keypad-btn action-btn" OnClick="@Backspace">
-                    <MudIcon Icon="@Icons.Material.Outlined.Backspace" Size="Size.Medium" />
+                    <MudIcon Icon="@Icons.Material.Rounded.Backspace" Size="Size.Medium" Style="color: #666;" />
                 </MudButton>
             </div>
         </div>
 
         <div class="footer-block d-flex flex-column align-center mt-2">
-            <MudButton Variant="Variant.Filled" FullWidth="true" Class="biometric-btn mb-4" OnClick="@LoginWithFingerprint" Style="max-width: 300px;">
-                <MudIcon Icon="@Icons.Material.Outlined.Fingerprint" Class="mr-3" Style="font-size: 1.6rem;" />
-                Login with Fingerprint
-            </MudButton>
+            @if (_isBiometricEnabled)
+            {
+                <MudButton Variant="Variant.Filled" FullWidth="true" Class="biometric-btn mb-6" OnClick="@LoginWithFingerprint" Style="max-width: 320px;">
+                    <MudIcon Icon="@Icons.Material.Rounded.Fingerprint" Class="mr-3" Style="font-size: 1.6rem;" />
+                    Login with Fingerprint
+                </MudButton>
+            }
 
-            <MudLink Href="/forgot-pin" Underline="Underline.Always" Style="color: #005ce6; font-weight: 600; font-size: 0.85rem;">
+            <MudLink Href="/forgot-pin" Underline="Underline.Always" Style="color: #6450f3; font-weight: 700; font-size: 0.9rem;">
                 Forgot PIN?
             </MudLink>
         </div>
@@ -78,13 +95,35 @@
         height: 100vh;
         height: 100dvh;
         max-height: 100dvh;
-        background-color: #fafbfc;
+        background-color: #fcfcfd;
         position: relative;
-        overflow-y: hidden; /* prevents scrolling */
+        overflow: hidden;
         padding-top: env(safe-area-inset-top);
         padding-bottom: env(safe-area-inset-bottom);
         display: flex;
         flex-direction: column;
+    }
+
+    .bg-decoration-top {
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(252, 252, 253, 0) 70%);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .bg-decoration-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 150px;
+        background: linear-gradient(to top, rgba(100, 80, 243, 0.08) 0%, rgba(252, 252, 253, 0) 100%);
+        z-index: 0;
+        pointer-events: none;
     }
 
     .brand-block {
@@ -95,7 +134,8 @@
 
     .profile-img-container {
         border-radius: 50%; padding: 4px;
-        background: transparent; border: 1.5px solid #0066ff;
+        background: transparent; border: 2px solid #6450f3;
+        box-shadow: 0 8px 16px rgba(100, 80, 243, 0.15);
     }
 
     .content-block {
@@ -104,10 +144,9 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: clamp(10px, 2.2vh, 18px);
-        padding-top: 4px;
-        padding-bottom: 12px;
+        justify-content: space-evenly;
+        width: 100%;
+        padding-bottom: 8px;
     }
 
     .header-block { margin-bottom: 2px; }
@@ -115,52 +154,62 @@
     .pin-dot {
         width: 18px; height: 18px;
         border-radius: 50%;
-        border: 2.5px solid #1a2530;
+        border: 2.5px solid #d1d5db;
         background-color: transparent;
         transition: all 0.2s ease;
     }
     .pin-dot.filled {
-        background-color: #0066ff;
-        border-color: #0066ff;
+        background-color: #6450f3;
+        border-color: #6450f3;
+        box-shadow: 0 0 10px rgba(100, 80, 243, 0.4);
     }
 
     .keypad-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
+        gap: clamp(8px, 1.5vh, 20px);
         width: 100%;
-        max-width: 350px;
+        max-width: 300px;
     }
     .keypad-btn {
         background-color: white !important;
         border: none !important;
         border-radius: 50% !important;
-        height: 75px !important;
-        width: 75px !important;
+        height: clamp(40px, 7vh, 60px) !important;
+        width: clamp(40px, 7vh, 60px) !important;
         margin: 0 auto !important;
         min-width: 0 !important;
-        font-size: 1.8rem !important;
+        font-size: 1.4rem !important;
         font-weight: 700 !important;
         color: #1a2530 !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
         text-transform: none !important;
+        transition: transform 0.1s;
+    }
+    .keypad-btn:active {
+        transform: scale(0.95);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
     }
     .action-btn {
         background-color: transparent !important;
         box-shadow: none !important;
     }
-
-    .footer-block { width: 100%; }
+    .footer-block { 
+        width: 100%; 
+        padding-bottom: 8px;
+        flex-shrink: 0;
+    }
     
     .biometric-btn {
-        background-color: #e6f0ff !important;
-        color: #005ce6 !important;
-        border-radius: 10px !important;
-        height: 48px;
-        font-weight: 700 !important;
+        background-color: #f3f0ff !important;
+        color: #6450f3 !important;
+        border-radius: 16px !important;
+        height: 56px;
+        font-weight: 800 !important;
         text-transform: none !important;
-        font-size: 0.95rem !important;
+        font-size: 1rem !important;
         box-shadow: none !important;
+        border: 1px solid rgba(100, 80, 243, 0.1) !important;
     }
 </style>
 
@@ -169,12 +218,28 @@
     private string UserName { get; set; } = "User";
     private string UserRole { get; set; } = "";
     private string Initials { get; set; } = "U";
+    private string? _profilePictureUrl;
+    private bool _isBiometricEnabled = false;
 
     protected override async Task OnInitializedAsync()
     {
-        // Load user info from SecureStorage
-        var name = await SecureStorage.Default.GetAsync("user_name");
-        var role = await SecureStorage.Default.GetAsync("user_role");
+        // Restore auth state from saved token first
+        var token = await SecureStorage.Default.GetAsync("jwt_token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            ((VikashERP.Mobile.State.CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(token);
+        }
+
+        // Load user info directly from the authenticated token claims
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        var name = user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? 
+                   user.FindFirst("name")?.Value ?? 
+                   user.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? "User";
+                   
+        var role = user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? 
+                   user.FindFirst("role")?.Value ?? "";
 
         if (!string.IsNullOrEmpty(name))
         {
@@ -185,14 +250,11 @@
                 : name[..1].ToUpper();
         }
 
-        UserRole = role ?? "";
-
-        // Restore auth state from saved token
-        var token = await SecureStorage.Default.GetAsync("jwt_token");
-        if (!string.IsNullOrEmpty(token))
-        {
-            ((VikashERP.Mobile.State.CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(token);
-        }
+        UserRole = role;
+        
+        _profilePictureUrl = AppState.UserProfilePictureUrl ?? user.FindFirst("picture")?.Value ?? user.FindFirst(System.Security.Claims.ClaimTypes.Uri)?.Value;
+        
+        _isBiometricEnabled = await AuthService.IsBiometricEnabledAsync();
     }
 
     private void KeyPressed(int num)
@@ -263,5 +325,17 @@
         await AuthService.LogoutAsync();
         ((VikashERP.Mobile.State.CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
         Navigation.NavigateTo("/login", true);
+    }
+    
+    private string GetImageUrl(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        if (path.StartsWith("http") || path.StartsWith("data:")) return path;
+        
+        if (path.StartsWith("/"))
+            path = path.Substring(1);
+            
+        var client = HttpClientFactory.CreateClient("ApiClient");
+        return $"{client.BaseAddress}{path}";
     }
 }

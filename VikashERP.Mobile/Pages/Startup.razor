@@ -2,15 +2,9 @@
 @using VikashERP.Mobile.Services.Interfaces
 @layout VikashERP.Mobile.Components.Layout.EmptyLayout
 
-<div class="d-flex flex-column align-center justify-center" style="height: 100vh; background-color: #fafbfc;">
-    <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2009/svg" class="mb-4">
-        <path d="M15 25 L50 85 L38 85 L15 35 Z" fill="#144b82" />
-        <path d="M15 25 L35 25 L50 85 L15 25" fill="#1e73be" />
-        <path d="M85 25 L50 85 L62 85 L85 35 Z" fill="#9ea7b0" />
-        <path d="M85 25 L65 25 L50 85 L85 25" fill="#3a4047" />
-        <polygon points="35,25 65,25 50,55" fill="white" />
-    </svg>
-    <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+<div class="splash-loading">
+    <div class="spinner"></div>
+    <div style="font-size: 1.1rem; font-weight: 500; letter-spacing: 1px; color: #E2E8F0;">Vikash Iron ERP</div>
 </div>
 
 @code {

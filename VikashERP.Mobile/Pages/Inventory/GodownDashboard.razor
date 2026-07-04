@@ -1,0 +1,318 @@
+@page "/godown-dashboard"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@inject IInventoryService InventoryService
+@inject ISnackbar Snackbar
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<div class="godown-page">
+    @* Page Header *@
+    <div class="d-flex justify-space-between align-end mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">Live Inventory</MudText>
+            <MudText Typo="Typo.body2" Style="color: #666;">
+                Real-time tracking and stock alerts
+            </MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadData" Disabled="_isLoading" />
+    </div>
+
+    @* KPIs Grid *@
+    <MudGrid Spacing="2" Class="mb-4">
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #e3f2fd;">
+                        <MudIcon Icon="@Icons.Material.Filled.Inventory2" Style="color: #1976d2;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Total Items</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_stockList.Count</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #e8f5e9;">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: #388e3c;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Healthy</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_stockList.Count(x => x.StockStatus == "In Stock")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #fff3e0;">
+                        <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Style="color: #f57c00;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Low Stock</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_stockList.Count(x => x.StockStatus == "Low Stock")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #ffebee;">
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Style="color: #d32f2f;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Out of Stock</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_stockList.Count(x => x.StockStatus == "Out of Stock")</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Controls (Tabs & Filters) *@
+    <MudPaper Elevation="0" Class="pa-3 mb-4 controls-card">
+        <MudTabs @bind-ActivePanelIndex="_activeTabIndex" Elevation="0" Rounded="true" Color="Color.Primary" Class="mb-3 category-tabs">
+            <MudTabPanel Text="All" />
+            @foreach (var cat in _categories)
+            {
+                <MudTabPanel Text="@cat" />
+            }
+        </MudTabs>
+
+        <div class="d-flex gap-2">
+            <MudSelect T="string" @bind-Value="_statusFilter" Variant="Variant.Outlined" Class="light-input flex-1" Margin="Margin.Dense" Dense="true" AnchorOrigin="Origin.BottomCenter">
+                <MudSelectItem Value="@("All")">All Status</MudSelectItem>
+                <MudSelectItem Value="@("In Stock")">In Stock</MudSelectItem>
+                <MudSelectItem Value="@("Low Stock")">Low Stock</MudSelectItem>
+                <MudSelectItem Value="@("Out of Stock")">Out of Stock</MudSelectItem>
+            </MudSelect>
+            <MudTextField @bind-Value="_searchQuery" Placeholder="Search products..." 
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input flex-2" 
+                          Immediate="true" />
+        </div>
+    </MudPaper>
+
+    @* Inventory List *@
+    <div class="inventory-list d-flex flex-column gap-3 mb-6">
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Syncing Ledger..." Absolute="true" />
+        
+        @if (!_isLoading)
+        {
+            var filtered = GetFilteredItems().ToList();
+            if (!filtered.Any())
+            {
+                <div class="d-flex flex-column align-center justify-center py-8">
+                    <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Style="color: #ccc; font-size: 3rem;" />
+                    <MudText Typo="Typo.body2" Class="mt-2" Style="color: #666;">No products found.</MudText>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in filtered)
+                {
+                    <MudPaper Class="inventory-card pa-3" Elevation="0">
+                        <div class="d-flex justify-space-between align-start mb-2">
+                            <div class="flex-1 pr-2">
+                                @if (_activeTabIndex == 0)
+                                {
+                                    <MudText Typo="Typo.caption" Style="color: #1976d2; font-weight: 700; text-transform: uppercase;">
+                                        @item.CategoryName
+                                    </MudText>
+                                }
+                                <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 800; line-height: 1.2;">
+                                    @item.ProductName
+                                </MudText>
+                                <MudText Typo="Typo.caption" Style="color: #666; display: block; margin-top: 2px;">
+                                    Size: @item.Size | Thick: @item.Thickness
+                                </MudText>
+                            </div>
+                            <div class="d-flex flex-column align-end">
+                                @if (item.StockStatus == "In Stock")
+                                {
+                                    <span class="status-badge status-success">IN STOCK</span>
+                                }
+                                else if (item.StockStatus == "Low Stock")
+                                {
+                                    <span class="status-badge status-warning">LOW STOCK</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-error">OUT OF STOCK</span>
+                                }
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-space-between align-center mt-2 pt-2" style="border-top: 1px dashed rgba(0,0,0,0.1);">
+                            <MudText Typo="Typo.caption" Style="color: #666;">Current Stock</MudText>
+                            @if (item.CategoryName == "Cosmetic")
+                            {
+                                <MudText Typo="Typo.h6" Style="color: #1976d2; font-weight: 800; font-family: monospace;">
+                                    @item.RunningPcs.ToString("N0") <span style="font-size: 0.7rem; color: #666;">Pcs</span>
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.h6" Style="color: #d81b60; font-weight: 800; font-family: monospace;">
+                                    @item.RunningWeightKg.ToString("N2") <span style="font-size: 0.7rem; color: #666;">Kg</span>
+                                </MudText>
+                            }
+                        </div>
+                    </MudPaper>
+                }
+            }
+        }
+    </div>
+</div>
+
+<style>
+    .godown-page {
+        background-color: #fafbfc;
+        min-height: 100vh;
+        padding: 16px;
+        padding-bottom: 80px; /* Space for bottom nav */
+    }
+    
+    .stat-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+    
+    .stat-icon-wrapper {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .controls-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+
+    .category-tabs ::deep .mud-tabs-tab {
+        min-width: auto;
+        padding: 6px 12px;
+        font-weight: 700;
+        text-transform: none;
+        font-size: 0.85rem;
+    }
+
+    .inventory-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+
+    .status-badge {
+        font-size: 0.6rem;
+        font-weight: 800;
+        padding: 4px 8px;
+        border-radius: 6px;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    .status-success {
+        background-color: #e8f5e9;
+        color: #388e3c;
+    }
+    .status-warning {
+        background-color: #fff3e0;
+        color: #f57c00;
+    }
+    .status-error {
+        background-color: #ffebee;
+        color: #d32f2f;
+    }
+
+    .light-input .mud-input-outlined {
+        background-color: white !important;
+        color: #1a2530 !important;
+        border-radius: 8px !important;
+    }
+    .light-input .mud-input-outlined-border {
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@code {
+    private bool _isLoading = true;
+    private List<GodownStockDto> _stockList = new();
+    private List<string> _categories = new();
+    
+    private string _searchQuery = "";
+    private string _statusFilter = "All";
+    private int _activeTabIndex = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _stockList = await InventoryService.GetGodownStockAsync();
+            _stockList = _stockList
+                .OrderBy(x => x.CategoryName)
+                .ThenBy(x => x.ProductName)
+                .ThenBy(x => x.Size)
+                .ThenBy(x => x.Thickness)
+                .ToList();
+
+            _categories = _stockList
+                .Where(x => !string.IsNullOrEmpty(x.CategoryName))
+                .Select(x => x.CategoryName)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _stockList = new();
+            _categories = new();
+            Snackbar.Add($"Failed to load stock: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private IEnumerable<GodownStockDto> GetFilteredItems()
+    {
+        var query = _stockList.AsEnumerable();
+
+        if (_activeTabIndex > 0 && _activeTabIndex <= _categories.Count)
+        {
+            var selectedCategory = _categories[_activeTabIndex - 1];
+            query = query.Where(x => x.CategoryName == selectedCategory);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            query = query.Where(x => 
+                (x.ProductName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.CategoryName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.Size?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.Thickness?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+            );
+        }
+
+        if (_statusFilter != "All")
+        {
+            query = query.Where(x => x.StockStatus == _statusFilter);
+        }
+
+        return query;
+    }
+}

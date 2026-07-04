@@ -5,5 +5,5 @@ namespace VikashERP.Mobile.Services.Interfaces;
 public interface IUserProfileService
 {
     Task<UserAccountDto?> GetProfileAsync(Guid userId);
-    Task<bool> UpdateProfileAsync(Guid userId, UpdateUserAccountDto profile);
+    Task<(bool IsSuccess, string ErrorMessage)> UpdateProfileAsync(Guid userId, UpdateUserAccountDto profile);
 }

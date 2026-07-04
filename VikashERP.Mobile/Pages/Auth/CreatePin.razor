@@ -4,13 +4,16 @@
 @layout VikashERP.Mobile.Components.Layout.EmptyLayout
 
 <div class="pin-page-container d-flex flex-column">
+    @* Background Image Decorations *@
+    <div class="bg-decoration-top"></div>
+    <div class="bg-decoration-bottom"></div>
 
-    <div class="brand-block d-flex flex-column align-center">
+    <div class="brand-block d-flex flex-column align-center" style="position: relative; z-index: 10;">
         <svg width="52" height="52" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2009/svg" class="mb-1">
-            <path d="M15 25 L50 85 L38 85 L15 35 Z" fill="#144b82" />
-            <path d="M15 25 L35 25 L50 85 L15 25" fill="#1e73be" />
-            <path d="M85 25 L50 85 L62 85 L85 35 Z" fill="#9ea7b0" />
-            <path d="M85 25 L65 25 L50 85 L85 25" fill="#3a4047" />
+            <path d="M15 25 L50 85 L38 85 L15 35 Z" fill="#4c1d95" />
+            <path d="M15 25 L35 25 L50 85 L15 25" fill="#7c3aed" />
+            <path d="M85 25 L50 85 L62 85 L85 35 Z" fill="#c4b5fd" />
+            <path d="M85 25 L65 25 L50 85 L85 25" fill="#a78bfa" />
             <polygon points="35,25 65,25 50,55" fill="white" />
         </svg>
         <div style="text-align: center; line-height: 1.15;">
@@ -19,22 +22,22 @@
         </div>
     </div>
 
-    <div class="content-block d-flex flex-column align-center px-6">
+    <div class="content-block d-flex flex-column align-center px-6" style="position: relative; z-index: 10;">
 
         <div class="header-block d-flex flex-column align-center">
             <div class="d-flex align-center" style="gap:8px;">
-                <MudIcon Icon="@Icons.Material.Filled.Lock" Style="color: #0066ff; font-size: 1.6rem;" />
-                <MudText Typo="Typo.h5" Style="font-weight:700; color:#1a2530;">
+                <MudIcon Icon="@Icons.Material.Rounded.Lock" Style="color: #6450f3; font-size: 1.8rem;" />
+                <MudText Typo="Typo.h5" Style="font-weight:800; color:#1a2530;">
                     Create New PIN
                 </MudText>
             </div>
-            <MudText Typo="Typo.body2" Style="color: #666; text-align: center; max-width: 260px;" Class="mt-1">
+            <MudText Typo="Typo.body2" Style="color: #666; text-align: center; max-width: 260px; font-weight: 500;" Class="mt-1">
                 Set a 4 digit PIN to secure your account
             </MudText>
         </div>
 
         <div class="pin-block d-flex flex-column align-center">
-            <MudText Typo="Typo.body2" Style="font-weight: 700; color: #1a2530;" Class="mb-2">Create PIN</MudText>
+            <MudText Typo="Typo.body2" Style="font-weight: 700; color: #1a2530;" Class="mb-2 mt-2">CREATE PIN</MudText>
             <div class="d-flex gap-4 mb-4">
                 @for (int i = 0; i < 4; i++)
                 {
@@ -43,7 +46,7 @@
                 }
             </div>
 
-            <MudText Typo="Typo.body2" Style="font-weight: 700; color: #1a2530;" Class="mb-2">Confirm PIN</MudText>
+            <MudText Typo="Typo.body2" Style="font-weight: 700; color: #1a2530;" Class="mb-2 mt-2">CONFIRM PIN</MudText>
             <div class="d-flex gap-4">
                 @for (int i = 0; i < 4; i++)
                 {
@@ -53,14 +56,14 @@
             </div>
         </div>
 
-        <div class="security-alert d-flex align-center pa-3">
-            <MudIcon Icon="@Icons.Material.Outlined.VerifiedUser" Style="color: #0066ff; font-size: 1.4rem;" Class="mr-2" />
-            <MudText Typo="Typo.body2" Style="color: #1a2530; line-height: 1.3; font-size: 0.82rem;">
+        <div class="security-alert d-flex align-center pa-3 mt-2">
+            <MudIcon Icon="@Icons.Material.Rounded.VerifiedUser" Style="color: #6450f3; font-size: 1.4rem;" Class="mr-3" />
+            <MudText Typo="Typo.body2" Style="color: #1a2530; line-height: 1.3; font-size: 0.82rem; font-weight: 600;">
                 Your PIN keeps your account secure. Don't share it with anyone.
             </MudText>
         </div>
 
-        <div class="keypad-block d-flex flex-column align-center">
+        <div class="keypad-block d-flex flex-column align-center mt-4">
             <div class="keypad-container">
                 @for (int i = 1; i <= 9; i++)
                 {
@@ -70,19 +73,19 @@
                 <div class="keypad-spacer"></div>
                 <MudButton Variant="Variant.Text" Class="keypad-btn" OnClick="@(() => KeyPressed(0))">0</MudButton>
                 <MudButton Variant="Variant.Text" Class="keypad-btn backspace-btn" OnClick="@Backspace">
-                    <MudIcon Icon="@Icons.Material.Outlined.Backspace" Size="Size.Medium" />
+                    <MudIcon Icon="@Icons.Material.Rounded.Backspace" Size="Size.Medium" Style="color: #666;" />
                 </MudButton>
             </div>
         </div>
 
-        <div class="footer-block d-flex flex-column align-center">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="save-btn" OnClick="@SavePin" Disabled="@(!IsPinValid)" Style="max-width: 300px;">
-                Save PIN
+        <div class="footer-block d-flex flex-column align-center mt-4">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="save-btn" OnClick="@SavePin" Disabled="@(!IsPinValid)" Style="max-width: 320px;">
+                Secure & Save PIN
             </MudButton>
 
-            <div class="d-flex align-center justify-center mt-2" style="opacity: 0.6;">
-                <MudIcon Icon="@Icons.Material.Outlined.Security" Size="Size.Small" Style="color: #666;" Class="mr-1" />
-                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.78rem;">Your information is safe with us</MudText>
+            <div class="d-flex align-center justify-center mt-3" style="opacity: 0.8;">
+                <MudIcon Icon="@Icons.Material.Rounded.Security" Size="Size.Small" Style="color: #4caf50;" Class="mr-2" />
+                <MudText Typo="Typo.caption" Style="color: #888; font-weight: 600; font-size: 0.78rem;">Your information is end-to-end encrypted</MudText>
             </div>
         </div>
     </div>
@@ -91,15 +94,37 @@
 <style>
     .pin-page-container {
         height: 100vh;
-        height: 100dvh; /* real visible viewport on mobile, avoids browser-chrome overflow */
+        height: 100dvh;
         max-height: 100dvh;
-        background-color: #fafbfc;
+        background-color: #fcfcfd;
         position: relative;
-        overflow-y: hidden; /* prevents scrolling */
+        overflow: hidden;
         padding-top: env(safe-area-inset-top);
         padding-bottom: env(safe-area-inset-bottom);
         display: flex;
         flex-direction: column;
+    }
+    
+    .bg-decoration-top {
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(252, 252, 253, 0) 70%);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .bg-decoration-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 150px;
+        background: linear-gradient(to top, rgba(100, 80, 243, 0.08) 0%, rgba(252, 252, 253, 0) 100%);
+        z-index: 0;
+        pointer-events: none;
     }
 
     .brand-block {
@@ -110,92 +135,106 @@
     .brand-name {
         font-weight: 800;
         font-size: 1.15rem;
-        color: #144b82;
+        color: #4c1d95;
         letter-spacing: 1px;
     }
     .brand-sub {
         font-size: 0.55rem;
-        font-weight: 600;
-        color: #666;
+        font-weight: 700;
+        color: #7c3aed;
         letter-spacing: 2px;
     }
 
-    /* Even, deliberate rhythm between sections instead of one big gap.
-       min-height:0 lets this block shrink inside the flex column so it
-       never overflows top/bottom; gap scales slightly with viewport height. */
     .content-block {
         flex: 1;
         min-height: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: clamp(10px, 2.2vh, 18px);
-        padding-top: 8px;
+        justify-content: space-evenly;
+        width: 100%;
         padding-bottom: 12px;
     }
 
-    .header-block { margin-bottom: 2px; }
+    .header-block { }
 
     .pin-dot {
         width: 18px; height: 18px;
         border-radius: 50%;
-        border: 2.5px solid #1a2530;
+        border: 2.5px solid #d1d5db;
         background-color: transparent;
         transition: all 0.2s ease;
     }
     .pin-dot.filled {
-        background-color: #0066ff;
-        border-color: #0066ff;
+        background-color: #6450f3;
+        border-color: #6450f3;
+        box-shadow: 0 0 10px rgba(100, 80, 243, 0.4);
     }
 
     .security-alert {
-        background-color: #f0f5ff;
-        border-radius: 10px;
+        background-color: #f3f0ff;
+        border-radius: 16px;
         width: 100%;
-        border: 1px solid rgba(0, 102, 255, 0.1);
+        max-width: 350px;
+        border: 1px solid rgba(100, 80, 243, 0.1);
+        box-shadow: 0 4px 12px rgba(100, 80, 243, 0.05);
     }
 
     .keypad-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
+        gap: clamp(8px, 1.5vh, 20px);
         width: 100%;
-        max-width: 350px;
+        max-width: 300px;
     }
     .keypad-btn {
         background-color: white !important;
         border: none !important;
         border-radius: 50% !important;
-        height: 75px !important;
-        width: 75px !important;
+        height: clamp(45px, 8.5vh, 68px) !important;
+        width: clamp(45px, 8.5vh, 68px) !important;
         margin: 0 auto !important;
         min-width: 0 !important;
-        font-size: 1.8rem !important;
+        font-size: 1.6rem !important;
         font-weight: 700 !important;
         color: #1a2530 !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06) !important;
         text-transform: none !important;
+        transition: transform 0.1s;
+    }
+    .keypad-btn:active {
+        transform: scale(0.95);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
     }
     .backspace-btn {
         background-color: transparent !important;
         box-shadow: none !important;
     }
-    .keypad-spacer { height: 65px; }
+    .keypad-spacer { height: clamp(30px, 7vh, 50px); }
 
-    .footer-block { width: 100%; }
+    .footer-block { 
+        width: 100%; 
+        padding-bottom: 4px;
+        flex-shrink: 0;
+    }
     .save-btn {
-        background-color: #005ce6 !important;
-        border-radius: 10px !important;
-        height: 48px;
-        font-weight: 700 !important;
+        background-color: #6450f3 !important;
+        border-radius: 16px !important;
+        height: 56px;
+        font-weight: 800 !important;
         text-transform: none !important;
-        font-size: 1rem !important;
+        font-size: 1.05rem !important;
+        box-shadow: 0 8px 20px rgba(100, 80, 243, 0.3) !important;
+        transition: all 0.2s ease;
+    }
+    .save-btn:active {
+        transform: scale(0.98);
+        box-shadow: 0 4px 10px rgba(100, 80, 243, 0.2) !important;
     }
     .save-btn.mud-button-disabled {
-        background-color: #b3d1ff !important;
-        color: white !important;
-        opacity: 0.7;
+        background-color: #e5e5e5 !important;
+        color: #a3a3a3 !important;
+        box-shadow: none !important;
     }
 </style>
 

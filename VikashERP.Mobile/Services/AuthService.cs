@@ -1,18 +1,19 @@
 using VikashERP.Mobile.Models;
 using VikashERP.Mobile.Services.Interfaces;
 using VikashERP.Mobile.State;
+using System.Net.Http;
 using System.Net.Http.Json;
 
 namespace VikashERP.Mobile.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly AppStateService _appStateService;
 
-    public AuthService(HttpClient httpClient, AppStateService appStateService)
+    public AuthService(IHttpClientFactory httpClientFactory, AppStateService appStateService)
     {
-        _httpClient = httpClient;
+        _httpClientFactory = httpClientFactory;
         _appStateService = appStateService;
     }
 
@@ -20,7 +21,8 @@ public class AuthService : IAuthService
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("api/auth/login", new { Email = email, Password = password });
+            var client = _httpClientFactory.CreateClient("AuthClient");
+            var response = await client.PostAsJsonAsync("api/auth/login", new { Email = email, Password = password });
 
             if (response.IsSuccessStatusCode)
             {
@@ -28,6 +30,10 @@ public class AuthService : IAuthService
                 if (result != null && !string.IsNullOrEmpty(result.Token))
                 {
                     await _appStateService.SetTokenAsync(result.Token);
+                    if (!string.IsNullOrEmpty(result.RefreshToken))
+                    {
+                        await _appStateService.SetRefreshTokenAsync(result.RefreshToken);
+                    }
                     return result;
                 }
             }
@@ -39,9 +45,55 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<bool> RefreshTokenAsync()
+    {
+        try
+        {
+            var accessToken = await _appStateService.GetTokenAsync();
+            var refreshToken = await _appStateService.GetRefreshTokenAsync();
+
+            if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+            {
+                return false;
+            }
+
+            var requestBody = new 
+            { 
+                AccessToken = accessToken, 
+                RefreshToken = refreshToken 
+            };
+
+            var client = _httpClientFactory.CreateClient("AuthClient");
+            // Also need to pass the old access token in header just in case backend expects it
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await client.PostAsJsonAsync("api/auth/refresh-token", requestBody);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>(new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (result != null && !string.IsNullOrEmpty(result.Token) && !string.IsNullOrEmpty(result.RefreshToken))
+                {
+                    await _appStateService.SetTokenAsync(result.Token);
+                    await _appStateService.SetRefreshTokenAsync(result.RefreshToken);
+                    return true;
+                }
+            }
+            
+            // If we fail to refresh (e.g. 401 on refresh endpoint, meaning refresh token is expired)
+            await LogoutAsync();
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task LogoutAsync()
     {
         await _appStateService.RemoveTokenAsync();
+        await _appStateService.RemoveRefreshTokenAsync();
         SecureStorage.Default.Remove("user_pin");
         SecureStorage.Default.Remove("biometric_enabled");
     }

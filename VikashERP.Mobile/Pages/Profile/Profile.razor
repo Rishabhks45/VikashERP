@@ -29,147 +29,165 @@ else if (_profile == null)
 else
 {
     @* ---- Header Section ---- *@
-    <MudPaper Class="hero-card mb-4 mt-2" Elevation="0">
-        <div class="d-flex flex-column align-center pa-4" style="position: relative;">
-            
-            <div class="avatar-container mb-3" style="position: relative;">
+    <div class="profile-header-container mb-6">
+        <div class="profile-header-bg"></div>
+        <div class="d-flex flex-column align-center pt-8 pb-4" style="position: relative; z-index: 2;">
+            <div class="avatar-container mb-3">
                 <label for="fileInput" style="@(_isEditing ? "cursor: pointer;" : "cursor: default;")">
-                    @if (!string.IsNullOrEmpty(_profile.ProfilePictureUrl))
-                    {
-                        <MudAvatar Style="height: 72px; width: 72px; font-size: 1.5rem; font-weight: 600; background-color: white; color: #185FA5;">
-                            <MudImage Src="@GetImageUrl(_profile.ProfilePictureUrl)" Style="width: 100%; height: 100%; object-fit: cover;" />
-                        </MudAvatar>
-                    }
-                    else
-                    {
-                        <MudAvatar Style="height: 72px; width: 72px; font-size: 1.5rem; font-weight: 600; background-color: white; color: #185FA5;">
-                            @GetInitials()
-                        </MudAvatar>
-                    }
-                    @if (_isEditing)
-                    {
-                        <div class="edit-badge">
-                            <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" Style="color: white; font-size: 14px;" />
-                        </div>
-                    }
+                    <div class="avatar-wrapper">
+                        @if (!string.IsNullOrEmpty(_profile.ProfilePictureUrl))
+                        {
+                            <MudAvatar Style="height: 88px; width: 88px; background-color: white; border: 3px solid white; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                                <MudImage Src="@GetImageUrl(_profile.ProfilePictureUrl)" Style="width: 100%; height: 100%; object-fit: cover;" fetchpriority="high" />
+                            </MudAvatar>
+                        }
+                        else
+                        {
+                            <MudAvatar Style="height: 88px; width: 88px; font-size: 2rem; font-weight: 700; background-color: white; color: #6450f3; border: 3px solid white; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                                @GetInitials()
+                            </MudAvatar>
+                        }
+                        @if (_isEditing)
+                        {
+                            <div class="edit-badge">
+                                <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" Style="color: white; font-size: 16px;" />
+                            </div>
+                        }
+                    </div>
                 </label>
                 <InputFile id="fileInput" OnChange="UploadProfilePicture" style="display:none;" accept="image/*" disabled="@(!_isEditing)" />
             </div>
 
-            <MudText Typo="Typo.h6" Style="font-weight: 700; color: white; line-height: 1.2;">@_profile.FirstName @_profile.LastName</MudText>
-            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.9);" Class="mb-2">@_profile.Role</MudText>
-            <MudChip T="string" Size="Size.Small" Style="background-color: rgba(255,255,255,0.2); color: white; font-weight: 600; border-radius: 16px;">User ID: @_profile.Id.ToString().Substring(0, 8).ToUpper()</MudChip>
+            <MudText Typo="Typo.h5" Style="font-weight: 800; color: white; line-height: 1.2; text-shadow: 0 2px 8px rgba(0,0,0,0.2);">@_profile.FirstName @_profile.LastName</MudText>
+            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.9); font-weight: 500;" Class="mb-3">@_profile.Role</MudText>
+            <div class="user-id-chip">User ID: @_profile.Id.ToString().Substring(0, 8).ToUpper()</div>
         </div>
-    </MudPaper>
+    </div>
 
     @* ---- Stats Grid ---- *@
-    <MudGrid Spacing="3" Class="mb-6">
+    <MudGrid Spacing="3" Class="mb-6 px-4" Style="margin-top: -40px; position: relative; z-index: 3;">
         <MudItem xs="6">
             <MudPaper Class="stat-card d-flex flex-column align-center justify-center pa-4" Elevation="0">
-                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;">Since</MudText>
-                <MudText Typo="Typo.caption" Style="color: #666;">@_profile.CreatedAt.ToString("MMM yyyy")</MudText>
+                <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1a2530;">@_profile.CreatedAt.ToString("MMM yyyy")</MudText>
+                <MudText Typo="Typo.caption" Style="color: #888; font-weight: 600;">JOINED</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="6">
             <MudPaper Class="stat-card d-flex flex-column align-center justify-center pa-4" Elevation="0">
-                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;">Status</MudText>
-                <MudText Typo="Typo.caption" Style="color: #666;">@(_profile.IsActive ? "Active" : "Inactive")</MudText>
+                <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1a2530;">@(_profile.IsActive ? "Active" : "Inactive")</MudText>
+                <MudText Typo="Typo.caption" Style="color: #888; font-weight: 600;">STATUS</MudText>
             </MudPaper>
         </MudItem>
     </MudGrid>
 
-    @* ---- Edit Profile Form ---- *@
-    <div class="d-flex align-center justify-space-between mb-2 px-1">
-        <MudText Typo="Typo.caption" Style="color: #888; font-weight: 600; letter-spacing: 0.5px;">PROFILE INFO</MudText>
-        @if (!_isEditing)
-        {
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="EnableEditMode" />
-        }
-    </div>
-
-    <MudPaper Class="settings-card mb-6 pa-4" Elevation="0">
-        <MudForm @ref="_form" @bind-IsValid="@_success" @bind-Errors="@_errors">
-            <MudTextField @bind-Value="_profile.FirstName" Label="First Name" Required="true" RequiredError="First name is required!" Variant="Variant.Outlined" Class="mb-3" ReadOnly="!_isEditing" />
-            <MudTextField @bind-Value="_profile.LastName" Label="Last Name" Required="true" RequiredError="Last name is required!" Variant="Variant.Outlined" Class="mb-3" ReadOnly="!_isEditing" />
-            <MudTextField @bind-Value="_profile.Email" Label="Email" Required="true" RequiredError="Email is required!" Variant="Variant.Outlined" Class="mb-4" ReadOnly="!_isEditing" />
-            
-            @if (_isEditing)
+    <div class="px-4">
+        @* ---- Edit Profile Form ---- *@
+        <div class="d-flex align-center justify-space-between mb-3 px-1">
+            <MudText Typo="Typo.caption" Style="color: #888; font-weight: 700; letter-spacing: 1px;">PERSONAL INFO</MudText>
+            @if (!_isEditing)
             {
-                <div class="d-flex gap-3">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" FullWidth="true" OnClick="CancelEditMode" Class="py-3" Style="border-radius: 8px;">
-                        Cancel
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SaveProfile" Disabled="@_isSaving" Class="py-3" Style="border-radius: 8px;">
-                        @if (_isSaving)
-                        {
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/> <span>Saving...</span>
-                        }
-                        else
-                        {
-                            <span>Save Changes</span>
-                        }
-                    </MudButton>
-                </div>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="EnableEditMode" Style="background: rgba(100, 80, 243, 0.1); color: #6450f3 !important; padding: 4px;" />
             }
-        </MudForm>
-    </MudPaper>
+        </div>
 
-    @* ---- Account Settings ---- *@
-    <MudText Typo="Typo.caption" Style="color: #888; font-weight: 600; letter-spacing: 0.5px;" Class="mb-2 d-block px-1">ACCOUNT</MudText>
-    <MudPaper Class="settings-card mb-6" Elevation="0">
-        <MudList T="string" Padding="false">
-            <MudListItem OnClick="OpenPasswordDialog">
-                <div class="d-flex align-center justify-space-between py-2">
-                    <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Outlined.Lock" Size="Size.Small" Style="color: #666;" Class="mr-4" />
-                        <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 600;">Change password</MudText>
+        <MudPaper Class="settings-card mb-6 pa-5" Elevation="0">
+            <MudForm @ref="_form" @bind-IsValid="@_success" @bind-Errors="@_errors">
+                <MudTextField @bind-Value="_profile.FirstName" Label="First Name" Required="true" RequiredError="First name is required!" Variant="Variant.Outlined" Class="mb-4 custom-input" ReadOnly="!_isEditing" />
+                <MudTextField @bind-Value="_profile.LastName" Label="Last Name" Required="true" RequiredError="Last name is required!" Variant="Variant.Outlined" Class="mb-4 custom-input" ReadOnly="!_isEditing" />
+                <MudTextField @bind-Value="_profile.Email" Label="Email Address" Variant="Variant.Outlined" Class="mb-4 custom-input" ReadOnly="true" Disabled="true" />
+                
+                @if (_isEditing)
+                {
+                    <div class="d-flex gap-3 mt-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Default" FullWidth="true" OnClick="CancelEditMode" Class="py-3 cancel-btn">
+                            Cancel
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SaveProfile" Disabled="@_isSaving" Class="py-3 save-btn">
+                            @if (_isSaving)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/> <span>Saving...</span>
+                            }
+                            else
+                            {
+                                <span>Save Changes</span>
+                            }
+                        </MudButton>
                     </div>
-                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="color: #999;" />
-                </div>
-            </MudListItem>
-            <MudDivider />
-            <MudListItem OnClick='@(() => Navigation.NavigateTo("/create-pin"))'>
-                <div class="d-flex align-center justify-space-between py-2">
-                    <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Outlined.Pin" Size="Size.Small" Style="color: #666;" Class="mr-4" />
-                        <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 600;">Change PIN</MudText>
-                    </div>
-                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Style="color: #999;" />
-                </div>
-            </MudListItem>
-            <MudDivider />
-            <MudListItem>
-                <div class="d-flex align-center justify-space-between py-1 w-100">
-                    <div class="d-flex align-center">
-                        <MudIcon Icon="@Icons.Material.Outlined.Fingerprint" Size="Size.Small" Style="color: #666;" Class="mr-4" />
-                        <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 600;">Enable Biometric</MudText>
-                    </div>
-                    <MudSwitch T="bool" Value="@_isBiometricEnabled" ValueChanged="ToggleBiometric" Color="Color.Primary" />
-                </div>
-            </MudListItem>
-        </MudList>
-    </MudPaper>
+                }
+            </MudForm>
+        </MudPaper>
 
-    @* ---- Log out ---- *@
-    <MudButton Variant="Variant.Filled" FullWidth="true" Class="logout-btn mb-4 py-3" StartIcon="@Icons.Material.Outlined.Logout" OnClick="Logout">
-        Log out
-    </MudButton>
+        @* ---- Account Settings ---- *@
+        <MudText Typo="Typo.caption" Style="color: #888; font-weight: 700; letter-spacing: 1px;" Class="mb-3 d-block px-1">SECURITY & SETTINGS</MudText>
+        <MudPaper Class="settings-card mb-8" Elevation="0">
+            <MudList T="string" Padding="false">
+                <MudListItem OnClick="OpenPasswordDialog" Class="custom-list-item">
+                    <div class="d-flex align-center justify-space-between py-2">
+                        <div class="d-flex align-center">
+                            <div class="list-icon-wrapper" style="background-color: #fff4e5;">
+                                <MudIcon Icon="@Icons.Material.Rounded.Lock" Size="Size.Small" Style="color: #ff9800;" />
+                            </div>
+                            <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 700; margin-left: 12px;">Change Password</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Rounded.ChevronRight" Size="Size.Small" Style="color: #ccc;" />
+                    </div>
+                </MudListItem>
+                <MudDivider Style="opacity: 0.5;" />
+                <MudListItem OnClick='@(() => Navigation.NavigateTo("/create-pin"))' Class="custom-list-item">
+                    <div class="d-flex align-center justify-space-between py-2">
+                        <div class="d-flex align-center">
+                            <div class="list-icon-wrapper" style="background-color: #e3f2fd;">
+                                <MudIcon Icon="@Icons.Material.Rounded.Pin" Size="Size.Small" Style="color: #2196f3;" />
+                            </div>
+                            <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 700; margin-left: 12px;">Update App PIN</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Rounded.ChevronRight" Size="Size.Small" Style="color: #ccc;" />
+                    </div>
+                </MudListItem>
+                <MudDivider Style="opacity: 0.5;" />
+                <MudListItem Class="custom-list-item">
+                    <div class="d-flex align-center justify-space-between py-1 w-100">
+                        <div class="d-flex align-center">
+                            <div class="list-icon-wrapper" style="background-color: #e8f5e9;">
+                                <MudIcon Icon="@Icons.Material.Rounded.Fingerprint" Size="Size.Small" Style="color: #4caf50;" />
+                            </div>
+                            <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 700; margin-left: 12px;">Biometric Login</MudText>
+                        </div>
+                        <MudSwitch T="bool" Value="@_isBiometricEnabled" ValueChanged="ToggleBiometric" Color="Color.Primary" />
+                    </div>
+                </MudListItem>
+            </MudList>
+        </MudPaper>
+
+        @* ---- Log out ---- *@
+        <MudButton Variant="Variant.Filled" FullWidth="true" Class="logout-btn mb-10 py-3" OnClick="Logout">
+            <div class="d-flex align-center justify-center">
+                <MudIcon Icon="@Icons.Material.Rounded.Logout" Class="mr-2" />
+                <span>Sign Out</span>
+            </div>
+        </MudButton>
+    </div>
 }
 
 @* ---- Password Change Dialog Overlay ---- *@
 @if (_isPasswordDialogOpen)
 {
-    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center;">
-        <MudPaper Class="pa-6" Style="width: 320px; max-width: 90vw; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
-            <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;" Class="mb-2">Change Password</MudText>
-            <MudText Typo="Typo.body2" Style="color: #666;" Class="mb-4">Enter your new password below.</MudText>
+    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(26, 37, 48, 0.4); backdrop-filter: blur(8px); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+        <MudPaper Class="pa-6" Style="width: 340px; max-width: 90vw; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div class="d-flex justify-center mb-4">
+                <div class="list-icon-wrapper" style="background-color: #fff4e5; width: 48px; height: 48px; border-radius: 16px;">
+                    <MudIcon Icon="@Icons.Material.Rounded.LockReset" Style="color: #ff9800; font-size: 28px;" />
+                </div>
+            </div>
+            <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1a2530; text-align: center;" Class="mb-1">Change Password</MudText>
+            <MudText Typo="Typo.body2" Style="color: #888; text-align: center;" Class="mb-5">Enter your new secure password.</MudText>
             
-            <MudTextField @bind-Value="_newPassword" Label="New Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" />
-            <MudTextField @bind-Value="_confirmPassword" Label="Confirm Password" InputType="InputType.Password" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4" />
+            <MudTextField @bind-Value="_newPassword" Label="New Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4 custom-input" />
+            <MudTextField @bind-Value="_confirmPassword" Label="Confirm Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-5 custom-input" />
             
-            <div class="d-flex justify-end gap-2">
-                <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ClosePasswordDialog">Cancel</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitPasswordChange" Disabled="@_isChangingPassword">
+            <div class="d-flex justify-space-between gap-3">
+                <MudButton Variant="Variant.Filled" Color="Color.Default" FullWidth="true" OnClick="ClosePasswordDialog" Class="cancel-btn py-3">Cancel</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="SubmitPasswordChange" Disabled="@_isChangingPassword" Class="save-btn py-3">
                     @if(_isChangingPassword){ <MudProgressCircular Size="Size.Small" Indeterminate="true"/> } else { <span>Update</span> }
                 </MudButton>
             </div>
@@ -180,63 +198,137 @@ else
 @* ---- Image Cropper Overlay ---- *@
 @if (_isCropperOpen)
 {
-    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.85); z-index: 10001; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div style="width: 90vw; height: 60vh; background: #000; position: relative; border-radius: 8px; overflow: hidden;">
+    <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.9); z-index: 10001; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="width: 90vw; height: 60vh; background: #000; position: relative; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
             <CropperComponent @ref="_cropperComponent" Src="@_tempImageUrl" Options="_cropperOptions" />
         </div>
-        <div class="d-flex justify-center gap-4 mt-6">
-            <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="CancelCropper" Style="border-radius: 8px; font-weight: 600;">Cancel</MudButton>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveCroppedImage" Style="border-radius: 8px; font-weight: 600;">Crop & Save</MudButton>
+        <div class="d-flex justify-center gap-4 mt-8">
+            <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="CancelCropper" Style="border-radius: 12px; font-weight: 700; padding: 12px 24px;">Cancel</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveCroppedImage" Style="border-radius: 12px; font-weight: 700; padding: 12px 24px; background: #6450f3;">Crop & Save</MudButton>
         </div>
     </div>
 }
 
 <style>
-    .hero-card {
-        background: linear-gradient(135deg, #185FA5 0%, #4A90E2 100%) !important;
-        border-radius: 16px !important;
-        box-shadow: 0 4px 15px rgba(24, 95, 165, 0.15) !important;
-    }
-    .stat-card {
-        background-color: white !important;
-        border-radius: 16px !important;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
-    }
-    .settings-card {
-        background-color: white !important;
-        border-radius: 16px !important;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+    .profile-header-container {
+        position: relative;
+        padding-top: 10px;
+        margin-left: -16px;
+        margin-right: -16px;
+        margin-top: -16px;
         overflow: hidden;
     }
-    .mud-list-item {
-        padding: 10px 16px !important;
+    .profile-header-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #6450f3 0%, #8b5cf6 100%);
+        border-radius: 0 0 32px 32px;
+        z-index: 1;
     }
+    
+    .avatar-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .user-id-chip {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        font-weight: 700;
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+        backdrop-filter: blur(4px);
+    }
+
+    .stat-card {
+        background-color: white !important;
+        border-radius: 20px !important;
+        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06) !important;
+    }
+    
+    .settings-card {
+        background-color: white !important;
+        border-radius: 20px !important;
+        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
+        overflow: hidden;
+    }
+    
+    .custom-list-item {
+        padding: 6px 16px !important;
+        transition: background-color 0.2s ease;
+    }
+    
+    .custom-list-item:active {
+        background-color: #f5f5f5 !important;
+    }
+    
+    .list-icon-wrapper {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
     .logout-btn {
-        background-color: #ffebee !important;
-        color: #d32f2f !important;
-        border-radius: 12px !important;
-        font-weight: 700 !important;
+        background-color: #fff0f0 !important;
+        color: #e53935 !important;
+        border-radius: 16px !important;
+        font-weight: 800 !important;
+        font-size: 1rem !important;
         text-transform: none !important;
         letter-spacing: 0.5px !important;
-        box-shadow: none !important;
+        box-shadow: 0 4px 12px rgba(229, 57, 53, 0.15) !important;
     }
-    .logout-btn .mud-icon-root {
-        color: #d32f2f !important;
-    }
+    
     .edit-badge {
         position: absolute;
         bottom: 0;
         right: 0;
-        background-color: #4A90E2;
+        background-color: #8b5cf6;
         border-radius: 50%;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 2px solid #185FA5;
+        border: 3px solid white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    
+    .custom-input .mud-input-outlined {
+        background-color: #f9f9f9 !important;
+        border-radius: 12px !important;
+    }
+    .custom-input .mud-input-outlined-border {
+        border-color: transparent !important;
+    }
+    .custom-input.mud-input-focused .mud-input-outlined-border {
+        border-color: #6450f3 !important;
+    }
+    
+    .save-btn {
+        background-color: #6450f3 !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        box-shadow: 0 4px 12px rgba(100, 80, 243, 0.3) !important;
+    }
+    
+    .cancel-btn {
+        background-color: #f5f5f5 !important;
+        color: #666 !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        text-transform: none !important;
+        box-shadow: none !important;
     }
 </style>
 
@@ -246,7 +338,7 @@ else
     [Inject] private IUserProfileService UserProfileService { get; set; } = default!;
     [Inject] private Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
     [Inject] private ISnackbar Snackbar { get; set; } = default!;
-    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
 
     private bool _isLoading = true;
     private bool _isSaving = false;
@@ -400,20 +492,26 @@ else
                 ProfilePictureUrl = _profile.ProfilePictureUrl
             };
 
-            var success = await UserProfileService.UpdateProfileAsync(_currentUserId, updateDto);
+            var result = await UserProfileService.UpdateProfileAsync(_currentUserId, updateDto);
 
             _isSaving = false;
             AppState.HideLoader();
 
-            if (success)
+            if (result.IsSuccess)
             {
                 Snackbar.Add("Profile updated successfully!", Severity.Success);
                 _isEditing = false;
                 CloneOriginalProfile();
+                
+                // Notify the rest of the app (like BottomNav) to update the picture instantly
+                if (_profile != null)
+                {
+                    AppState.UpdateProfilePicture(_profile.ProfilePictureUrl);
+                }
             }
             else
             {
-                Snackbar.Add("Failed to update profile.", Severity.Error);
+                Snackbar.Add($"Failed to update profile: {result.ErrorMessage}", Severity.Error);
             }
         }
     }
@@ -525,6 +623,12 @@ else
             return;
         }
 
+        if (_newPassword.Length < 6)
+        {
+            Snackbar.Add("Password must be at least 6 characters long.", Severity.Warning);
+            return;
+        }
+
         if (_newPassword != _confirmPassword)
         {
             Snackbar.Add("Passwords do not match.", Severity.Error);
@@ -546,16 +650,16 @@ else
                 ProfilePictureUrl = _profile.ProfilePictureUrl
             };
 
-            var success = await UserProfileService.UpdateProfileAsync(_currentUserId, updateDto);
+            var result = await UserProfileService.UpdateProfileAsync(_currentUserId, updateDto);
             
-            if (success)
+            if (result.IsSuccess)
             {
                 Snackbar.Add("Password updated successfully!", Severity.Success);
                 _isPasswordDialogOpen = false;
             }
             else
             {
-                Snackbar.Add("Failed to update password.", Severity.Error);
+                Snackbar.Add($"Failed to update password: {result.ErrorMessage}", Severity.Error);
             }
         }
         
@@ -612,6 +716,7 @@ else
         if (path.StartsWith("/"))
             path = path.Substring(1);
             
-        return $"{Http.BaseAddress}{path}";
+        var client = HttpClientFactory.CreateClient("ApiClient");
+        return $"{client.BaseAddress}{path}";
     }
 }

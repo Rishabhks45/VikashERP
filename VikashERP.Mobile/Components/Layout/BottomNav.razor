@@ -1,93 +1,238 @@
 @implements IDisposable
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IHttpClientFactory HttpClientFactory
 
-<MudPaper Elevation="8" Class="d-flex justify-space-around align-center py-2" Style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 2000; padding-bottom: max(env(safe-area-inset-bottom), 12px) !important; border-radius: 0; border-top: 1px solid var(--mud-palette-lines-default); background-color: var(--mud-palette-surface);">
-    <div class="nav-item @( _selected == 0 ? "selected" : "" )" @onclick="@(() => NavigateTo("/"))">
-        <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Medium" />
+<MudPaper Elevation="10" Class="bottom-nav">
+
+    <!-- Home -->
+    <div class="nav-item @(_selected == 0 ? "selected" : "")"
+         @onclick='() => NavigateTo("/manager-dashboard")'>
+        <MudIcon Icon="@(_selected == 0 ? Icons.Material.Filled.Home : Icons.Material.Outlined.Home)" />
         <span>Home</span>
     </div>
 
-    <div class="nav-item @( _selected == 1 ? "selected" : "" )" @onclick="@(() => NavigateTo("/sales"))">
-        <MudIcon Icon="@Icons.Material.Outlined.Assignment" Size="Size.Medium" />
-        <span>Orders</span>
-    </div>
-
-    <div class="nav-item @( _selected == 2 ? "selected" : "" )" @onclick="@(() => NavigateTo("/material-catalog"))">
-        <MudIcon Icon="@Icons.Material.Outlined.Inventory2" Size="Size.Medium" />
+    <!-- Stock -->
+    <div class="nav-item @(_selected == 1 ? "selected" : "")"
+         @onclick='() => NavigateTo("/godown-dashboard")'>
+        <MudIcon Icon="@(_selected == 1 ? Icons.Material.Filled.Inventory2 : Icons.Material.Outlined.Inventory2)" />
         <span>Stock</span>
     </div>
 
-    <div class="nav-item @( _selected == 3 ? "selected" : "" )" @onclick="@(() => NavigateTo("/reports"))">
-        <MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Medium" />
+    <!-- Floating New Bill -->
+    <div class="fab-container" @onclick='() => NavigateTo("/sales")'>
+        <div class="new-bill-btn-wrapper">
+            <div class="new-bill-btn">
+                <MudIcon Icon="@Icons.Material.Filled.Add" />
+            </div>
+        </div>
+        <span class="fab-text">New Bill</span>
+    </div>
+
+    <!-- Reports -->
+    <div class="nav-item @(_selected == 2 ? "selected" : "")"
+         @onclick='() => NavigateTo("/reports")'>
+        <MudIcon Icon="@(_selected == 2 ? Icons.Material.Filled.BarChart : Icons.Material.Outlined.BarChart)" />
         <span>Reports</span>
     </div>
 
-    <div class="nav-item @( _selected == 4 ? "selected" : "" )" @onclick="@(() => NavigateTo("/profile"))">
-        <MudIcon Icon="@Icons.Material.Outlined.Person" Size="Size.Medium" />
+    <!-- Profile -->
+    <div class="nav-item @(_selected == 3 ? "selected" : "")"
+         @onclick='() => NavigateTo("/profile")'>
+        @if (!string.IsNullOrEmpty(_profilePictureUrl))
+        {
+            <MudAvatar Style="height: 30px; width: 30px; margin-bottom: 3px; font-size: 1rem;">
+                <MudImage Src="@GetImageUrl(_profilePictureUrl)" Style="width: 100%; height: 100%; object-fit: cover;" />
+            </MudAvatar>
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Outlined.PersonOutline" />
+        }
         <span>Profile</span>
     </div>
+
 </MudPaper>
 
 <style>
-    .nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: var(--mud-palette-action-default);
-        cursor: pointer;
-        transition: color 0.2s;
-        flex: 1;
-        padding-top: 4px;
-        padding-bottom: 4px;
-    }
-    .nav-item span {
-        font-size: 0.7rem;
-        margin-top: 2px;
-        font-weight: 500;
-    }
-    .nav-item.selected {
-        color: var(--mud-palette-primary);
-    }
-    .nav-item.selected .mud-icon-root {
-        color: var(--mud-palette-primary) !important;
-    }
+.bottom-nav{
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: auto; /* Dynamic height based on content + padding */
+    min-height: 74px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-top: 12px;
+    /* Padds the bottom dynamically based on phone's nav bar/home indicator */
+    padding-bottom: calc(5px + env(safe-area-inset-bottom, 16px));
+    background: white;
+    border-radius: 30px 30px 0 0;
+    z-index: 9999 !important;
+    filter: drop-shadow(0px -4px 16px rgba(0, 0, 0, 0.08));
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.nav-item{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    color: #8E8E93;
+    transition: 0.2s;
+}
+
+.nav-item .mud-icon-root{
+    font-size: 26px;
+    margin-bottom: 4px;
+    transition: 0.2s;
+}
+
+.nav-item span{
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+.nav-item.selected{
+    color: #6450f3;
+}
+
+.nav-item.selected .mud-icon-root{
+    color: #6450f3 !important;
+}
+
+.nav-item.selected span{
+    font-weight: 600;
+}
+
+/* Floating Button */
+.fab-container{
+    position: relative;
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+}
+
+.new-bill-btn-wrapper {
+    position: absolute;
+    top: -40px; /* Adjusted so it floats perfectly out of the 12px padding-top */
+    background: white;
+    border-radius: 50%;
+    padding: 6px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.new-bill-btn{
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: #6450f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(100, 80, 243, 0.4);
+}
+
+.new-bill-btn .mud-icon-root{
+    font-size: 32px !important;
+    color: white !important;
+    margin: 0 !important;
+}
+
+.fab-text{
+    color: #6450f3;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 30px; /* Pushed down to align with other texts */
+}
 </style>
 
-@code {
-    [Inject] private NavigationManager Navigation { get; set; } = default!;
+@code{
 
-    private int _selected = 0;
+    [Inject]
+    NavigationManager Navigation { get; set; } = default!;
+    
+    [Inject]
+    VikashERP.Mobile.State.AppStateService AppState { get; set; } = default!;
 
-    protected override void OnInitialized()
+    private int _selected;
+    private string? _profilePictureUrl;
+
+    protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        _profilePictureUrl = AppState.UserProfilePictureUrl ?? user.FindFirst("picture")?.Value ?? user.FindFirst(System.Security.Claims.ClaimTypes.Uri)?.Value;
+        
+        if (AppState.UserProfilePictureUrl == null && _profilePictureUrl != null)
+        {
+            AppState.UpdateProfilePicture(_profilePictureUrl);
+        }
+
+        AppState.OnProfilePictureChanged += HandleProfilePictureChanged;
+
         UpdateSelected(Navigation.Uri);
         Navigation.LocationChanged += HandleLocationChanged;
     }
 
-    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void HandleProfilePictureChanged(string? newUrl)
+    {
+        _profilePictureUrl = newUrl;
+        InvokeAsync(StateHasChanged);
+    }
+
+    void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         UpdateSelected(e.Location);
         InvokeAsync(StateHasChanged);
     }
 
-    private void UpdateSelected(string uri)
+    void UpdateSelected(string uri)
     {
-        var path = "/" + Navigation.ToBaseRelativePath(uri).Split('?')[0];
+        var relativePath = Navigation.ToBaseRelativePath(uri).Split('?')[0].TrimEnd('/');
+        var path = "/" + relativePath;
+        if (path == "//") path = "/";
+
         _selected = path switch
         {
             "/" => 0,
-            "/sales" => 1,
-            "/material-catalog" => 2,
-            "/reports" => 3,
-            "/profile" => 4,
-            _ => 0
+            "/manager-dashboard" => 0,
+            "/godown-dashboard" => 1,
+            "/reports" => 2,
+            "/profile" => 3,
+            _ => -1
         };
     }
 
-    private void NavigateTo(string url) => Navigation.NavigateTo(url);
+    void NavigateTo(string url)
+    {
+        Navigation.NavigateTo(url);
+    }
 
     public void Dispose()
     {
+        AppState.OnProfilePictureChanged -= HandleProfilePictureChanged;
         Navigation.LocationChanged -= HandleLocationChanged;
+    }
+
+    private string GetImageUrl(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        if (path.StartsWith("http") || path.StartsWith("data:")) return path;
+        
+        if (path.StartsWith("/"))
+            path = path.Substring(1);
+            
+        var client = HttpClientFactory.CreateClient("ApiClient");
+        return $"{client.BaseAddress}{path}";
     }
 }

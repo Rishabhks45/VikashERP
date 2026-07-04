@@ -1,0 +1,344 @@
+@page "/admin/system"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@inject IOrganizationService OrganizationService
+@inject ISnackbar Snackbar
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<div class="system-settings-page">
+    @* Page Header *@
+    <div class="d-flex justify-space-between align-end mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">System Settings</MudText>
+            <MudText Typo="Typo.body2" Style="color: #666;">
+                Company profile, branding, and defaults
+            </MudText>
+        </div>
+        
+        <div>
+            @if (!_isEditing)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="() => _isEditing = true" Size="Size.Small">
+                    EDIT
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="CancelEdit" Size="Size.Small" Class="mr-2">CANCEL</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveAsync" Size="Size.Small" Disabled="_isSaving">
+                    @(_isSaving ? "SAVING..." : "SAVE")
+                </MudButton>
+            }
+        </div>
+    </div>
+
+    @if (_lastUpdated.HasValue && !_isEditing)
+    {
+        <div class="d-flex align-center mb-4">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #28a745; margin-right: 8px;"></div>
+            <MudText Typo="Typo.caption" Style="color: #666;">Last saved: @_lastUpdated.Value.ToString("MMM dd, yyyy - hh:mm tt")</MudText>
+        </div>
+    }
+
+    <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@(_isLoading || _isSaving)" Text="@(_isSaving ? "Saving Settings..." : "Loading Settings...")" Absolute="true" />
+
+    @if (!_isLoading && _loadError == null)
+    {
+        <MudPaper Elevation="0" Class="pa-0 mb-6" Style="background-color: transparent;">
+            <MudTabs @bind-ActivePanelIndex="_activeTabIndex" Elevation="0" Rounded="true" Color="Color.Transparent" SliderColor="Color.Primary" Class="mb-3 category-tabs">
+                <MudTabPanel Text="General" />
+                <MudTabPanel Text="Contact" />
+                <MudTabPanel Text="Tax & Bank" />
+                <MudTabPanel Text="Website" />
+                <MudTabPanel Text="Automation" />
+                <MudTabPanel Text="Regional" />
+            </MudTabs>
+        </MudPaper>
+
+        <div class="settings-content pb-16">
+            @if (_activeTabIndex == 0)
+            {
+                <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid rgba(0,0,0,0.05); border-radius: 12px;">
+                    <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 700;">Company Profile</MudText>
+                    
+                    <MudTextField @bind-Value="Model.LegalName" Label="Legal Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.DisplayName" Label="Display Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.Tagline" Label="Tagline" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2" Style="font-weight: 700;">Branding Assets</MudText>
+                    <MudTextField @bind-Value="Model.LogoUrl" Label="Logo URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.FaviconUrl" Label="Favicon URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2" Style="font-weight: 700;">Theme Colors</MudText>
+                    <div class="d-flex gap-3">
+                        <MudTextField @bind-Value="Model.PrimaryColor" Label="Primary" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input flex-1" Disabled="!_isEditing" />
+                        <MudTextField @bind-Value="Model.SecondaryColor" Label="Secondary" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input flex-1" Disabled="!_isEditing" />
+                    </div>
+                </MudPaper>
+            }
+            else if (_activeTabIndex == 1)
+            {
+                <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid rgba(0,0,0,0.05); border-radius: 12px;">
+                    <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 700;">Contact Details</MudText>
+                    
+                    <MudTextField @bind-Value="Model.Email" Label="Primary Email" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.Phone" Label="Phone Number" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.WhatsAppNumber" Label="WhatsApp Number" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4 light-input" Disabled="!_isEditing" />
+                    
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight: 700;">Physical Address</MudText>
+                    <MudTextField @bind-Value="Model.AddressLine1" Label="Address Line 1" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.AddressLine2" Label="Address Line 2" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    
+                    <div class="d-flex gap-3 mb-3">
+                        <MudTextField @bind-Value="Model.City" Label="City" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input flex-1" Disabled="!_isEditing" />
+                        <MudTextField @bind-Value="Model.State" Label="State" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input flex-1" Disabled="!_isEditing" />
+                    </div>
+                    <div class="d-flex gap-3">
+                        <MudTextField @bind-Value="Model.PinCode" Label="PIN Code" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input flex-1" Disabled="!_isEditing" />
+                        <MudTextField @bind-Value="Model.Country" Label="Country" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input flex-1" Disabled="!_isEditing" />
+                    </div>
+                </MudPaper>
+            }
+            else if (_activeTabIndex == 2)
+            {
+                <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid rgba(0,0,0,0.05); border-radius: 12px;">
+                    <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 700;">Tax Information</MudText>
+                    
+                    <MudTextField @bind-Value="Model.Gstin" Label="GSTIN" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.Pan" Label="PAN" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4 light-input" Disabled="!_isEditing" />
+                    
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight: 700;">Bank Details</MudText>
+                    <MudTextField @bind-Value="Model.BankName" Label="Bank Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.BankAccountName" Label="Account Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.BankAccountNumber" Label="Account Number" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.IfscCode" Label="IFSC Code" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input" Disabled="!_isEditing" />
+                </MudPaper>
+            }
+            else if (_activeTabIndex == 3)
+            {
+                <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid rgba(0,0,0,0.05); border-radius: 12px;">
+                    <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 700;">Website Settings</MudText>
+                    
+                    <MudTextField @bind-Value="Model.WebsiteUrl" Label="Website URL" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4 light-input" Disabled="!_isEditing" />
+                    
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight: 700;">SEO Details</MudText>
+                    <MudTextField @bind-Value="Model.MetaTitle" Label="Meta Title" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.MetaDescription" Label="Meta Description" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.MetaKeywords" Label="Meta Keywords" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-4 light-input" Disabled="!_isEditing" />
+                    
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight: 700;">Social Links</MudText>
+                    <MudTextField @bind-Value="Model.SocialFacebookUrl" Label="Facebook" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.SocialInstagramUrl" Label="Instagram" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.SocialLinkedInUrl" Label="LinkedIn" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-2 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.SocialYoutubeUrl" Label="YouTube" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input" Disabled="!_isEditing" />
+                </MudPaper>
+            }
+            else if (_activeTabIndex == 4)
+            {
+                <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid rgba(0,0,0,0.05); border-radius: 12px;">
+                    <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 700;">System Automation</MudText>
+                    
+                    <MudSwitch @bind-Value="Model.EnableCustomerPortal" Label="Enable Customer Portal" Color="Color.Primary" Class="mb-2" Disabled="!_isEditing" />
+                    <MudSwitch @bind-Value="Model.EnableLowStockAlerts" Label="Enable Low Stock Alerts" Color="Color.Primary" Class="mb-2" Disabled="!_isEditing" />
+                    <MudSwitch @bind-Value="Model.EnablePaymentReminders" Label="Enable Payment Reminders" Color="Color.Primary" Class="mb-2" Disabled="!_isEditing" />
+                    <MudSwitch @bind-Value="Model.EnableDailyReportEmail" Label="Daily Report Email" Color="Color.Primary" Class="mb-2" Disabled="!_isEditing" />
+                    <MudSwitch @bind-Value="Model.EnableTradeConfirmations" Label="Trade Confirmations" Color="Color.Primary" Class="mb-4" Disabled="!_isEditing" />
+                    
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight: 700;">Email Settings</MudText>
+                    <MudTextField @bind-Value="Model.EmailFromName" Label="Sender Name" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.EmailFromAddress" Label="Sender Email" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input" Disabled="!_isEditing" />
+                </MudPaper>
+            }
+            else if (_activeTabIndex == 5)
+            {
+                <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid rgba(0,0,0,0.05); border-radius: 12px;">
+                    <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 700;">Regional Settings</MudText>
+                    
+                    <MudTextField @bind-Value="Model.DefaultCurrency" Label="Default Currency" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.DefaultWeightUnit" Label="Default Weight Unit" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.TimeZone" Label="Time Zone" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" Disabled="!_isEditing" />
+                    <MudTextField @bind-Value="Model.DateFormat" Label="Date Format" Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input" Disabled="!_isEditing" />
+                </MudPaper>
+            }
+        </div>
+    }
+    else if (_loadError != null)
+    {
+        <div class="d-flex flex-column align-center justify-center pa-8 text-center">
+            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" Color="Color.Error" Class="mb-2" />
+            <MudText Typo="Typo.body1" Color="Color.Error">@_loadError</MudText>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4" OnClick="LoadAsync">RETRY</MudButton>
+        </div>
+    }
+</div>
+
+<style>
+    .system-settings-page {
+        background-color: #fafbfc;
+        min-height: 100vh;
+        padding: 16px;
+    }
+    
+    .category-tabs ::deep .mud-tabs-tab {
+        min-width: auto;
+        padding: 8px 16px;
+        font-weight: 700;
+        text-transform: none;
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+    
+    .category-tabs ::deep .mud-tabs-tab.mud-tab-active {
+        color: #1976d2 !important;
+    }
+    
+    .category-tabs ::deep .mud-tabs-toolbar {
+        background-color: transparent !important;
+    }
+
+    .light-input .mud-input-outlined {
+        background-color: white !important;
+        border-radius: 8px !important;
+    }
+</style>
+
+@code {
+    private OrganizationFormModel Model { get; set; } = new();
+    private OrganizationResponse? _originalDto;
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private bool _isEditing = false;
+    private string? _loadError;
+    private DateTime? _lastUpdated;
+    
+    private int _activeTabIndex = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _loadError = null;
+        StateHasChanged();
+
+        try
+        {
+            var dto = await OrganizationService.GetOrganizationAsync();
+            if (dto != null)
+            {
+                _originalDto = dto;
+                MapFromResponse(dto);
+                _lastUpdated = dto.UpdatedAt;
+            }
+            else
+            {
+                _loadError = "Failed to load system settings.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _loadError = $"Could not load settings: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CancelEdit()
+    {
+        _isEditing = false;
+        if (_originalDto != null)
+        {
+            MapFromResponse(_originalDto);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_isSaving) return;
+        
+        _isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var saved = await OrganizationService.UpdateOrganizationAsync(Model);
+            if (saved != null)
+            {
+                _originalDto = saved;
+                MapFromResponse(saved);
+                _lastUpdated = saved.UpdatedAt;
+                _isEditing = false;
+                Snackbar.Add("Settings saved successfully.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to save settings.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void MapFromResponse(OrganizationResponse dto)
+    {
+        Model.LegalName = dto.LegalName;
+        Model.DisplayName = dto.DisplayName;
+        Model.Tagline = dto.Tagline;
+        Model.LogoUrl = dto.LogoUrl;
+        Model.FaviconUrl = dto.FaviconUrl;
+        Model.LoginBackgroundUrl = dto.LoginBackgroundUrl;
+        Model.PrimaryColor = dto.PrimaryColor;
+        Model.SecondaryColor = dto.SecondaryColor;
+        Model.AddressLine1 = dto.AddressLine1;
+        Model.AddressLine2 = dto.AddressLine2;
+        Model.City = dto.City;
+        Model.State = dto.State;
+        Model.PinCode = dto.PinCode;
+        Model.Country = dto.Country;
+        Model.Phone = dto.Phone;
+        Model.Email = dto.Email;
+        Model.WebsiteUrl = dto.WebsiteUrl;
+        Model.WhatsAppNumber = dto.WhatsAppNumber;
+        Model.Gstin = dto.Gstin;
+        Model.Pan = dto.Pan;
+        Model.BankName = dto.BankName;
+        Model.BankAccountName = dto.BankAccountName;
+        Model.BankAccountNumber = dto.BankAccountNumber;
+        Model.IfscCode = dto.IfscCode;
+        Model.EmailFromName = dto.EmailFromName;
+        Model.EmailFromAddress = dto.EmailFromAddress;
+        Model.MetaTitle = dto.MetaTitle;
+        Model.MetaDescription = dto.MetaDescription;
+        Model.MetaKeywords = dto.MetaKeywords;
+        Model.FooterText = dto.FooterText;
+        Model.CopyrightText = dto.CopyrightText;
+        Model.SocialFacebookUrl = dto.SocialFacebookUrl;
+        Model.SocialInstagramUrl = dto.SocialInstagramUrl;
+        Model.SocialLinkedInUrl = dto.SocialLinkedInUrl;
+        Model.SocialYoutubeUrl = dto.SocialYoutubeUrl;
+        Model.DefaultCurrency = dto.DefaultCurrency;
+        Model.DefaultWeightUnit = dto.DefaultWeightUnit;
+        Model.TimeZone = dto.TimeZone;
+        Model.DateFormat = dto.DateFormat;
+        Model.EnableCustomerPortal = dto.EnableCustomerPortal;
+        Model.EnableLowStockAlerts = dto.EnableLowStockAlerts;
+        Model.EnablePaymentReminders = dto.EnablePaymentReminders;
+        Model.EnableDailyReportEmail = dto.EnableDailyReportEmail;
+        Model.EnableTradeConfirmations = dto.EnableTradeConfirmations;
+        Model.IsActive = dto.IsActive;
+    }
+}

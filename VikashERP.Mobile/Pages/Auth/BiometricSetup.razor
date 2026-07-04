@@ -15,16 +15,16 @@
 
     @* Top Bar *@
     <div class="d-flex px-4 py-2" style="position: relative; z-index: 10; flex-shrink: 0;">
-        <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack" Color="Color.Inherit" OnClick="GoBack" />
+        <MudIconButton Icon="@Icons.Material.Rounded.ArrowBack" Color="Color.Inherit" OnClick="GoBack" />
     </div>
 
     @* Logo Section *@
     <div class="brand-block d-flex flex-column align-center" style="position: relative; z-index: 10;">
         <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="mb-1">
-            <path d="M15 25 L50 85 L38 85 L15 35 Z" fill="#144b82" />
-            <path d="M15 25 L35 25 L50 85 L15 25" fill="#1e73be" />
-            <path d="M85 25 L50 85 L62 85 L85 35 Z" fill="#9ea7b0" />
-            <path d="M85 25 L65 25 L50 85 L85 25" fill="#3a4047" />
+            <path d="M15 25 L50 85 L38 85 L15 35 Z" fill="#4c1d95" />
+            <path d="M15 25 L35 25 L50 85 L15 25" fill="#7c3aed" />
+            <path d="M85 25 L50 85 L62 85 L85 35 Z" fill="#c4b5fd" />
+            <path d="M85 25 L65 25 L50 85 L85 25" fill="#a78bfa" />
             <polygon points="35,25 65,25 50,55" fill="white" />
         </svg>
         <div style="text-align: center; line-height: 1.15;">
@@ -39,53 +39,53 @@
         @* Fingerprint Icon *@
         <div class="fingerprint-icon-container" style="position: relative;">
             <div class="icon-circle">
-                <MudIcon Icon="@Icons.Material.Filled.Fingerprint" Style="color: #0066ff; font-size: 2.2rem;" />
+                <MudIcon Icon="@Icons.Material.Rounded.Fingerprint" Style="color: #6450f3; font-size: 2.8rem;" />
             </div>
             <div class="shield-badge">
-                <MudIcon Icon="@Icons.Material.Filled.Security" Style="color: white; font-size: 0.9rem;" />
+                <MudIcon Icon="@Icons.Material.Rounded.Security" Style="color: white; font-size: 1rem;" />
             </div>
         </div>
 
-        <MudText Typo="Typo.h5" Style="font-weight: 800; color: #1a2530;" Class="mt-2 mb-1">Biometric Setup</MudText>
-        <MudText Typo="Typo.body2" Style="color: #666; text-align: center; max-width: 280px;" Class="mb-1">
+        <MudText Typo="Typo.h5" Style="font-weight: 800; color: #1a2530;" Class="mt-4 mb-2">Biometric Setup</MudText>
+        <MudText Typo="Typo.body2" Style="color: #666; text-align: center; max-width: 280px; font-weight: 500;" Class="mb-3">
             Secure your account with your fingerprint for faster and safer login
         </MudText>
 
         @* Benefits Card *@
-        <MudPaper Class="benefits-card" Elevation="0">
+        <MudPaper Class="benefits-card mt-3 mb-2" Elevation="0">
             <MudList T="string" Padding="false">
-                <MudListItem>
-                    <div class="d-flex align-center py-1">
-                        <div class="benefit-icon mr-3">
-                            <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Style="color: #0066ff;" Size="Size.Small" />
+                <MudListItem Class="custom-list-item">
+                    <div class="d-flex align-center py-2">
+                        <div class="benefit-icon mr-4">
+                            <MudIcon Icon="@Icons.Material.Rounded.VerifiedUser" Style="color: #6450f3;" Size="Size.Small" />
                         </div>
                         <div>
                             <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #1a2530;">Enhanced Security</MudText>
-                            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.2; display: block;">Your biometric data is encrypted<br/>and stored securely</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.3; display: block; font-weight: 500;">Your biometric data is encrypted<br/>and stored securely</MudText>
                         </div>
                     </div>
                 </MudListItem>
-                <MudDivider />
-                <MudListItem>
-                    <div class="d-flex align-center py-1">
-                        <div class="benefit-icon mr-3">
-                            <MudIcon Icon="@Icons.Material.Filled.FlashOn" Style="color: #0066ff;" Size="Size.Small" />
+                <MudDivider Style="opacity: 0.5;" />
+                <MudListItem Class="custom-list-item">
+                    <div class="d-flex align-center py-2">
+                        <div class="benefit-icon mr-4">
+                            <MudIcon Icon="@Icons.Material.Rounded.FlashOn" Style="color: #6450f3;" Size="Size.Small" />
                         </div>
                         <div>
                             <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #1a2530;">Faster Access</MudText>
-                            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.2; display: block;">Login quickly using your fingerprint</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.3; display: block; font-weight: 500;">Login quickly using your fingerprint</MudText>
                         </div>
                     </div>
                 </MudListItem>
-                <MudDivider />
-                <MudListItem>
-                    <div class="d-flex align-center py-1">
-                        <div class="benefit-icon mr-3">
-                            <MudIcon Icon="@Icons.Material.Filled.Person" Style="color: #0066ff;" Size="Size.Small" />
+                <MudDivider Style="opacity: 0.5;" />
+                <MudListItem Class="custom-list-item">
+                    <div class="d-flex align-center py-2">
+                        <div class="benefit-icon mr-4">
+                            <MudIcon Icon="@Icons.Material.Rounded.Person" Style="color: #6450f3;" Size="Size.Small" />
                         </div>
                         <div>
                             <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #1a2530;">Unique to You</MudText>
-                            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.2; display: block;">Only your fingerprint can access<br/>your account</MudText>
+                            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.3; display: block; font-weight: 500;">Only your fingerprint can access<br/>your account</MudText>
                         </div>
                     </div>
                 </MudListItem>
@@ -93,18 +93,18 @@
         </MudPaper>
 
         @* Agreement Checkbox *@
-        <div class="d-flex align-start mt-1 mb-1">
-            <MudCheckBox @bind-Value="Agreed" Color="Color.Primary" Class="mr-2" Style="margin-top: -8px;" />
-            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.4;">
+        <div class="d-flex align-center mt-3 mb-2">
+            <MudCheckBox @bind-Value="Agreed" Color="Color.Primary" Class="mr-2 custom-checkbox" />
+            <MudText Typo="Typo.caption" Style="color: #666; line-height: 1.4; font-weight: 500;">
                 I agree to use my fingerprint to login to<br/>
-                <span style="color: #0066ff; font-weight: 600;">Vikash Iron & Steel</span> app.
+                <span style="color: #6450f3; font-weight: 700;">Vikash Iron & Steel</span> app.
             </MudText>
         </div>
 
         <div class="footer-block d-flex flex-column align-center" style="width: 100%;">
             @* Enable Button *@
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="enable-btn mb-1" OnClick="EnableBiometric" Disabled="!Agreed" Style="max-width: 320px;">
-                <MudIcon Icon="@Icons.Material.Outlined.Fingerprint" Class="mr-2" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="enable-btn mb-2" OnClick="EnableBiometric" Disabled="!Agreed" Style="max-width: 320px;">
+                <MudIcon Icon="@Icons.Material.Rounded.Fingerprint" Class="mr-3" />
                 Enable Fingerprint
             </MudButton>
 
@@ -121,9 +121,9 @@
         height: 100vh;
         height: 100dvh;
         max-height: 100dvh;
-        background-color: #fafbfc;
+        background-color: #fcfcfd;
         position: relative;
-        overflow-y: hidden;
+        overflow: hidden;
         padding-top: env(safe-area-inset-top);
         padding-bottom: env(safe-area-inset-bottom);
         display: flex;
@@ -138,14 +138,20 @@
     .brand-name {
         font-weight: 800;
         font-size: 1.15rem;
-        color: #144b82;
+        color: #4c1d95;
         letter-spacing: 1px;
     }
     .brand-sub {
         font-size: 0.55rem;
-        font-weight: 600;
-        color: #666;
+        font-weight: 700;
+        color: #7c3aed;
         letter-spacing: 2px;
+    }
+
+    .footer-block {
+        width: 100%;
+        padding-bottom: 8px;
+        flex-shrink: 0;
     }
 
     .content-block {
@@ -154,19 +160,18 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: clamp(6px, 1.5vh, 12px);
-        padding-top: 4px;
-        padding-bottom: 12px;
+        justify-content: space-evenly;
+        width: 100%;
+        padding-bottom: 8px;
     }
     
     .bg-decoration-top {
         position: absolute;
-        top: 0;
-        right: 0;
-        width: 250px;
-        height: 250px;
-        background: radial-gradient(circle, rgba(200, 220, 240, 0.5) 0%, rgba(250, 251, 252, 0) 70%);
+        top: -50px;
+        right: -50px;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(252, 252, 253, 0) 70%);
         z-index: 0;
         pointer-events: none;
     }
@@ -177,78 +182,91 @@
         left: 0;
         width: 100%;
         height: 150px;
-        /* Using a stylized gradient/pattern to mimic the steel skyline */
-        background: linear-gradient(to top, rgba(200, 220, 240, 0.4) 0%, rgba(250, 251, 252, 0) 100%);
+        background: linear-gradient(to top, rgba(100, 80, 243, 0.08) 0%, rgba(252, 252, 253, 0) 100%);
         z-index: 0;
         pointer-events: none;
     }
 
     .icon-circle {
-        width: 72px;
-        height: 72px;
+        width: clamp(55px, 8vh, 75px);
+        height: clamp(55px, 8vh, 75px);
         border-radius: 50%;
-        background-color: #e6f0ff;
+        background-color: #f3f0ff;
         display: flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 12px 24px rgba(100, 80, 243, 0.15);
     }
 
     .shield-badge {
         position: absolute;
         bottom: 0;
         right: 0;
-        width: 24px;
-        height: 24px;
-        background-color: #0066ff;
+        width: 28px;
+        height: 28px;
+        background-color: #6450f3;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 2px solid #fafbfc;
+        border: 3px solid #fcfcfd;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
 
     .benefits-card {
-        background-color: white;
-        border-radius: 12px;
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        background-color: white !important;
+        border-radius: 20px !important;
+        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
         width: 100%;
-        padding: 8px;
+        padding: 8px 4px;
+    }
+    
+    .custom-list-item {
+        padding: 4px 16px !important;
     }
 
     .benefit-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: #f0f5ff;
+        width: clamp(35px, 5vh, 44px);
+        height: clamp(35px, 5vh, 44px);
+        border-radius: 12px;
+        background-color: #f3f0ff;
         display: flex;
         align-items: center;
         justify-content: center;
     }
-
-    .mud-list-item {
-        padding: 8px 12px !important;
+    
+    .custom-checkbox {
+        color: #6450f3 !important;
     }
 
     .enable-btn {
-        background-color: #005ce6 !important;
-        border-radius: 8px !important;
-        height: 50px;
-        font-weight: 700 !important;
+        background-color: #6450f3 !important;
+        border-radius: 16px !important;
+        height: 56px;
+        font-weight: 800 !important;
         text-transform: none !important;
-        font-size: 1rem !important;
+        font-size: 1.05rem !important;
+        box-shadow: 0 8px 20px rgba(100, 80, 243, 0.3) !important;
+        transition: all 0.2s ease;
+    }
+    .enable-btn:active {
+        transform: scale(0.98);
+        box-shadow: 0 4px 10px rgba(100, 80, 243, 0.2) !important;
     }
     .enable-btn.mud-button-disabled {
-        background-color: #b3d1ff !important;
-        color: white !important;
-        opacity: 0.7;
+        background-color: #e5e5e5 !important;
+        color: #a3a3a3 !important;
+        box-shadow: none !important;
     }
 
     .setup-later-btn {
         font-weight: 700 !important;
         text-transform: none !important;
         font-size: 0.95rem !important;
-        letter-spacing: 0px !important;
+        letter-spacing: 0.5px !important;
+        color: #888 !important;
+        margin-top: 4px;
     }
 </style>
 

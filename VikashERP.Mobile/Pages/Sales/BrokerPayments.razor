@@ -1,0 +1,393 @@
+@page "/broker-payments"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@inject IBrokerService BrokerService
+@inject ISnackbar Snackbar
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<div class="broker-payments-page">
+    @* Page Header *@
+    <div class="d-flex justify-space-between align-end mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">Broker Ledger</MudText>
+            <MudText Typo="Typo.body2" Style="color: #666;">
+                Commissions & manual payouts
+            </MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadDataAsync" Disabled="_isLoading" />
+    </div>
+
+    @* KPIs Grid *@
+    <MudGrid Spacing="2" Class="mb-4">
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #e3f2fd;">
+                        <MudIcon Icon="@Icons.Material.Filled.Today" Style="color: #1976d2;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Today Payouts</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">₹@_todayPayments.ToString("N0")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #e8f5e9;">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Style="color: #388e3c;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Month Payouts</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">₹@_monthlyPayments.ToString("N0")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center justify-space-between mb-1">
+                    <div class="d-flex align-center">
+                        <div class="stat-icon-wrapper" style="background-color: #fff3e0;">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Style="color: #f57c00;" Size="Size.Small" />
+                        </div>
+                        <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Month Commissions Credited</MudText>
+                    </div>
+                    <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">₹@_monthlyCommission.ToString("N0")</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Search Bar *@
+    <MudTextField @bind-Value="_searchQuery" Placeholder="Search by broker or remarks..." 
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input mb-4" 
+                  Immediate="true" TextChanged="FilterTransactions" />
+
+    @* Transactions List *@
+    <div class="transaction-list d-flex flex-column gap-3 mb-6">
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Ledger..." Absolute="true" />
+        
+        @if (!_isLoading && !_filteredTransactions.Any())
+        {
+            <MudText Typo="Typo.body2" Style="color: #666; text-align: center;">No transactions found.</MudText>
+        }
+        else if (!_isLoading)
+        {
+            @foreach (var tx in _filteredTransactions)
+            {
+                <MudPaper Class="transaction-card pa-3" Elevation="0">
+                    <div class="d-flex justify-space-between align-start mb-2">
+                        <div class="flex-1 pr-2">
+                            <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 800; line-height: 1.2;">
+                                @tx.BrokerName
+                            </MudText>
+                            <MudText Typo="Typo.caption" Style="color: #666; display: block; margin-top: 2px;">
+                                @tx.TransactionDate.ToString("MMM dd, yyyy")
+                                @if (tx.TransactionType == "Payment" && !string.IsNullOrEmpty(tx.PaymentMode))
+                                {
+                                    <span> • @tx.PaymentMode</span>
+                                }
+                            </MudText>
+                        </div>
+                        <div class="d-flex flex-column align-end">
+                            @if (tx.TransactionType == "Commission")
+                            {
+                                <span class="status-badge status-success">COMMISSION</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-warning">PAYOUT</span>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-space-between align-center mt-2 pt-2" style="border-top: 1px dashed rgba(0,0,0,0.1);">
+                        @if (!string.IsNullOrEmpty(tx.Remarks))
+                        {
+                            <MudText Typo="Typo.caption" Style="color: #666; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                @tx.Remarks
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Style="color: #ccc;">No remarks</MudText>
+                        }
+                        
+                        @if (tx.TransactionType == "Commission")
+                        {
+                            <MudText Typo="Typo.h6" Style="color: #388e3c; font-weight: 800; font-family: monospace;">
+                                +₹@tx.Amount.ToString("N0")
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.h6" Style="color: #d32f2f; font-weight: 800; font-family: monospace;">
+                                -₹@tx.Amount.ToString("N0")
+                            </MudText>
+                        }
+                    </div>
+                </MudPaper>
+            }
+        }
+    </div>
+
+    @* Floating Action Button *@
+    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddCard" 
+            Style="position: fixed; bottom: 120px; right: 24px; background-color: #1976d2;" 
+            OnClick="OpenAddSheet" />
+</div>
+
+@* Bottom Sheet for Add Transaction *@
+<MudDrawer @bind-Open="_isSheetOpen" Anchor="Anchor.Bottom" Elevation="2" Variant="DrawerVariant.Temporary" Height="auto" Style="background-color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; padding-bottom: env(safe-area-inset-bottom);">
+    <div class="pa-4 d-flex flex-column" style="padding-bottom: 80px !important;">
+        <div class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-center gap-3">
+                <MudIcon Icon="@Icons.Material.Filled.Payments" Style="color: #1a2530;" />
+                <div>
+                    <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700; line-height: 1.2;">Record Transaction</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #666;">Credit commission or debit payout.</MudText>
+                </div>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="() => _isSheetOpen = false" />
+        </div>
+
+        <EditForm Model="@_editModel" OnSubmit="SaveTransactionAsync">
+            
+            <MudSelect T="BrokerListDto" @bind-Value="_editModel.SelectedBroker" Label="Select Broker" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" ToStringFunc="@(b => b?.Name)">
+                @foreach (var broker in _brokers)
+                {
+                    <MudSelectItem Value="@broker">@broker.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (_editModel.SelectedBroker != null)
+            {
+                <div class="mb-3 pa-2 rounded" style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                    <MudText Typo="Typo.caption" Style="color: #666;">Current Balance</MudText>
+                    <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 700;">₹@_editModel.SelectedBroker.CurrentBalance.ToString("N2")</MudText>
+                </div>
+            }
+
+            <MudSelect T="string" @bind-Value="_editModel.TransactionType" Label="Transaction Type" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input">
+                <MudSelectItem Value="@("Payment")">Payout (Debit)</MudSelectItem>
+                <MudSelectItem Value="@("Commission")">Commission Credit</MudSelectItem>
+            </MudSelect>
+
+            <MudNumericField @bind-Value="_editModel.Amount" Label="Amount (₹)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" HideSpinButtons="true" />
+            
+            <MudDatePicker @bind-Date="_editModel.TransactionDate" Label="Transaction Date" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" MaxDate="DateTime.Today" />
+
+            @if (_editModel.TransactionType == "Payment")
+            {
+                <MudSelect T="string" @bind-Value="_editModel.PaymentMode" Label="Payment Mode" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input">
+                    @foreach (var mode in _paymentModes)
+                    {
+                        <MudSelectItem Value="@mode">@mode</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+
+            <MudTextField @bind-Value="_editModel.Remarks" Label="Remarks / Description" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Class="mb-4 light-input" />
+
+            <MudButton OnClick="SaveTransactionAsync" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Disabled="_isSaving" Size="Size.Large">
+                @(_isSaving ? "RECORDING..." : "RECORD TRANSACTION")
+            </MudButton>
+        </EditForm>
+    </div>
+</MudDrawer>
+
+<style>
+    .broker-payments-page {
+        background-color: #fafbfc;
+        min-height: 100vh;
+        padding: 16px;
+        padding-bottom: 80px; /* Space for bottom nav */
+    }
+    
+    .stat-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+    
+    .stat-icon-wrapper {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .transaction-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+
+    .status-badge {
+        font-size: 0.6rem;
+        font-weight: 800;
+        padding: 4px 8px;
+        border-radius: 6px;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    .status-success {
+        background-color: #e8f5e9;
+        color: #388e3c;
+    }
+    .status-warning {
+        background-color: #fff3e0;
+        color: #f57c00;
+    }
+
+    .light-input .mud-input-outlined {
+        background-color: white !important;
+        color: #1a2530 !important;
+        border-radius: 8px !important;
+    }
+    .light-input .mud-input-outlined-border {
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@code {
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private bool _isSheetOpen = false;
+    
+    private List<RecentBrokerTransactionDto> _transactions = new();
+    private List<RecentBrokerTransactionDto> _filteredTransactions = new();
+    private List<BrokerListDto> _brokers = new();
+    
+    private string _searchQuery = "";
+    
+    private decimal _todayPayments = 0;
+    private decimal _monthlyPayments = 0;
+    private decimal _monthlyCommission = 0;
+
+    private BrokerTransactionFormModel _editModel = new();
+    private readonly string[] _paymentModes = ["Cash", "UPI", "NetBanking", "Cheque", "N/A"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var txsTask = BrokerService.GetRecentTransactionsAsync(100);
+            var brokersTask = BrokerService.GetBrokersAsync();
+            
+            await Task.WhenAll(txsTask, brokersTask);
+            
+            _transactions = txsTask.Result;
+            _brokers = brokersTask.Result.OrderBy(b => b.Name).ToList();
+            
+            CalculateKPIs();
+            FilterTransactions();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading ledger: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CalculateKPIs()
+    {
+        var today = DateTime.Today;
+        
+        _todayPayments = _transactions
+            .Where(x => x.TransactionType == "Payment" && x.TransactionDate.Date == today)
+            .Sum(x => x.Amount);
+            
+        _monthlyPayments = _transactions
+            .Where(x => x.TransactionType == "Payment" && x.TransactionDate.Month == today.Month && x.TransactionDate.Year == today.Year)
+            .Sum(x => x.Amount);
+            
+        _monthlyCommission = _transactions
+            .Where(x => x.TransactionType == "Commission" && x.TransactionDate.Month == today.Month && x.TransactionDate.Year == today.Year)
+            .Sum(x => x.Amount);
+    }
+
+    private void FilterTransactions()
+    {
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            _filteredTransactions = _transactions;
+        }
+        else
+        {
+            _filteredTransactions = _transactions.Where(x => 
+                x.BrokerName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                (x.Remarks != null && x.Remarks.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+    }
+
+    private void OpenAddSheet()
+    {
+        _editModel = new BrokerTransactionFormModel 
+        { 
+            TransactionDate = DateTime.Today,
+            TransactionType = "Payment",
+            PaymentMode = "Cash"
+        };
+        _isSheetOpen = true;
+    }
+
+    private async Task SaveTransactionAsync()
+    {
+        if (_editModel.SelectedBroker == null)
+        {
+            Snackbar.Add("Please select a broker.", Severity.Warning);
+            return;
+        }
+        
+        if (_editModel.Amount <= 0)
+        {
+            Snackbar.Add("Amount must be greater than zero.", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await BrokerService.RecordTransactionAsync(_editModel);
+            if (result != null)
+            {
+                Snackbar.Add("Transaction recorded successfully.", Severity.Success);
+                _isSheetOpen = false;
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to record transaction.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+}

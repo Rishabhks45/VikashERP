@@ -41,18 +41,21 @@
             <Authorized>
                 <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary" Style="letter-spacing:0.5px;">DASHBOARD</MudText>
                 <MudNavMenu Class="mb-3">
-                    <MudNavLink Href="/employee-dashboard" Icon="@Icons.Material.Filled.Dashboard">
-                        My dashboard
-                    </MudNavLink>
+                    <MudNavLink Href="/attendance" Icon="@Icons.Material.Filled.EventAvailable">My attendance</MudNavLink>
+                    <MudNavLink Href="/salary-slip" Icon="@Icons.Material.Filled.ReceiptLong">Salary slip</MudNavLink>
+                    <MudNavLink Href="/tasks" Icon="@Icons.Material.Filled.Checklist">My tasks</MudNavLink>
                 </MudNavMenu>
             </Authorized>
         </AuthorizeView>
 
         @* ---- Sales section ---- *@
-        <AuthorizeView Roles="Manager,Super Admin">
+        <AuthorizeView Roles="Manager,Super Admin,Administrator">
             <Authorized>
                 <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary" Style="letter-spacing:0.5px;">SALES</MudText>
                 <MudNavMenu Class="mb-3">
+                    <MudNavLink Href="/profiles" Icon="@Icons.Material.Filled.Groups">
+                        Customers
+                    </MudNavLink>
                     <MudNavLink Href="/sales" Icon="@Icons.Material.Filled.ReceiptLong">
                         Sales invoices
                     </MudNavLink>
@@ -89,13 +92,31 @@
                     <MudNavLink Href="/labour-attendance" Icon="@Icons.Material.Filled.People">
                         Labour attendance
                     </MudNavLink>
-                    <AuthorizeView Roles="Super Admin" Context="innerCtx">
+                    <AuthorizeView Roles="Super Admin,Administrator" Context="innerCtx">
                         <Authorized>
                             <MudNavLink Href="/admin/staff" Icon="@Icons.Material.Filled.Badge">
                                 Staff accounts
                             </MudNavLink>
                         </Authorized>
                     </AuthorizeView>
+                </MudNavMenu>
+            </Authorized>
+        </AuthorizeView>
+
+        @* ---- Administration section ---- *@
+        <AuthorizeView Roles="Super Admin,Administrator">
+            <Authorized>
+                <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary mt-2" Style="letter-spacing:0.5px;">ADMINISTRATION</MudText>
+                <MudNavMenu Class="mb-3">
+                    <MudNavLink Href="/admin/staff" Icon="@Icons.Material.Filled.Badge">
+                        Staff accounts
+                    </MudNavLink>
+                    <MudNavLink Href="/expenses" Icon="@Icons.Material.Filled.AccountBalanceWallet">
+                        Daily expenses
+                    </MudNavLink>
+                    <MudNavLink Href="/admin/system" Icon="@Icons.Material.Filled.DisplaySettings">
+                        System settings
+                    </MudNavLink>
                 </MudNavMenu>
             </Authorized>
         </AuthorizeView>

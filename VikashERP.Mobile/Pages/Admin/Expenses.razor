@@ -1,0 +1,354 @@
+@page "/expenses"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@inject IExpenseService ExpenseService
+@inject ISnackbar Snackbar
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<div class="expenses-page">
+    @* Page Header *@
+    <div class="d-flex justify-space-between align-end mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">Daily Expenses</MudText>
+            <MudText Typo="Typo.body2" Style="color: #666;">
+                Operational overheads & costs
+            </MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadDataAsync" Disabled="_isLoading" />
+    </div>
+
+    @* KPIs Grid *@
+    <MudGrid Spacing="2" Class="mb-4">
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #e3f2fd;">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Style="color: #1976d2;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Month Total</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">₹@_monthlyExpenses.ToString("N0")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #ffebee;">
+                        <MudIcon Icon="@Icons.Material.Filled.Today" Style="color: #d32f2f;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Today Total</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">₹@_todayExpenses.ToString("N0")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center justify-space-between mb-1">
+                    <div class="d-flex align-center">
+                        <div class="stat-icon-wrapper" style="background-color: #fff3e0;">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Style="color: #f57c00;" Size="Size.Small" />
+                        </div>
+                        <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Top Expense Category</MudText>
+                    </div>
+                    <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800; font-size: 1rem;">@_topCategory</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Search Bar *@
+    <MudTextField @bind-Value="_searchQuery" Placeholder="Search by category or remarks..." 
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input mb-4" 
+                  Immediate="true" TextChanged="FilterExpenses" />
+
+    @* Expenses List *@
+    <div class="expense-list d-flex flex-column gap-3 mb-6">
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Expenses..." Absolute="true" />
+        
+        @if (!_isLoading && !_filteredExpenses.Any())
+        {
+            <MudText Typo="Typo.body2" Style="color: #666; text-align: center;">No expenses found.</MudText>
+        }
+        else if (!_isLoading)
+        {
+            @foreach (var exp in _filteredExpenses)
+            {
+                <MudPaper Class="expense-card pa-3" Elevation="0">
+                    <div class="d-flex justify-space-between align-start mb-2">
+                        <div class="flex-1 pr-2">
+                            <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 800; line-height: 1.2;">
+                                @exp.Category
+                            </MudText>
+                            <MudText Typo="Typo.caption" Style="color: #666; display: block; margin-top: 2px;">
+                                @exp.ExpenseDate.ToString("MMM dd, yyyy") • @exp.PaymentMode
+                            </MudText>
+                        </div>
+                        <div class="d-flex flex-column align-end">
+                            <MudText Typo="Typo.h6" Style="color: #d32f2f; font-weight: 800; font-family: monospace;">
+                                ₹@exp.Amount.ToString("N0")
+                            </MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Default" OnClick="() => OpenEditSheet(exp)" Class="mt-1" />
+                        </div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(exp.Remarks))
+                    {
+                        <div class="mt-2 pt-2" style="border-top: 1px dashed rgba(0,0,0,0.1);">
+                            <MudText Typo="Typo.caption" Style="color: #666;">
+                                @exp.Remarks
+                            </MudText>
+                        </div>
+                    }
+                </MudPaper>
+            }
+        }
+    </div>
+
+    @* Floating Action Button *@
+    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+            Style="position: fixed; bottom: 120px; right: 24px; background-color: #1976d2;" 
+            OnClick="OpenAddSheet" />
+</div>
+
+@* Bottom Sheet for Add Expense *@
+<MudDrawer @bind-Open="_isSheetOpen" Anchor="Anchor.Bottom" Elevation="2" Variant="DrawerVariant.Temporary" Height="auto" Style="background-color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; padding-bottom: env(safe-area-inset-bottom);">
+    <div class="pa-4 d-flex flex-column" style="padding-bottom: 80px !important;">
+        <div class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-center gap-3">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Style="color: #1a2530;" />
+                <div>
+                    <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700; line-height: 1.2;">@(_editingExpenseId == null ? "Log Expense" : "Edit Expense")</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #666;">@(_editingExpenseId == null ? "Record a new operational cost." : "Update this expense.")</MudText>
+                </div>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="() => _isSheetOpen = false" />
+        </div>
+
+        <EditForm Model="@_editModel">
+            <MudSelect T="string" @bind-Value="_editModel.Category" Label="Category" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input">
+                @foreach (var cat in _expenseCategories)
+                {
+                    <MudSelectItem Value="@cat">@cat</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudNumericField @bind-Value="_editModel.Amount" Label="Amount (₹)" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" HideSpinButtons="true" />
+            
+            <MudDatePicker @bind-Date="_editModel.ExpenseDate" Label="Expense Date" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" MaxDate="DateTime.Today" />
+
+            <MudSelect T="string" @bind-Value="_editModel.PaymentMode" Label="Payment Mode" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input">
+                <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
+                <MudSelectItem Value="@("UPI")">UPI</MudSelectItem>
+                <MudSelectItem Value="@("NetBanking")">NetBanking</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField @bind-Value="_editModel.Remarks" Label="Remarks / Description" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Class="mb-4 light-input" />
+
+            <MudButton OnClick="SaveExpenseAsync" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Disabled="_isSaving" Size="Size.Large">
+                @(_isSaving ? "SAVING..." : (_editingExpenseId == null ? "RECORD EXPENSE" : "UPDATE EXPENSE"))
+            </MudButton>
+        </EditForm>
+    </div>
+</MudDrawer>
+
+<style>
+    .expenses-page {
+        background-color: #fafbfc;
+        min-height: 100vh;
+        padding: 16px;
+        padding-bottom: 80px; /* Space for bottom nav */
+    }
+    
+    .stat-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+    
+    .stat-icon-wrapper {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .expense-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+
+    .light-input .mud-input-outlined {
+        background-color: white !important;
+        color: #1a2530 !important;
+        border-radius: 8px !important;
+    }
+    .light-input .mud-input-outlined-border {
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@code {
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    private bool _isSheetOpen = false;
+    
+    private List<ExpenseListDto> _expenses = new();
+    private List<ExpenseListDto> _filteredExpenses = new();
+    
+    private string _searchQuery = "";
+    
+    private decimal _todayExpenses = 0;
+    private decimal _monthlyExpenses = 0;
+    private string _topCategory = "N/A";
+
+    private Guid? _editingExpenseId = null;
+    private ExpenseFormModel _editModel = new();
+    
+    // Using same categories as web
+    private readonly string[] _expenseCategories = ["Tea/Snacks", "Fuel", "Rent", "Utilities", "Maintenance", "Stationery", "Miscellaneous", "Wages"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _expenses = await ExpenseService.GetExpensesAsync();
+            _expenses = _expenses.OrderByDescending(x => x.ExpenseDate).ThenByDescending(x => x.CreatedAt).ToList();
+            
+            CalculateKPIs();
+            FilterExpenses();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading expenses: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CalculateKPIs()
+    {
+        var today = DateTime.Today;
+        
+        _todayExpenses = _expenses
+            .Where(x => x.ExpenseDate.Date == today)
+            .Sum(x => x.Amount);
+            
+        _monthlyExpenses = _expenses
+            .Where(x => x.ExpenseDate.Month == today.Month && x.ExpenseDate.Year == today.Year)
+            .Sum(x => x.Amount);
+            
+        var topCat = _expenses
+            .Where(x => x.ExpenseDate.Month == today.Month && x.ExpenseDate.Year == today.Year)
+            .GroupBy(x => x.Category)
+            .OrderByDescending(g => g.Sum(x => x.Amount))
+            .FirstOrDefault();
+            
+        _topCategory = topCat != null ? $"{topCat.Key} (₹{topCat.Sum(x => x.Amount):N0})" : "N/A";
+    }
+
+    private void FilterExpenses()
+    {
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            _filteredExpenses = _expenses;
+        }
+        else
+        {
+            _filteredExpenses = _expenses.Where(x => 
+                x.Category.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                (x.Remarks != null && x.Remarks.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+    }
+
+    private void OpenAddSheet()
+    {
+        _editingExpenseId = null;
+        _editModel = new ExpenseFormModel 
+        { 
+            ExpenseDate = DateTime.Today,
+            Category = "Miscellaneous",
+            PaymentMode = "Cash"
+        };
+        _isSheetOpen = true;
+    }
+
+    private void OpenEditSheet(ExpenseListDto exp)
+    {
+        _editingExpenseId = exp.Id;
+        _editModel = new ExpenseFormModel
+        {
+            ExpenseDate = exp.ExpenseDate,
+            Category = exp.Category,
+            Amount = exp.Amount,
+            PaymentMode = string.IsNullOrEmpty(exp.PaymentMode) ? "Cash" : exp.PaymentMode,
+            Remarks = exp.Remarks
+        };
+        _isSheetOpen = true;
+    }
+
+    private async Task SaveExpenseAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_editModel.Category))
+        {
+            Snackbar.Add("Please select a category.", Severity.Warning);
+            return;
+        }
+        
+        if (_editModel.Amount <= 0)
+        {
+            Snackbar.Add("Amount must be greater than zero.", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            bool success = false;
+            if (_editingExpenseId == null)
+            {
+                success = await ExpenseService.RecordExpenseAsync(_editModel);
+            }
+            else
+            {
+                success = await ExpenseService.UpdateExpenseAsync(_editingExpenseId.Value, _editModel);
+            }
+
+            if (success)
+            {
+                Snackbar.Add(_editingExpenseId == null ? "Expense recorded successfully." : "Expense updated successfully.", Severity.Success);
+                _isSheetOpen = false;
+                await LoadDataAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+}

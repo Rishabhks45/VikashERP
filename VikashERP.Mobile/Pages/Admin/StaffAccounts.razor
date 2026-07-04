@@ -1,0 +1,411 @@
+@page "/admin/staff"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject VikashERP.Mobile.State.AppStateService AppState
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Super Admin,Administrator")]
+
+<div class="staff-page">
+    @* Page Header / Title *@
+    <div class="header-section mb-4">
+        <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">Staff Accounts</MudText>
+        <MudText Typo="Typo.body2" Style="color: #666;">
+            Administer user profiles, allocate roles, reset credentials, and monitor system authentication activity.
+        </MudText>
+    </div>
+
+    @* Stats Grid *@
+    <MudGrid Spacing="2" Class="mb-4">
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: rgba(100, 150, 255, 0.2);">
+                        <MudIcon Icon="@Icons.Material.Filled.PeopleAlt" Style="color: #6496ff;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #9ea7b0; margin-left: 8px;">Total Accounts</MudText>
+                </div>
+                <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">@_users.Count</MudText>
+                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">Active directory</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: rgba(100, 255, 150, 0.2);">
+                        <MudIcon Icon="@Icons.Material.Filled.Security" Style="color: #28a745;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Administrators</MudText>
+                </div>
+                <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">@_users.Count(u => u.Role == "Super Admin")</MudText>
+                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">System owners</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: rgba(255, 200, 100, 0.2);">
+                        <MudIcon Icon="@Icons.Material.Filled.SupportAgent" Style="color: #ff9800;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Managers</MudText>
+                </div>
+                <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">@_users.Count(u => u.Role == "Manager")</MudText>
+                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">Operations</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: rgba(255, 100, 100, 0.2);">
+                        <MudIcon Icon="@Icons.Material.Filled.Engineering" Style="color: #dc3545;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Employees</MudText>
+                </div>
+                <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">@_users.Count(u => u.Role == "Employee")</MudText>
+                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">Field agents</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Search Bar *@
+    <MudTextField @bind-Value="_searchQuery" Placeholder="Search by name or email..." 
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="search-bar mb-4" 
+                  Immediate="true" TextChanged="FilterUsers" />
+
+    @* Users List *@
+    <div class="user-list d-flex flex-column gap-3 mb-6">
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Accounts..." Absolute="true" />
+        
+        @if (!_isLoading && !_filteredUsers.Any())
+        {
+            <MudText Typo="Typo.body2" Style="color: #666; text-align: center;">No users found.</MudText>
+        }
+        else if (!_isLoading)
+        {
+            @foreach (var user in _filteredUsers)
+            {
+                <div class="user-card d-flex align-center pa-3">
+                    <MudAvatar Style="height: 48px; width: 48px; font-size: 1rem; font-weight: 600; background-color: #e6f0ff; color: #0066ff;" Class="mr-3">
+                        @if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                        {
+                            <MudImage Src="@user.ProfilePictureUrl" Style="width: 100%; height: 100%; object-fit: cover;" fetchpriority="high" />
+                        }
+                        else
+                        {
+                            @GetInitials(user)
+                        }
+                    </MudAvatar>
+
+                    <div class="flex-1 overflow-hidden mr-2">
+                        <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            @user.FirstName @user.LastName
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color: #666; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            @user.Email
+                        </MudText>
+                    </div>
+
+                    <div class="d-flex flex-column align-end">
+                        <div class="d-flex align-center mb-1 gap-2">
+                            <span class="role-badge">@user.Role.ToUpper()</span>
+                            <div class="d-flex align-center">
+                                <div style="width: 6px; height: 6px; border-radius: 50%; background-color: @(user.IsActive ? "#28a745" : "#dc3545"); margin-right: 4px;"></div>
+                                <span style="font-size: 0.65rem; color: #666;">@(user.IsActive ? "Active" : "Inactive")</span>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #0066ff;" OnClick="() => OpenEditSheet(user)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #dc3545;" OnClick="() => DeleteUser(user)" />
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    @* Floating Action Button - Adjusted to prevent cut-off without excess scroll *@
+    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" 
+            Style="position: fixed; bottom: 120px; right: 24px; background-color: #c92a2a;" 
+            OnClick="OpenAddSheet" />
+</div>
+
+@* Bottom Sheet for Add/Edit using MudDrawer *@
+<MudDrawer @bind-Open="_isSheetOpen" Anchor="Anchor.Bottom" Elevation="2" Variant="DrawerVariant.Temporary" Height="auto" Style="background-color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; padding-bottom: env(safe-area-inset-bottom);">
+    <div class="pa-4 d-flex flex-column" style="padding-bottom: 80px !important;">
+        <div class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-center gap-3">
+                <MudIcon Icon="@Icons.Material.Filled.PersonAddAlt1" Style="color: #1a2530;" />
+                <div>
+                    <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700; line-height: 1.2;">@(_isEditing ? "Edit Staff Account" : "New Staff Account")</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #666;">@(_isEditing ? "Update existing user details." : "Create a new system user with login credentials.")</MudText>
+                </div>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Style="color: #666; background-color: rgba(0,0,0,0.05);" OnClick="CloseSheet" />
+        </div>
+
+        <MudForm @ref="_form" @bind-IsValid="_isFormValid">
+            <div class="d-flex gap-3 mb-3">
+                <MudTextField @bind-Value="_dto.FirstName" Label="First Name *" Required="true" Variant="Variant.Outlined" Class="dark-input flex-1" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_dto.LastName" Label="Last Name *" Required="true" Variant="Variant.Outlined" Class="dark-input flex-1" Margin="Margin.Dense" />
+            </div>
+
+            <MudTextField @bind-Value="_dto.Email" Label="Email Address *" Required="true" InputType="InputType.Email" Variant="Variant.Outlined" Class="dark-input mb-3" Margin="Margin.Dense" />
+
+            <MudSelect T="string" @bind-Value="_dto.Role" Label="System Role *" Required="true" Variant="Variant.Outlined" Class="dark-input mb-3" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter">
+                <MudSelectItem Value="@("Super Admin")">Super Admin</MudSelectItem>
+                <MudSelectItem Value="@("Back Office User")">Back Office User</MudSelectItem>
+                <MudSelectItem Value="@("Manager")">Manager</MudSelectItem>
+                <MudSelectItem Value="@("Employee")">Employee</MudSelectItem>
+                <MudSelectItem Value="@("Customer")">Customer</MudSelectItem>
+            </MudSelect>
+
+            <div class="d-flex align-center mb-3">
+                <MudSwitch @bind-Value="_dto.IsActive" Color="Color.Success" />
+                <MudText Typo="Typo.body2" Style="color: #1a2530;" Class="ml-2">Is Active Account</MudText>
+            </div>
+
+            @if (!_isEditing)
+            {
+                <MudTextField @bind-Value="_password" Label="Security Key (Password) *" Required="true" InputType="InputType.Password" Variant="Variant.Outlined" Class="light-input mb-4" Margin="Margin.Dense" />
+            }
+
+            <div class="d-flex justify-space-between mt-auto pt-2 pb-6">
+                <MudButton Variant="Variant.Text" Style="color: #666;" OnClick="CloseSheet">CANCEL</MudButton>
+                <MudButton Variant="Variant.Filled" Style="background-color: #c92a2a; color: white;" OnClick="SaveUser" Disabled="@_isSaving">
+                    @if(_isSaving){ <MudProgressCircular Size="Size.Small" Indeterminate="true"/> } else { <span>@(_isEditing ? "SAVE CHANGES" : "CREATE ACCOUNT")</span> }
+                </MudButton>
+            </div>
+        </MudForm>
+    </div>
+</MudDrawer>
+
+<style>
+    .staff-page {
+        background-color: #fafbfc;
+        padding: 16px;
+        padding-bottom: 80px; /* Space so last item clears FAB */
+        color: #1a2530;
+    }
+    
+    .stat-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+    
+    .stat-icon-wrapper {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .search-bar .mud-input-outlined {
+        background-color: white !important;
+        border-radius: 12px !important;
+        color: #1a2530 !important;
+    }
+    .search-bar .mud-input-outlined-border {
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .user-card {
+        background-color: white;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+    .role-badge {
+        font-size: 0.55rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background-color: #f0f5ff;
+        color: #0066ff;
+        letter-spacing: 0.5px;
+        border: 1px solid rgba(0, 102, 255, 0.1);
+    }
+
+    .light-input .mud-input-outlined {
+        background-color: white !important;
+        color: #1a2530 !important;
+    }
+    .light-input .mud-input-outlined-border {
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+    .light-input label {
+        color: #666 !important;
+    }
+</style>
+
+@code {
+    private List<UserAccountDto> _users = new();
+    private List<UserAccountDto> _filteredUsers = new();
+    private string _searchQuery = "";
+    private bool _isLoading = true;
+
+    private bool _isSheetOpen = false;
+    private bool _isEditing = false;
+    private bool _isSaving = false;
+    private Guid _currentEditId = Guid.Empty;
+    
+    private CreateUserAccountDto _dto = new();
+    private string _password = "";
+    private MudForm? _form;
+    private bool _isFormValid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        
+        _users = await UserService.GetAllAsync();
+        FilterUsers(_searchQuery);
+        
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private void FilterUsers(string query)
+    {
+        _searchQuery = query;
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            _filteredUsers = _users;
+        }
+        else
+        {
+            _filteredUsers = _users.Where(u => 
+                (u.FirstName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (u.LastName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (u.Email?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+        }
+    }
+
+    private string GetInitials(UserAccountDto user)
+    {
+        var first = !string.IsNullOrWhiteSpace(user.FirstName) ? user.FirstName.Substring(0, 1).ToUpper() : "";
+        var last = !string.IsNullOrWhiteSpace(user.LastName) ? user.LastName.Substring(0, 1).ToUpper() : "";
+        return $"{first}{last}";
+    }
+
+    private void OpenAddSheet()
+    {
+        _isEditing = false;
+        _currentEditId = Guid.Empty;
+        _dto = new CreateUserAccountDto { Role = "Employee", IsActive = true };
+        _password = "";
+        _isSheetOpen = true;
+    }
+
+    private void OpenEditSheet(UserAccountDto user)
+    {
+        _isEditing = true;
+        _currentEditId = user.Id;
+        _dto = new CreateUserAccountDto
+        {
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Role = user.Role,
+            IsActive = user.IsActive,
+            ProfilePictureUrl = user.ProfilePictureUrl
+        };
+        _password = "";
+        _isSheetOpen = true;
+    }
+
+    private void CloseSheet()
+    {
+        _isSheetOpen = false;
+    }
+
+    private async Task SaveUser()
+    {
+        if (_form != null)
+        {
+            await _form.ValidateAsync();
+            if (!_isFormValid) return;
+        }
+
+        _isSaving = true;
+
+        if (_isEditing)
+        {
+            var updateDto = new UpdateUserAccountDto
+            {
+                FirstName = _dto.FirstName,
+                LastName = _dto.LastName,
+                Email = _dto.Email,
+                Role = _dto.Role,
+                IsActive = _dto.IsActive,
+                Password = string.IsNullOrWhiteSpace(_password) ? null : _password,
+                ProfilePictureUrl = _dto.ProfilePictureUrl
+            };
+
+            var result = await UserService.UpdateAsync(_currentEditId, updateDto);
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("User updated successfully", Severity.Success);
+                CloseSheet();
+                await LoadUsersAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Error: {result.ErrorMessage}", Severity.Error);
+            }
+        }
+        else
+        {
+            _dto.Password = _password;
+            var result = await UserService.CreateAsync(_dto);
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("User created successfully", Severity.Success);
+                CloseSheet();
+                await LoadUsersAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Error: {result.ErrorMessage}", Severity.Error);
+            }
+        }
+
+        _isSaving = false;
+    }
+
+    private async Task DeleteUser(UserAccountDto user)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var result = await DialogService.ShowMessageBoxAsync(
+            "Delete User", 
+            $"Are you sure you want to delete {user.FirstName} {user.LastName}?", 
+            yesText: "Delete", cancelText: "Cancel", options: options);
+
+        if (result == true)
+        {
+            var deleteResult = await UserService.DeleteAsync(user.Id);
+            if (deleteResult.IsSuccess)
+            {
+                Snackbar.Add("User deleted", Severity.Success);
+                await LoadUsersAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Error: {deleteResult.ErrorMessage}", Severity.Error);
+            }
+        }
+    }
+}

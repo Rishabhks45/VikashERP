@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Net.Http.Headers;
 using VikashERP.Mobile.Models;
@@ -8,41 +9,35 @@ namespace VikashERP.Mobile.Services;
 
 public class UserProfileService : IUserProfileService
 {
-    private readonly HttpClient _httpClient;
-    private readonly AppStateService _appStateService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public UserProfileService(HttpClient httpClient, AppStateService appStateService)
+    public UserProfileService(IHttpClientFactory httpClientFactory)
     {
-        _httpClient = httpClient;
-        _appStateService = appStateService;
-    }
-
-    private async Task SetAuthorizationHeader()
-    {
-        var token = await _appStateService.GetTokenAsync();
-        if (!string.IsNullOrEmpty(token))
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<UserAccountDto?> GetProfileAsync(Guid userId)
     {
-        await SetAuthorizationHeader();
-        return await _httpClient.GetFromJsonAsync<UserAccountDto>($"api/users/{userId}");
+        var client = _httpClientFactory.CreateClient("ApiClient");
+        return await client.GetFromJsonAsync<UserAccountDto>($"api/users/{userId}");
     }
 
-    public async Task<bool> UpdateProfileAsync(Guid userId, UpdateUserAccountDto profile)
+    public async Task<(bool IsSuccess, string ErrorMessage)> UpdateProfileAsync(Guid userId, UpdateUserAccountDto profile)
     {
         try
         {
-            await SetAuthorizationHeader();
-            var response = await _httpClient.PutAsJsonAsync($"api/users/{userId}", profile);
-            return response.IsSuccessStatusCode;
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            var response = await client.PutAsJsonAsync($"api/users/{userId}", profile);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                return (false, $"API Error: {response.StatusCode} - {error}");
+            }
+            return (true, string.Empty);
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return (false, $"Exception: {ex.Message}");
         }
     }
 }

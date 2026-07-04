@@ -1,0 +1,385 @@
+@page "/sales"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Utils
+@using VikashERP.Mobile.Services.Interfaces
+@inject ISalesService SalesService
+@inject IPdfExportService PdfExportService
+@inject ISnackbar Snackbar
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<div class="sales-list-page">
+    <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isPdfGenerating" Text="@_pdfLoadingMessage" Absolute="false" />
+
+    @* Page Header *@
+    <div class="d-flex justify-space-between align-end mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">Sales Invoices</MudText>
+            <MudText Typo="Typo.body2" Style="color: #666;">
+                Track customer billing & ledgers
+            </MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadDataAsync" Disabled="_isLoading" />
+    </div>
+
+    @* KPIs Grid *@
+    <MudGrid Spacing="2" Class="mb-4">
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #e3f2fd;">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Style="color: #1976d2;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Month Sales</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">₹@_monthlySales.ToString("N0")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #e8f5e9;">
+                        <MudIcon Icon="@Icons.Material.Filled.Today" Style="color: #388e3c;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Today Sales</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">₹@_todaySales.ToString("N0")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #fff3e0;">
+                        <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Style="color: #f57c00;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Total Invoices</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_totalInvoicesCount</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #f3e5f5;">
+                        <MudIcon Icon="@Icons.Material.Filled.FactCheck" Style="color: #7b1fa2;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">App / Draft</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_approvedVsDraft</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Search Bar *@
+    <MudTextField @bind-Value="_searchQuery" Placeholder="Search by customer or invoice #..." 
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input mb-3" 
+                  Immediate="true" TextChanged="FilterInvoices" />
+
+    @* Filter Chips *@
+    <div class="mb-4" style="overflow-x: auto; white-space: nowrap; padding-bottom: 4px;">
+        <MudChip T="string" Color="@(_statusFilter == "" ? Color.Primary : Color.Default)" Variant="@(_statusFilter == "" ? Variant.Filled : Variant.Outlined)" OnClick="@(() => SetStatusFilter(""))" Size="Size.Small">All</MudChip>
+        <MudChip T="string" Color="@(_statusFilter == "Draft" ? Color.Warning : Color.Default)" Variant="@(_statusFilter == "Draft" ? Variant.Filled : Variant.Outlined)" OnClick="@(() => SetStatusFilter("Draft"))" Size="Size.Small">Draft</MudChip>
+        <MudChip T="string" Color="@(_statusFilter == "Approved" ? Color.Success : Color.Default)" Variant="@(_statusFilter == "Approved" ? Variant.Filled : Variant.Outlined)" OnClick="@(() => SetStatusFilter("Approved"))" Size="Size.Small">Approved</MudChip>
+    </div>
+
+    @* Invoices List *@
+    <div class="invoice-list d-flex flex-column gap-3 mb-6">
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Invoices..." Absolute="true" />
+        
+        @if (!_isLoading && !_filteredInvoices.Any())
+        {
+            <MudText Typo="Typo.body2" Style="color: #666; text-align: center;">No invoices found.</MudText>
+        }
+        else if (!_isLoading)
+        {
+            @foreach (var invoice in _filteredInvoices)
+            {
+                <MudPaper Class="invoice-card" Elevation="0">
+                    <div class="d-flex justify-space-between align-center mb-3">
+                        <div class="d-flex align-center gap-3">
+                            <div class="invoice-avatar">
+                                <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Small" Style="color: #6450f3;" />
+                            </div>
+                            <div>
+                                <MudText Typo="Typo.subtitle2" Style="color: #6450f3; font-weight: 800; font-family: monospace;">#@invoice.InvoiceNumber</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #999; font-weight: 600;">@invoice.InvoiceDate.ToString("MMM dd, yyyy")</MudText>
+                            </div>
+                        </div>
+                        <div>
+                            @if (invoice.Status == SalesInvoiceStatus.Approved)
+                            {
+                                <span class="status-badge status-success">APPROVED</span>
+                            }
+                            else if (invoice.Status == SalesInvoiceStatus.Draft)
+                            {
+                                <span class="status-badge status-warning">DRAFT</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-default">@invoice.Status.ToString().ToUpper()</span>
+                            }
+                        </div>
+                    </div>
+                    
+                    <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 800; line-height: 1.2; margin-bottom: 16px;">
+                        @invoice.CustomerName
+                    </MudText>
+                    
+                    <div class="invoice-footer d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.caption" Style="color: #8E8E93; font-weight: 600;">TOTAL AMOUNT</MudText>
+                            <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 900; font-family: monospace;">₹@invoice.TotalAmount.ToString("N0")</MudText>
+                            @if (invoice.DueAmount > 0)
+                            {
+                                <MudText Typo="Typo.caption" Style="color: #e53935; font-weight: 700;">Due: ₹@invoice.DueAmount.ToString("N0")</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Style="color: #43a047; font-weight: 700;">Fully Paid</MudText>
+                            }
+                        </div>
+                        
+                        <MudIconButton Icon="@Icons.Material.Rounded.CloudDownload" 
+                                       Variant="Variant.Filled" 
+                                       Size="Size.Medium" 
+                                       Class="download-btn"
+                                       OnClick="@(() => DownloadInvoiceAsync(invoice))" />
+                    </div>
+                </MudPaper>
+            }
+        }
+    </div>
+
+    @* Floating Action Button *@
+    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+            Style="position: fixed; bottom: 120px; right: 24px; background-color: #1976d2;" 
+            OnClick="ShowNewInvoiceWarning" />
+
+</div>
+
+<style>
+    .sales-list-page {
+        background-color: #fafbfc;
+        min-height: 100vh;
+        padding: 16px;
+        padding-bottom: 80px; /* Space for bottom nav */
+    }
+    
+    .stat-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+    
+    .stat-icon-wrapper {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .invoice-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important;
+        padding: 20px;
+    }
+    
+    .invoice-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background-color: rgba(100, 80, 243, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .status-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 6px 10px;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+    }
+    .status-success {
+        background-color: rgba(67, 160, 71, 0.1);
+        color: #43a047;
+    }
+    .status-warning {
+        background-color: rgba(245, 124, 0, 0.1);
+        color: #f57c00;
+    }
+    .status-default {
+        background-color: #f5f5f5;
+        color: #616161;
+    }
+
+    .invoice-footer {
+        background-color: #fcfcfd;
+        margin: 0 -20px -20px -20px;
+        padding: 16px 20px;
+        border-radius: 0 0 20px 20px;
+        border-top: 1px dashed rgba(0,0,0,0.08);
+    }
+    
+    .download-btn {
+        background-color: #6450f3 !important;
+        color: white !important;
+        border-radius: 14px !important;
+        box-shadow: 0 6px 16px rgba(100, 80, 243, 0.3) !important;
+    }
+
+    .light-input .mud-input-outlined {
+        background-color: white !important;
+        color: #1a2530 !important;
+        border-radius: 8px !important;
+    }
+    .light-input .mud-input-outlined-border {
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@code {
+    private bool _isLoading = true;
+    private bool _isPdfGenerating = false;
+    private string _pdfLoadingMessage = "Generating PDF...";
+    
+    private List<InvoiceListDto> _invoices = new();
+    private List<InvoiceListDto> _filteredInvoices = new();
+    
+    private string _searchQuery = "";
+    private string _statusFilter = "";
+    
+    private decimal _todaySales = 0;
+    private decimal _monthlySales = 0;
+    private int _totalInvoicesCount = 0;
+    private string _approvedVsDraft = "0 / 0";
+    
+    private InvoiceDetailDto? _selectedInvoiceForPrint;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            _invoices = await SalesService.GetInvoicesAsync();
+            _invoices = _invoices.OrderByDescending(x => x.InvoiceDate).ThenByDescending(x => x.InvoiceNumber).ToList();
+            
+            CalculateKPIs();
+            FilterInvoices();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading invoices: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CalculateKPIs()
+    {
+        var today = DateTime.Today;
+        
+        _todaySales = _invoices
+            .Where(x => x.InvoiceDate.Date == today)
+            .Sum(x => x.TotalAmount);
+            
+        _monthlySales = _invoices
+            .Where(x => x.InvoiceDate.Month == today.Month && x.InvoiceDate.Year == today.Year)
+            .Sum(x => x.TotalAmount);
+            
+        _totalInvoicesCount = _invoices.Count;
+
+        int approvedCount = _invoices.Count(x => x.Status == SalesInvoiceStatus.Approved);
+        int draftCount = _invoices.Count(x => x.Status == SalesInvoiceStatus.Draft);
+        _approvedVsDraft = $"{approvedCount} / {draftCount}";
+    }
+
+    private void SetStatusFilter(string status)
+    {
+        _statusFilter = status;
+        FilterInvoices();
+    }
+
+    private void FilterInvoices()
+    {
+        var query = _invoices.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            query = query.Where(x => 
+                x.CustomerName.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                x.InvoiceNumber.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+            );
+        }
+
+        if (!string.IsNullOrEmpty(_statusFilter))
+        {
+            if (Enum.TryParse<SalesInvoiceStatus>(_statusFilter, out var statusEnum))
+            {
+                query = query.Where(x => x.Status == statusEnum);
+            }
+        }
+
+        _filteredInvoices = query.ToList();
+    }
+
+    private void ShowNewInvoiceWarning()
+    {
+        Snackbar.Add("Please use the Web Portal to create detailed Sales Invoices.", Severity.Info);
+    }
+
+    private async Task DownloadInvoiceAsync(InvoiceListDto invoice)
+    {
+        try
+        {
+            _isPdfGenerating = true;
+            _pdfLoadingMessage = "Downloading PDF...";
+            StateHasChanged();
+            
+            var bytes = await SalesService.GetInvoicePdfAsync(invoice.Id);
+            if (bytes != null)
+            {
+                var safeInvoiceNumber = invoice.InvoiceNumber.Replace("/", "-").Replace("\\", "-");
+                var filename = $"Invoice_{safeInvoiceNumber}.pdf";
+                
+                var base64String = Convert.ToBase64String(bytes);
+                var result = await PdfExportService.SaveAndOpenPdfAsync(base64String, filename);
+                
+                if (result.IsSuccess) Snackbar.Add("Invoice downloaded successfully!", Severity.Success);
+                else Snackbar.Add($"Download failed: {result.ErrorMessage}", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add("Failed to generate PDF on server.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error downloading invoice: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isPdfGenerating = false;
+            StateHasChanged();
+        }
+    }
+}

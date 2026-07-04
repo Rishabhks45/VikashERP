@@ -1,0 +1,416 @@
+@page "/profiles"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@inject ICustomerService CustomerService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject VikashERP.Mobile.State.AppStateService AppState
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<div class="profiles-page">
+    @* Page Header / Title *@
+    <div class="header-section mb-4">
+        <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">Entity Profiles</MudText>
+        <MudText Typo="Typo.body2" Style="color: #666;">
+            Manage customer accounts, contact details, credit limits, and default payment modes.
+        </MudText>
+    </div>
+
+    @* Stats Grid (KPIs) *@
+    <MudGrid Spacing="2" Class="mb-4">
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #e3f2fd;">
+                        <MudIcon Icon="@Icons.Material.Filled.Groups" Style="color: #1976d2;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Total Customers</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700;">@_customers.Count</MudText>
+                <MudText Typo="Typo.caption" Style="color: #28a745; font-size: 0.65rem;">Active profiles</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #fff3e0;">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Style="color: #f57c00;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Dues</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700;">@FormatCurrency(TotalDues)</MudText>
+                <MudText Typo="Typo.caption" Style="color: #dc3545; font-size: 0.65rem;">@DueCustomerCount accounts</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #e8f5e9;">
+                        <MudIcon Icon="@Icons.Material.Filled.Savings" Style="color: #388e3c;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Advance</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700;">@FormatCurrency(TotalAdvance)</MudText>
+                <MudText Typo="Typo.caption" Style="color: #28a745; font-size: 0.65rem;">@AdvanceCustomerCount accounts</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
+                <div class="d-flex align-center mb-1">
+                    <div class="stat-icon-wrapper" style="background-color: #f3e5f5;">
+                        <MudIcon Icon="@Icons.Material.Filled.Payments" Style="color: #7b1fa2;" Size="Size.Small" />
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">A/C Cust.</MudText>
+                </div>
+                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700;">@_customers.Count(c => c.DefaultPaymentMode == "A/C")</MudText>
+                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">Credit accounts</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Search Bar *@
+    <MudTextField @bind-Value="_searchQuery" Placeholder="Search by name, account no, phone..." 
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="search-bar mb-4 light-input" 
+                  Immediate="true" TextChanged="FilterCustomers" />
+
+    @* Customer List *@
+    <div class="customer-list d-flex flex-column gap-3">
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Profiles..." Absolute="true" />
+        
+        @if (!_isLoading && !_filteredCustomers.Any())
+        {
+            <MudText Typo="Typo.body2" Style="color: #666; text-align: center;">No customers found.</MudText>
+        }
+        else if (!_isLoading)
+        {
+            @foreach (var customer in _filteredCustomers)
+            {
+                <div class="customer-card pa-3">
+                    <div class="d-flex justify-space-between align-start mb-2">
+                        <div class="flex-1 mr-2">
+                            <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 700; line-height: 1.2;">
+                                @($"{customer.FirstName} {customer.LastName}".Trim())
+                            </MudText>
+                            @if (!string.IsNullOrWhiteSpace(customer.CompanyName))
+                            {
+                                <MudText Typo="Typo.caption" Style="color: #64748b; display: block;">@customer.CompanyName</MudText>
+                            }
+                            <MudText Typo="Typo.caption" Style="color: #666; display: block; margin-top: 4px;">
+                                A/C: @customer.AccountNumber
+                            </MudText>
+                        </div>
+                        <div class="d-flex flex-column align-end">
+                            <span class="payment-badge @(customer.DefaultPaymentMode == "Cash" ? "badge-cash" : "badge-ac")">
+                                @customer.DefaultPaymentMode
+                            </span>
+                            <MudText Typo="Typo.body2" Style="font-weight: 700; margin-top: 4px;" Class="@GetBalanceClass(customer.CurrentBalance)">
+                                @FormatCurrency(customer.CurrentBalance)
+                            </MudText>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-space-between align-center mt-2 pt-2" style="border-top: 1px dashed rgba(0,0,0,0.1);">
+                        <MudText Typo="Typo.caption" Style="color: #666;">
+                            <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Style="font-size: 0.8rem; margin-right: 4px; vertical-align: text-bottom;" />
+                            @customer.Phone
+                        </MudText>
+                        <div class="d-flex gap-1">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #0066ff; padding: 4px;" OnClick="() => OpenEditSheet(customer)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #dc3545; padding: 4px;" OnClick="() => DeleteCustomer(customer)" />
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    @* Floating Action Button *@
+    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" 
+            Style="position: fixed; bottom: 120px; right: 24px; background-color: #1976d2;" 
+            OnClick="OpenAddSheet" />
+</div>
+
+@* Bottom Sheet for Add/Edit using MudDrawer *@
+<MudDrawer @bind-Open="_isSheetOpen" Anchor="Anchor.Bottom" Elevation="2" Variant="DrawerVariant.Temporary" Height="auto" Style="background-color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; padding-bottom: env(safe-area-inset-bottom);">
+    <div class="pa-4 d-flex flex-column" style="padding-bottom: 80px !important;">
+        <div class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-center gap-3">
+                <MudIcon Icon="@(_isEditing ? Icons.Material.Filled.ManageAccounts : Icons.Material.Filled.PersonAddAlt1)" Style="color: #1a2530;" />
+                <div>
+                    <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700; line-height: 1.2;">@(_isEditing ? "Edit Customer" : "New Customer")</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #666;">@(_isEditing ? $"Account: {_editingAccountNumber}" : "Account number will be generated automatically.")</MudText>
+                </div>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Style="color: #666; background-color: rgba(0,0,0,0.05);" OnClick="CloseSheet" />
+        </div>
+
+        <MudForm @ref="_form" @bind-IsValid="_isFormValid">
+            <div class="d-flex gap-3 mb-3">
+                <MudTextField @bind-Value="_model.FirstName" Label="First Name *" Required="true" Variant="Variant.Outlined" Class="light-input flex-1" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_model.LastName" Label="Last Name *" Required="true" Variant="Variant.Outlined" Class="light-input flex-1" Margin="Margin.Dense" />
+            </div>
+
+            <MudTextField @bind-Value="_model.CompanyName" Label="Company Name" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense" />
+            
+            <div class="d-flex gap-3 mb-3">
+                <MudTextField @bind-Value="_model.Phone" Label="Phone *" Required="true" Variant="Variant.Outlined" Class="light-input flex-1" Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_model.Gstin" Label="GSTIN" Variant="Variant.Outlined" Class="light-input flex-1" Margin="Margin.Dense" />
+            </div>
+
+            <MudTextField @bind-Value="_model.Email" Label="Email" InputType="InputType.Email" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_model.Address" Label="Address" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense" Lines="2" />
+
+            <MudSelect T="string" @bind-Value="_model.DefaultPaymentMode" Label="Default Payment Mode *" Required="true" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter">
+                <MudSelectItem Value="@("A/C")">A/C (Credit Account)</MudSelectItem>
+                <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
+            </MudSelect>
+
+            <div class="d-flex gap-3 mb-4">
+                <MudNumericField @bind-Value="_model.CreditLimit" Label="Credit Limit" Variant="Variant.Outlined" Class="light-input flex-1" Margin="Margin.Dense" Min="0" />
+                <MudNumericField @bind-Value="_model.DefaultFreightRate" Label="Default Freight" Variant="Variant.Outlined" Class="light-input flex-1" Margin="Margin.Dense" Min="0" />
+            </div>
+
+            <div class="d-flex justify-space-between mt-auto pt-2 pb-6">
+                <MudButton Variant="Variant.Text" Style="color: #666;" OnClick="CloseSheet">CANCEL</MudButton>
+                <MudButton Variant="Variant.Filled" Style="background-color: #1976d2; color: white;" OnClick="SaveCustomer" Disabled="@_isSaving">
+                    @if(_isSaving){ <MudProgressCircular Size="Size.Small" Indeterminate="true"/> } else { <span>@(_isEditing ? "UPDATE CUSTOMER" : "CREATE CUSTOMER")</span> }
+                </MudButton>
+            </div>
+        </MudForm>
+    </div>
+</MudDrawer>
+
+<style>
+    .profiles-page {
+        background-color: #fafbfc;
+        padding: 16px;
+        padding-bottom: 80px; /* Space so last item clears FAB */
+        color: #1a2530;
+    }
+    
+    .stat-card {
+        background-color: white !important;
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    }
+    
+    .stat-icon-wrapper {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .customer-card {
+        background-color: white;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+
+    .payment-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 12px;
+        letter-spacing: 0.5px;
+    }
+    .badge-ac {
+        background-color: #f3e5f5;
+        color: #7b1fa2;
+        border: 1px solid rgba(123, 31, 162, 0.2);
+    }
+    .badge-cash {
+        background-color: #e8f5e9;
+        color: #388e3c;
+        border: 1px solid rgba(56, 142, 60, 0.2);
+    }
+
+    .balance-dues { color: #d32f2f !important; }
+    .balance-advance { color: #2e7d32 !important; }
+    .balance-zero { color: #64748b !important; }
+
+    .light-input .mud-input-outlined {
+        background-color: white !important;
+        color: #1a2530 !important;
+    }
+    .light-input .mud-input-outlined-border {
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+    .light-input label {
+        color: #666 !important;
+    }
+</style>
+
+@code {
+    private List<CustomerListDto> _customers = new();
+    private List<CustomerListDto> _filteredCustomers = new();
+    private string _searchQuery = "";
+    private bool _isLoading = true;
+
+    private bool _isSheetOpen = false;
+    private bool _isEditing = false;
+    private bool _isSaving = false;
+    private Guid _currentEditId = Guid.Empty;
+    private string _editingAccountNumber = "";
+    
+    private CustomerFormModel _model = new();
+    private MudForm? _form;
+    private bool _isFormValid;
+
+    private decimal TotalDues => _customers.Where(c => c.CurrentBalance < 0).Sum(c => Math.Abs(c.CurrentBalance));
+    private int DueCustomerCount => _customers.Count(c => c.CurrentBalance < 0);
+    private decimal TotalAdvance => _customers.Where(c => c.CurrentBalance > 0).Sum(c => c.CurrentBalance);
+    private int AdvanceCustomerCount => _customers.Count(c => c.CurrentBalance > 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        
+        _customers = await CustomerService.GetAllAsync();
+        FilterCustomers(_searchQuery);
+        
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private void FilterCustomers(string query)
+    {
+        _searchQuery = query;
+        if (string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            _filteredCustomers = _customers;
+        }
+        else
+        {
+            _filteredCustomers = _customers.Where(c => 
+                (c.AccountNumber?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (c.FirstName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (c.LastName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (c.CompanyName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (c.Phone?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (c.Email?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+        }
+    }
+
+    private string FormatCurrency(decimal amount) => $"₹{amount:N2}";
+
+    private string GetBalanceClass(decimal balance) => balance switch
+    {
+        < 0 => "balance-dues",
+        > 0 => "balance-advance",
+        _ => "balance-zero"
+    };
+
+    private void OpenAddSheet()
+    {
+        _isEditing = false;
+        _currentEditId = Guid.Empty;
+        _editingAccountNumber = "";
+        _model = new CustomerFormModel { DefaultPaymentMode = "A/C", IsNewCustomer = true };
+        _isSheetOpen = true;
+    }
+
+    private void OpenEditSheet(CustomerListDto customer)
+    {
+        _isEditing = true;
+        _currentEditId = customer.Id;
+        _editingAccountNumber = customer.AccountNumber;
+        _model = new CustomerFormModel
+        {
+            FirstName = customer.FirstName,
+            LastName = customer.LastName,
+            CompanyName = customer.CompanyName,
+            Phone = customer.Phone,
+            Email = customer.Email,
+            Gstin = customer.Gstin,
+            Address = customer.Address,
+            DefaultPaymentMode = customer.DefaultPaymentMode,
+            CreditLimit = customer.CreditLimit,
+            DefaultFreightRate = customer.DefaultFreightRate,
+            IsNewCustomer = false
+        };
+        _isSheetOpen = true;
+    }
+
+    private void CloseSheet()
+    {
+        _isSheetOpen = false;
+    }
+
+    private async Task SaveCustomer()
+    {
+        if (_form != null)
+        {
+            await _form.ValidateAsync();
+            if (!_isFormValid) return;
+        }
+
+        _isSaving = true;
+
+        if (_isEditing)
+        {
+            var result = await CustomerService.UpdateAsync(_currentEditId, _model);
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("Customer updated successfully", Severity.Success);
+                CloseSheet();
+                await LoadCustomersAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Error: {result.ErrorMessage}", Severity.Error);
+            }
+        }
+        else
+        {
+            var result = await CustomerService.CreateAsync(_model);
+            if (result.IsSuccess)
+            {
+                Snackbar.Add("Customer created successfully", Severity.Success);
+                CloseSheet();
+                await LoadCustomersAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Error: {result.ErrorMessage}", Severity.Error);
+            }
+        }
+
+        _isSaving = false;
+    }
+
+    private async Task DeleteCustomer(CustomerListDto customer)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var result = await DialogService.ShowMessageBoxAsync(
+            "Delete Customer", 
+            $"Are you sure you want to delete {customer.FirstName} {customer.LastName}?", 
+            yesText: "Delete", cancelText: "Cancel", options: options);
+
+        if (result == true)
+        {
+            var deleteResult = await CustomerService.DeleteAsync(customer.Id);
+            if (deleteResult.IsSuccess)
+            {
+                Snackbar.Add("Customer deleted", Severity.Success);
+                await LoadCustomersAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Error: {deleteResult.ErrorMessage}", Severity.Error);
+            }
+        }
+    }
+}

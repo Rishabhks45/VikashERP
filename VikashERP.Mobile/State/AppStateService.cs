@@ -61,4 +61,14 @@ public class AppStateService
     }
 
     private void NotifyStateChanged() => OnChange?.Invoke();
+
+    // --- User Profile State ---
+    public string? UserProfilePictureUrl { get; private set; }
+    public event Action<string?>? OnProfilePictureChanged;
+
+    public void UpdateProfilePicture(string? newUrl)
+    {
+        UserProfilePictureUrl = newUrl;
+        OnProfilePictureChanged?.Invoke(newUrl);
+    }
 }
