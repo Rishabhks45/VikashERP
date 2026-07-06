@@ -64,7 +64,7 @@ public class SalesWebService : ISalesWebService
 
     public async Task<byte[]?> GetInvoicePdfAsync(Guid id)
     {
-        var response = await _httpClient.GetAsync($"api/sales/invoices/{id}/pdf");
+        var response = await _httpClient.GetAsync($"api/sales/{id}/pdf");
         if (response.IsSuccessStatusCode)
         {
             return await response.Content.ReadAsByteArrayAsync();
