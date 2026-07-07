@@ -21,7 +21,7 @@ public class CreatePurchaseEntryCommandHandler : IRequestHandler<CreatePurchaseE
         {
             SupplierId = request.Dto.SupplierId,
             InvoiceNumber = request.Dto.InvoiceNumber,
-            InvoiceDate = request.Dto.InvoiceDate.ToUniversalTime(),
+            InvoiceDate = DateTime.SpecifyKind(request.Dto.InvoiceDate, DateTimeKind.Utc),
             LoadingCharge = request.Dto.LoadingCharge,
             FreightCharge = request.Dto.FreightCharge,
             CgstAmount = request.Dto.CgstAmount,

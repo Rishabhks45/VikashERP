@@ -48,8 +48,7 @@ public class SalesCommandHandlers :
             PaymentMode = dto.PaymentMode,
             VehicleNumber = dto.VehicleNumber,
             Remarks = dto.Remarks,
-            InvoiceDate = DateTime.SpecifyKind(dto.InvoiceDate.Date, DateTimeKind.Utc),
-            CreatedAt = DateTime.UtcNow
+            InvoiceDate = dto.InvoiceDate == default ? DateTime.UtcNow : DateTime.SpecifyKind(dto.InvoiceDate, DateTimeKind.Utc),
         };
 
         foreach (var itemDto in dto.Items)
@@ -66,8 +65,7 @@ public class SalesCommandHandlers :
                 CgstRate = itemDto.CgstRate,
                 SgstRate = itemDto.SgstRate,
                 IgstRate = itemDto.IgstRate,
-                TotalPrice = itemDto.TotalPrice,
-                CreatedAt = DateTime.UtcNow
+                TotalPrice = itemDto.TotalPrice
             });
         }
 
@@ -101,8 +99,7 @@ public class SalesCommandHandlers :
             PaymentMode = dto.PaymentMode,
             VehicleNumber = dto.VehicleNumber,
             Remarks = dto.Remarks,
-            InvoiceDate = DateTime.SpecifyKind(dto.InvoiceDate.Date, DateTimeKind.Utc),
-            UpdatedAt = DateTime.UtcNow
+            InvoiceDate = dto.InvoiceDate == default ? DateTime.UtcNow : DateTime.SpecifyKind(dto.InvoiceDate, DateTimeKind.Utc)
         };
 
         foreach (var itemDto in dto.Items)
@@ -119,8 +116,7 @@ public class SalesCommandHandlers :
                 CgstRate = itemDto.CgstRate,
                 SgstRate = itemDto.SgstRate,
                 IgstRate = itemDto.IgstRate,
-                TotalPrice = itemDto.TotalPrice,
-                CreatedAt = DateTime.UtcNow
+                TotalPrice = itemDto.TotalPrice
             });
         }
 

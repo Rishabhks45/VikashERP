@@ -20,7 +20,7 @@ public class Invoice : BaseEntity
     public string PaymentMode { get; set; } = string.Empty;
     public string? VehicleNumber { get; set; }
     public string? Remarks { get; set; }
-    public DateTime InvoiceDate { get; set; }
+    public DateTime InvoiceDate { get; set; } = DateTime.UtcNow;
     public VikashERP.SharedKernel.Enums.SalesInvoiceStatus Status { get; set; } = VikashERP.SharedKernel.Enums.SalesInvoiceStatus.Draft;
 
 
