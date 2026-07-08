@@ -55,7 +55,7 @@ public class JwtProvider : IJwtProvider
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        if (!string.IsNullOrEmpty(profilePictureUrl))
+        if (!string.IsNullOrEmpty(profilePictureUrl) && !profilePictureUrl.StartsWith("data:image"))
             claims.Add(new Claim("picture", profilePictureUrl));
 
         if (customerId.HasValue)
