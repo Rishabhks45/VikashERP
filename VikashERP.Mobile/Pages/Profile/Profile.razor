@@ -417,11 +417,17 @@ else
             _profile = await UserProfileService.GetProfileAsync(_currentUserId);
             if (_profile == null)
             {
-                _errorMessage = "The service returned null. Check API endpoint or token.";
+                _errorMessage = "Unable to load profile data. Please try again.";
             }
             else
             {
                 CloneOriginalProfile();
+                
+                // Sync the loaded profile picture with the global AppState if they differ
+                if (_profile.ProfilePictureUrl != AppState.UserProfilePictureUrl)
+                {
+                    AppState.UpdateProfilePicture(_profile.ProfilePictureUrl);
+                }
             }
         }
         catch (Exception ex)

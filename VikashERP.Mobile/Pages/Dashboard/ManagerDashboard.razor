@@ -2,18 +2,24 @@
 @using MudBlazor
 @using Microsoft.AspNetCore.Authorization
 @using VikashERP.Mobile.Components.Layout
+@using VikashERP.Mobile.Services.Interfaces
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IUserProfileService UserProfileService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject VikashERP.Mobile.State.AppStateService AppState
 @attribute [Authorize(Roles = "Super Admin,Back Office User,Manager,Employee,Customer")]
 
 @* ---- Hero Section ---- *@
 <MudPaper Class="hero-card mb-4" Elevation="0">
     <div class="hero-content">
         <MudText Typo="Typo.body2" Class="mb-1" Style="font-weight: 500; opacity: 0.9;">Welcome Back,</MudText>
-        <MudText Typo="Typo.h5" Class="mb-1" Style="font-weight: 700;">Rishabh Kumar</MudText>
-        <MudText Typo="Typo.body2" Class="mb-4" Style="opacity: 0.9;">Store Manager</MudText>
+        <MudText Typo="Typo.h5" Class="mb-1" Style="font-weight: 700;">@(_profile != null ? $"{_profile.FirstName} {_profile.LastName}" : "Loading...")</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="opacity: 0.9;">@(_profile?.Role ?? "Employee")</MudText>
         
         <div class="employee-badge">
             <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" Class="mr-2" />
-            <span style="font-size: 0.75rem; font-weight: 500;">Employee ID: EMP1024</span>
+            <span style="font-size: 0.75rem; font-weight: 500;">Role: @(_profile?.Role ?? "Employee")</span>
         </div>
     </div>
     <div class="hero-bg-image"></div>
@@ -138,6 +144,30 @@
 
 @code {
     [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private VikashERP.Mobile.Models.UserAccountDto? _profile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdString = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(userIdString, out var userId))
+            {
+                _profile = await UserProfileService.GetProfileAsync(userId);
+                if (_profile != null)
+                {
+                    // Sync the loaded profile picture with the global AppState if they differ
+                    if (_profile.ProfilePictureUrl != AppState.UserProfilePictureUrl)
+                    {
+                        AppState.UpdateProfilePicture(_profile.ProfilePictureUrl);
+                    }
+                }
+            }
+        }
+    }
 
     private void NavigateTo(string url)
     {

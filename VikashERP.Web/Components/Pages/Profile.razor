@@ -547,6 +547,8 @@
             }
             else
             {
+                await LoadProfileDataAsync(); // Fetch fresh data from API to replace base64 picture URLs with actual file paths
+                
                 NotificationService.Success("Profile updated successfully!");
                 _userName = $"{_profileModel.FirstName} {_profileModel.LastName}".Trim();
                 if (string.IsNullOrEmpty(_userName))
@@ -589,6 +591,8 @@
             };
             
             await UserProfileService.UpdateProfileAsync(_userId.Value, dto);
+            
+            await LoadProfileDataAsync(); // Fetch fresh data from API to replace base64 picture URLs with actual file paths
             
             UserProfileService.NotifyProfileUpdated(new UserProfileDto
             {
