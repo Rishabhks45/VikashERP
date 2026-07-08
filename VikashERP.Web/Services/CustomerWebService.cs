@@ -10,6 +10,7 @@ public interface ICustomerWebService
     Task<bool> RecordCustomerPaymentAsync(CreateCustomerPaymentDto request);
     Task<List<RecentCustomerPaymentDto>> GetRecentPaymentsAsync();
     Task<List<CustomerLedgerEntryDto>> GetCustomerLedgerAsync(Guid id, DateTime? fromDate = null, DateTime? toDate = null);
+    Task<byte[]?> GetLedgerPdfAsync(Guid id, DateTime? fromDate = null, DateTime? toDate = null);
 }
 
 public class CustomerWebService : ICustomerWebService
@@ -85,5 +86,29 @@ public class CustomerWebService : ICustomerWebService
             url += "?" + string.Join("&", queryParams);
         }
         return await _httpClient.GetFromJsonAsync<List<CustomerLedgerEntryDto>>(url) ?? new List<CustomerLedgerEntryDto>();
+    }
+
+    public async Task<byte[]?> GetLedgerPdfAsync(Guid id, DateTime? fromDate = null, DateTime? toDate = null)
+    {
+        try
+        {
+            var query = new List<string>();
+            if (fromDate.HasValue) query.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+            if (toDate.HasValue) query.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+            
+            var queryString = query.Any() ? "?" + string.Join("&", query) : "";
+            
+            var response = await _httpClient.GetAsync($"api/customers/{id}/ledger/pdf{queryString}");
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsByteArrayAsync();
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching Ledger PDF: {ex.Message}");
+            return null;
+        }
     }
 }

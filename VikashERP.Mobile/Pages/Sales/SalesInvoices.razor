@@ -8,6 +8,7 @@
 @inject ISnackbar Snackbar
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavManager
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 <div class="sales-list-page">
@@ -21,7 +22,7 @@
                 Track customer billing & ledgers
             </MudText>
         </div>
-        <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadDataAsync" Disabled="_isLoading" />
+            <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadDataAsync" Disabled="_isLoading" />
     </div>
 
     @* KPIs Grid *@
@@ -156,7 +157,7 @@
     @* Floating Action Button *@
     <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
             Style="position: fixed; bottom: 120px; right: 24px; background-color: #1976d2;" 
-            OnClick="ShowNewInvoiceWarning" />
+            OnClick='() => NavManager.NavigateTo("/sales/create")' />
 
 </div>
 
@@ -342,10 +343,6 @@
         _filteredInvoices = query.ToList();
     }
 
-    private void ShowNewInvoiceWarning()
-    {
-        Snackbar.Add("Please use the Web Portal to create detailed Sales Invoices.", Severity.Info);
-    }
 
     private async Task DownloadInvoiceAsync(InvoiceListDto invoice)
     {

@@ -2,7 +2,8 @@
 @using VikashERP.Web.Models
 @using VikashERP.Web.Services
 @inject ISalesWebService SalesService
-@inject ICustomerWebService CustomerService
+@inject VikashERP.Web.Services.ICustomerWebService CustomerService
+@inject VikashERP.Web.Services.Interfaces.ITimezoneService TimezoneService
 @inject IDialogService DialogService
 @inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
@@ -112,7 +113,7 @@
                 <Columns>
                     <TemplateColumn Title="Date" SortBy="x => x.InvoiceDate">
                         <CellTemplate>
-                            <div style="font-weight: 500;">@context.Item.InvoiceDate.ToString("dd MMM yyyy")</div>
+                            <div style="font-weight: 500;">@TimezoneService.FormatDate(context.Item.InvoiceDate)</div>
                         </CellTemplate>
                     </TemplateColumn>
                     <PropertyColumn Property="x => x.InvoiceNumber" Title="Invoice No">
@@ -174,11 +175,15 @@
     private bool _isLoading = true;
 
     private decimal TotalMonthlySales => _invoices
-        .Where(i => i.InvoiceDate.Year == DateTime.Today.Year && i.InvoiceDate.Month == DateTime.Today.Month)
+        .Where(i => 
+        {
+            var local = TimezoneService.GetUserTime(i.InvoiceDate);
+            return local.Year == DateTime.Today.Year && local.Month == DateTime.Today.Month;
+        })
         .Sum(i => i.TotalAmount);
 
     private decimal TodaySales => _invoices
-        .Where(i => i.InvoiceDate.Date == DateTime.Today.Date)
+        .Where(i => TimezoneService.GetUserTime(i.InvoiceDate).Date == DateTime.Today.Date)
         .Sum(i => i.TotalAmount);
 
     private int TotalInvoicesCount => _invoices.Count;
@@ -209,12 +214,12 @@
 
             if (_dateRange?.Start.HasValue == true)
             {
-                query = query.Where(i => i.InvoiceDate.Date >= _dateRange.Start.Value.Date);
+                query = query.Where(i => TimezoneService.GetUserTime(i.InvoiceDate).Date >= _dateRange.Start.Value.Date);
             }
 
             if (_dateRange?.End.HasValue == true)
             {
-                query = query.Where(i => i.InvoiceDate.Date <= _dateRange.End.Value.Date);
+                query = query.Where(i => TimezoneService.GetUserTime(i.InvoiceDate).Date <= _dateRange.End.Value.Date);
             }
 
             return query;

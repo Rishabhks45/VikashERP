@@ -5,6 +5,7 @@
 @inject ICustomerService CustomerService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject NavigationManager NavigationManager
 @inject VikashERP.Mobile.State.AppStateService AppState
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
@@ -117,6 +118,7 @@
                             @customer.Phone
                         </MudText>
                         <div class="d-flex gap-1">
+                            <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" Style="color: #4caf50; padding: 4px;" OnClick="() => NavigateToLedger(customer)" />
                             <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #0066ff; padding: 4px;" OnClick="() => OpenEditSheet(customer)" />
                             <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #dc3545; padding: 4px;" OnClick="() => DeleteCustomer(customer)" />
                         </div>
@@ -320,6 +322,11 @@
         _editingAccountNumber = "";
         _model = new CustomerFormModel { DefaultPaymentMode = "A/C", IsNewCustomer = true };
         _isSheetOpen = true;
+    }
+
+    private void NavigateToLedger(CustomerListDto customer)
+    {
+        NavigationManager.NavigateTo($"/profiles/ledger/{customer.Id}");
     }
 
     private void OpenEditSheet(CustomerListDto customer)

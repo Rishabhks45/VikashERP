@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using System.Linq;
 using VikashERP.Mobile.Models;
 using VikashERP.Mobile.Services.Interfaces;
 
@@ -140,5 +141,56 @@ public class CustomerService : ICustomerService
         
         var errorBody = await response.Content.ReadAsStringAsync();
         throw new Exception($"API Error ({response.StatusCode}): {errorBody}");
+    }
+
+    public async Task<List<CustomerLedgerEntryDto>> GetCustomerLedgerAsync(Guid id, DateTime? fromDate = null, DateTime? toDate = null)
+    {
+        try
+        {
+            var url = $"api/customers/{id}/ledger";
+            var queryParams = new List<string>();
+            if (fromDate.HasValue) queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+            if (toDate.HasValue) queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+            
+            if (queryParams.Any())
+            {
+                url += "?" + string.Join("&", queryParams);
+            }
+            
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            var result = await client.GetFromJsonAsync<List<CustomerLedgerEntryDto>>(url);
+            return result ?? new List<CustomerLedgerEntryDto>();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"GetCustomerLedgerAsync exception: {ex.Message}");
+            return new List<CustomerLedgerEntryDto>();
+        }
+    }
+
+    public async Task<byte[]?> GetLedgerPdfAsync(Guid id, DateTime? fromDate = null, DateTime? toDate = null)
+    {
+        try
+        {
+            var queryParams = new List<string>();
+            if (fromDate.HasValue) queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+            if (toDate.HasValue) queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
+            
+            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+            
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            var response = await client.GetAsync($"api/customers/{id}/ledger/pdf{queryString}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsByteArrayAsync();
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"GetLedgerPdfAsync exception: {ex.Message}");
+            return null;
+        }
     }
 }

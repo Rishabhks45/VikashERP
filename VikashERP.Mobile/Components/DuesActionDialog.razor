@@ -1,0 +1,39 @@
+@using MudBlazor
+
+<MudDialog Style="border-radius: 16px; backdrop-filter: blur(10px); background-color: rgba(255,255,255,0.95);">
+    <DialogContent>
+        <div class="d-flex flex-column align-center text-center pa-4">
+            <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Warning" Style="font-size: 64px;" Class="mb-3" />
+            <MudText Typo="Typo.h5" Style="font-weight: 800; color: #333;" Class="mb-1">Pending Dues</MudText>
+            <MudText Typo="Typo.body1" Class="mb-4" Style="color: #666;">
+                This bill has a pending due amount of <br/>
+                <span style="font-weight: 800; color: var(--mud-palette-error); font-size: 1.5rem;">₹@DueAmount.ToString("N0")</span>
+            </MudText>
+            <MudText Typo="Typo.body2" Style="color: #888;">
+                Do you want to register this amount in the account (Udhaar), or write it off (Maaf/Discount)?
+            </MudText>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex flex-column gap-2 pa-4 w-100 pb-6" style="padding-top: 0 !important;">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Size="Size.Large" OnClick="Register" Style="font-weight: 700; border-radius: 12px; height: 52px; font-size: 0.95rem;">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Class="mr-2" Size="Size.Small" /> REGISTER IN ACCOUNT
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Success" FullWidth="true" Size="Size.Large" OnClick="WriteOff" Style="font-weight: 700; border-radius: 12px; height: 52px; font-size: 0.95rem; border-width: 2px;">
+                <MudIcon Icon="@Icons.Material.Filled.MoneyOff" Class="mr-2" Size="Size.Small" /> WRITE IT OFF (MAAF)
+            </MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Default" FullWidth="true" Size="Size.Large" OnClick="Cancel" Style="font-weight: 600; font-size: 0.9rem; margin-top: 4px;">
+                CANCEL / ENTER PAYMENT
+            </MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public decimal DueAmount { get; set; }
+
+    private void Register() => MudDialog.Close(DialogResult.Ok(true));
+    private void WriteOff() => MudDialog.Close(DialogResult.Ok(false));
+    private void Cancel() => MudDialog.Cancel();
+}

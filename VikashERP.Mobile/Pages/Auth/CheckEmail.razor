@@ -2,116 +2,46 @@
 @using MudBlazor
 @layout VikashERP.Mobile.Components.Layout.EmptyLayout
 
-<div class="check-email-page-container">
-    @* Background Image Decoration Top Right *@
-    <div class="bg-decoration-top"></div>
-
-    @* Top Bar *@
-    <div class="d-flex px-4 py-4" style="position: relative; z-index: 10;">
-        <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack" Color="Color.Inherit" OnClick="GoBack" />
+<div class="login-page-container">
+    <div class="gradient-mesh-bg">
+        <div class="mesh-blob mesh-blob-1"></div>
+        <div class="mesh-blob mesh-blob-2"></div>
+        <div class="mesh-blob mesh-blob-3"></div>
     </div>
 
-    @* Content Section *@
-    <div class="d-flex flex-column align-center px-6" style="position: relative; z-index: 10; margin-top: 20px;">
-        
-        @* Icon Container *@
-        <div class="icon-circle mb-6">
-            <MudIcon Icon="@Icons.Material.Outlined.Email" Style="color: #005ce6; font-size: 2.5rem;" />
-            <div class="check-badge">
-                <MudIcon Icon="@Icons.Material.Filled.Check" Style="color: white; font-size: 1rem; font-weight: 900;" />
+    <div class="brand-header d-flex flex-column align-center justify-center pt-8 pb-4">
+        <div class="logo-circle">
+            <MudIcon Icon="@Icons.Material.Rounded.MarkEmailUnread" Class="logo-icon" />
+        </div>
+    </div>
+
+    <div class="login-card-wrapper">
+        <div class="login-card">
+            <MudText Typo="Typo.h5" Class="welcome-title mb-2">Check Your Email</MudText>
+            <MudText Typo="Typo.body2" Class="welcome-subtitle mb-8" Style="padding: 0 10px;">
+                We have sent a password reset link to<br/>
+                <span style="color: #4f46e5; font-weight: 700;">vikash@email.com</span>
+                <br/><br/>
+                Please check your inbox and follow the instructions to reset your password.
+            </MudText>
+
+            <MudButton Variant="Variant.Filled" Class="premium-login-btn mb-6" OnClick="GoBack">
+                <MudIcon Icon="@Icons.Material.Rounded.ArrowBack" Size="Size.Small" Class="mr-2" />
+                <span>Back to Login</span>
+            </MudButton>
+            
+            <div class="signup-prompt">
+                <span>Didn't receive the email?</span>
+                <MudLink Href="#" Class="signup-link" Underline="Underline.None" OnClick="ResendEmail">Resend</MudLink>
             </div>
         </div>
-
-        <MudText Typo="Typo.h5" Style="font-weight: 800; color: #1a2530;" Class="mb-3">Check Your Email</MudText>
-        <MudText Typo="Typo.body2" Style="color: #666; text-align: center; max-width: 280px; line-height: 1.5;" Class="mb-8">
-            We have sent a password reset link to<br/>
-            <span style="color: #005ce6; font-weight: 600;">vikash@email.com</span>
-            <br/><br/>
-            Please check your inbox and follow the instructions to reset your password.
-        </MudText>
-
-        @* Action Buttons *@
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="back-login-btn mb-6" OnClick="GoBack">
-            Back to Login
-        </MudButton>
-
-        <MudText Typo="Typo.body2" Style="color: #666;">
-            Didn't receive the email? 
-            <MudLink Href="#" Style="color: #005ce6; font-weight: 600;" Underline="Underline.None" OnClick="ResendEmail">Resend</MudLink>
-        </MudText>
     </div>
-
-    @* Background Image Decoration Bottom *@
-    <div class="bg-decoration-bottom"></div>
-</div>
-
-<style>
-    .check-email-page-container {
-        min-height: 100vh;
-        background-color: #fafbfc;
-        position: relative;
-        overflow-x: hidden;
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-    }
     
-    .bg-decoration-top {
-        position: absolute;
-        top: -30px;
-        right: -30px;
-        width: 250px;
-        height: 250px;
-        background: radial-gradient(circle, rgba(200, 220, 240, 0.6) 0%, rgba(250, 251, 252, 0) 70%);
-        z-index: 0;
-        pointer-events: none;
-    }
-
-    .bg-decoration-bottom {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 200px;
-        background: linear-gradient(to top, rgba(200, 220, 240, 0.4) 0%, rgba(250, 251, 252, 0) 100%);
-        z-index: 0;
-        pointer-events: none;
-    }
-
-    .icon-circle {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background-color: #e6f0ff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-    }
-
-    .check-badge {
-        position: absolute;
-        bottom: -2px;
-        right: -2px;
-        width: 28px;
-        height: 28px;
-        background-color: #005ce6;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid #fafbfc;
-    }
-
-    .back-login-btn {
-        background-color: #005ce6 !important;
-        border-radius: 8px !important;
-        height: 52px;
-        font-weight: 700 !important;
-        text-transform: none !important;
-        font-size: 1.05rem !important;
-        box-shadow: 0 4px 10px rgba(0, 92, 230, 0.2) !important;
-    }
-</style>
+    <div class="security-footer">
+        <MudIcon Icon="@Icons.Material.Rounded.Security" Size="Size.Small" Class="security-icon mr-2" />
+        <span>Your information is end-to-end encrypted</span>
+    </div>
+</div>
 
 @code {
     [Inject] private NavigationManager Navigation { get; set; } = default!;

@@ -6,206 +6,71 @@
 @layout VikashERP.Mobile.Components.Layout.EmptyLayout
 
 <div class="login-page-container">
-    <div class="bg-decoration-top"></div>
-    <div class="bg-decoration-blob"></div>
+    <div class="gradient-mesh-bg">
+        <div class="mesh-blob mesh-blob-1"></div>
+        <div class="mesh-blob mesh-blob-2"></div>
+        <div class="mesh-blob mesh-blob-3"></div>
+    </div>
 
-    <div class="d-flex flex-column align-start px-6 brand-block" style="position: relative; z-index: 10;">
-        <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="mb-2">
-            <path d="M15 25 L50 85 L38 85 L15 35 Z" fill="#4c1d95" />
-            <path d="M15 25 L35 25 L50 85 L15 25" fill="#7c3aed" />
-            <path d="M85 25 L50 85 L62 85 L85 35 Z" fill="#c4b5fd" />
-            <path d="M85 25 L65 25 L50 85 L85 25" fill="#a78bfa" />
-            <polygon points="35,25 65,25 50,55" fill="white" />
-        </svg>
-        <div style="line-height: 1.1;">
-            <span style="font-weight: 800; font-size: 1.4rem; color: #4c1d95; letter-spacing: 1px;">VIKASH</span><br/>
-            <span style="font-size: 0.6rem; font-weight: 700; color: #7c3aed; letter-spacing: 2px;">— IRON & STEEL —</span>
+    <div class="brand-header d-flex flex-column align-center justify-center">
+        <div class="logo-circle">
+            <img src="images/dashboard_logo.svg" alt="App Logo" class="app-logo-img" />
+        </div>
+        <div class="brand-text">
+            <span class="brand-title">VIKASH</span>
+            <span class="brand-subtitle">IRON & STEEL</span>
         </div>
     </div>
 
-    <div class="content-block d-flex flex-column px-6" style="position: relative; z-index: 10;">
+    <div class="login-card-wrapper">
+        <div class="login-card">
+            <MudText Typo="Typo.h5" Class="welcome-title mb-1">Welcome Back!</MudText>
+            <MudText Typo="Typo.body2" Class="welcome-subtitle mb-8">Sign in to your account</MudText>
 
-        <MudText Typo="Typo.h5" Style="font-weight: 800; color: #1a2530;" Class="mb-1 mt-4">Welcome Back!</MudText>
-        <MudText Typo="Typo.body2" Style="color: #666; font-weight: 500;" Class="mb-8">Login to continue to your account</MudText>
+            <div class="input-container mb-5">
+                <span class="input-label">EMAIL OR PHONE</span>
+                <MudTextField T="string" @bind-Value="Email" Placeholder="Enter your email" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Mail" Immediate="true" Class="premium-input" />
+            </div>
 
-        <MudText Typo="Typo.caption" Style="font-weight: 700; color: #1a2530; letter-spacing: 0.5px;" Class="mb-2 pl-1">EMAIL OR PHONE</MudText>
-        <MudTextField T="string" @bind-Value="Email"
-                      Placeholder="Enter your email or phone"
-                      Variant="Variant.Outlined"
-                      Adornment="Adornment.Start"
-                      AdornmentIcon="@Icons.Material.Rounded.Mail"
-                      Immediate="true"
-                      Class="mb-4 custom-textfield" />
+            <div class="input-container mb-2">
+                <span class="input-label">PASSWORD</span>
+                <MudTextField T="string" @bind-Value="Password" Placeholder="Enter your password" Variant="Variant.Outlined" InputType="@(ShowPassword ? InputType.Text : InputType.Password)" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Lock" Immediate="true" Class="premium-input">
+                    <AppendAdornment>
+                        <MudIconButton Icon="@(ShowPassword ? Icons.Material.Rounded.Visibility : Icons.Material.Rounded.VisibilityOff)" OnClick="TogglePasswordVisibility" Size="Size.Small" Class="visibility-btn" />
+                    </AppendAdornment>
+                </MudTextField>
+            </div>
 
-        <MudText Typo="Typo.caption" Style="font-weight: 700; color: #1a2530; letter-spacing: 0.5px;" Class="mb-2 pl-1">PASSWORD</MudText>
-        <MudTextField T="string" @bind-Value="Password"
-                      Placeholder="Enter your password"
-                      Variant="Variant.Outlined"
-                      InputType="@(ShowPassword ? InputType.Text : InputType.Password)"
-                      Adornment="Adornment.Start"
-                      AdornmentIcon="@Icons.Material.Rounded.Lock"
-                      Immediate="true"
-                      Class="mb-2 custom-textfield">
-            <AppendAdornment>
-                <MudIconButton Icon="@(ShowPassword ? Icons.Material.Rounded.Visibility : Icons.Material.Rounded.VisibilityOff)"
-                               OnClick="TogglePasswordVisibility"
-                               Class="password-toggle" Size="Size.Small" />
-            </AppendAdornment>
-        </MudTextField>
+            <div class="d-flex justify-end mb-8">
+                <MudLink Href="/forgot-password" Class="forgot-link" Underline="Underline.None">Forgot Password?</MudLink>
+            </div>
 
-        <div class="d-flex justify-end mb-4 mt-1">
-            <MudLink Href="/forgot-password" Style="color: #6450f3; font-weight: 700; font-size: 0.85rem;" Underline="Underline.None">
-                Forgot Password?
-            </MudLink>
-        </div>
-
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="login-btn mb-4" OnClick="@PerformLogin" Disabled="@IsLoading">
-            @if (IsLoading)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="color: white;" Class="mr-2" />
-                <span>Logging in...</span>
-            }
-            else
-            {
-                <div class="d-flex align-center justify-center">
+            <MudButton Variant="Variant.Filled" Class="premium-login-btn mb-6" OnClick="PerformLogin" Disabled="@IsLoading">
+                @if (IsLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="color: white;" Class="mr-2" />
+                    <span>Logging in...</span>
+                }
+                else
+                {
                     <span>Login Securely</span>
                     <MudIcon Icon="@Icons.Material.Rounded.ArrowForward" Size="Size.Small" Class="ml-2" />
-                </div>
-            }
-        </MudButton>
-
-        <div class="d-flex justify-center mb-4">
-            <MudText Typo="Typo.body2" Style="color: #666; font-weight: 500;">
-                Don't have an account? 
-                <MudLink Href="/signup" Style="color: #6450f3; font-weight: 800; margin-left: 4px;" Underline="Underline.None">Sign up</MudLink>
-            </MudText>
+                }
+            </MudButton>
+            
+            <div class="signup-prompt">
+                <span>Don't have an account?</span>
+                <MudLink Href="/signup" Class="signup-link" Underline="Underline.None">Sign up</MudLink>
+            </div>
         </div>
     </div>
-
-    <div class="d-flex align-center justify-center security-footer">
-        <MudIcon Icon="@Icons.Material.Rounded.Security" Size="Size.Small" Style="color: #4caf50;" Class="mr-2" />
-        <MudText Typo="Typo.caption" Style="color: #888; font-weight: 600;">Your information is end-to-end encrypted</MudText>
+    
+    <div class="security-footer">
+        <MudIcon Icon="@Icons.Material.Rounded.Security" Size="Size.Small" Class="security-icon mr-2" />
+        <span>Your information is end-to-end encrypted</span>
     </div>
 
-    <div class="bg-decoration-bottom"></div>
-</div>
-
-<style>
-    .login-page-container {
-        height: 100vh;
-        height: 100dvh;
-        max-height: 100dvh;
-        background-color: #fcfcfd;
-        position: relative;
-        overflow: hidden;
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .brand-block {
-        padding-top: clamp(16px, 4vh, 48px);
-        flex-shrink: 0;
-    }
-    
-    .content-block {
-        flex: 1;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-
-    .bg-decoration-top {
-        position: absolute;
-        top: -100px;
-        right: -100px;
-        width: 350px;
-        height: 350px;
-        background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(252, 252, 253, 0) 70%);
-        z-index: 0;
-        pointer-events: none;
-    }
-    
-    .bg-decoration-blob {
-        position: absolute;
-        top: 20%;
-        left: -100px;
-        width: 250px;
-        height: 250px;
-        background: radial-gradient(circle, rgba(100, 80, 243, 0.1) 0%, rgba(252, 252, 253, 0) 70%);
-        z-index: 0;
-        pointer-events: none;
-    }
-
-    .bg-decoration-bottom {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 150px;
-        background: linear-gradient(to top, rgba(139, 92, 246, 0.05) 0%, rgba(252, 252, 253, 0) 100%);
-        z-index: 0;
-        pointer-events: none;
-    }
-
-    .custom-textfield .mud-input-outlined {
-        background-color: #f9f9f9 !important;
-        border-radius: 16px !important;
-        transition: all 0.2s ease;
-    }
-    .custom-textfield .mud-input-outlined-border {
-        border-color: transparent !important;
-    }
-    .custom-textfield.mud-input-focused .mud-input-outlined {
-        background-color: white !important;
-        box-shadow: 0 4px 12px rgba(100, 80, 243, 0.1);
-    }
-    .custom-textfield.mud-input-focused .mud-input-outlined-border {
-        border-color: #6450f3 !important;
-    }
-    .custom-textfield .mud-input-slot {
-        height: 56px;
-        font-size: 0.95rem;
-        color: #1a2530;
-        font-weight: 500;
-    }
-    .custom-textfield .mud-input-adornment-icon {
-        color: #888;
-    }
-    .custom-textfield.mud-input-focused .mud-input-adornment-icon {
-        color: #6450f3;
-    }
-
-    .password-toggle {
-        color: #999 !important;
-    }
-
-    .login-btn {
-        background-color: #6450f3 !important;
-        border-radius: 16px !important;
-        height: 56px;
-        font-weight: 800 !important;
-        text-transform: none !important;
-        font-size: 1.05rem !important;
-        box-shadow: 0 8px 20px rgba(100, 80, 243, 0.3) !important;
-        transition: all 0.2s ease;
-    }
-    
-    .login-btn:active {
-        transform: scale(0.98);
-        box-shadow: 0 4px 10px rgba(100, 80, 243, 0.2) !important;
-    }
-
-    .security-footer {
-        flex-shrink: 0;
-        padding-bottom: clamp(12px, 3vh, 32px);
-        position: relative;
-        z-index: 10;
-    }
-</style>
-
+    </div>
 @code {
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IAuthService AuthService { get; set; } = default!;

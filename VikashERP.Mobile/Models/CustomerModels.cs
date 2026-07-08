@@ -55,3 +55,15 @@ public class CustomerPaymentFormModel
     public string? Remarks { get; set; }
     public DateTime? PaymentDate { get; set; } = DateTime.Today;
 }
+
+public class CustomerLedgerEntryDto
+{
+    public Guid Id { get; set; }
+    public Guid CustomerId { get; set; }
+    public DateTime TransactionDate { get; set; }
+    public string TransactionType { get; set; } = string.Empty;
+    public decimal Debit { get; set; }
+    public decimal Credit { get; set; }
+    public decimal RunningBalance { get; set; }
+    public string? Remarks { get; set; }
+}

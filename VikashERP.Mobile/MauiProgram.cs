@@ -17,16 +17,8 @@ public static class MauiProgram
 			.ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-			})
-			.ConfigureLifecycleEvents(events =>
-			{
-#if ANDROID
-				events.AddAndroid(android => android.OnCreate((activity, bundle) =>
-				{
-					Plugin.Fingerprint.CrossFingerprint.SetCurrentActivityResolver(() => activity);
-				}));
-#endif
 			});
+
 
 		builder.Services.AddMauiBlazorWebView();
 		builder.Services.AddMudServices();

@@ -39,13 +39,14 @@
                                  AdornmentColor="Color.Primary" />
             </MudItem>
             <MudItem xs="12" sm="8" md="4">
-                <MudDateRangePicker @ref="_dateRangePicker"
-                                    Label="Statement Period"
-                                    @bind-DateRange="_dateRange"
-                                    AutoClose="true"
-                                    Variant="Variant.Outlined"
-                                    Margin="Margin.Dense"
-                                    Clearable="false" />
+                <MudSelect T="DateFilter" Value="@_selectedFilter" ValueChanged="OnDateFilterChanged" Label="Select Date Range" Variant="Variant.Outlined" Margin="Margin.Dense" Color="Color.Primary" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="DateFilter.CurrentMonth">Current Month</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.PastMonth">Past Month</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.Last6Months">Last 6 Months</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.FinancialYear">Financial Year</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.PastYear">Past Year</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.AllTime">All Time</MudSelectItem>
+                </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="4" md="3" Class="d-flex gap-2">
                 <MudButton Variant="Variant.Filled"
@@ -263,10 +264,21 @@
 </MudStack>
 
 @code {
+    public enum DateFilter
+    {
+        CurrentMonth,
+        PastMonth,
+        Last6Months,
+        FinancialYear,
+        PastYear,
+        AllTime
+    }
+
     private List<CustomerListDto> _customers = new();
     private CustomerListDto? _selectedCustomer;
-    private DateRange _dateRange = new DateRange(DateTime.Today.AddDays(-30), DateTime.Today);
-    private MudDateRangePicker? _dateRangePicker;
+    
+    private DateFilter _selectedFilter = DateFilter.CurrentMonth;
+    private DateRange _dateRange = new DateRange();
 
     private List<CustomerLedgerEntryDto> _ledgerEntries = new();
     private bool _isLoadingData = false;
@@ -281,12 +293,61 @@
     {
         try
         {
+            UpdateDateRangeForFilter();
             _customers = await CustomerService.GetCustomersAsync();
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Error loading customers: {ex.Message}", Severity.Error);
         }
+    }
+
+    private async Task OnDateFilterChanged(DateFilter newFilter)
+    {
+        _selectedFilter = newFilter;
+        UpdateDateRangeForFilter();
+        if (_selectedCustomer != null)
+        {
+            await FetchLedgerDataAsync();
+        }
+    }
+
+    private void UpdateDateRangeForFilter()
+    {
+        var today = DateTime.Today;
+        DateTime? start = null;
+        DateTime? end = null;
+
+        switch (_selectedFilter)
+        {
+            case DateFilter.CurrentMonth:
+                start = new DateTime(today.Year, today.Month, 1);
+                end = start.Value.AddMonths(1).AddDays(-1);
+                break;
+            case DateFilter.PastMonth:
+                start = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
+                end = start.Value.AddMonths(1).AddDays(-1);
+                break;
+            case DateFilter.Last6Months:
+                start = today.AddMonths(-6);
+                end = today;
+                break;
+            case DateFilter.FinancialYear:
+                var currentYear = today.Month >= 4 ? today.Year : today.Year - 1;
+                start = new DateTime(currentYear, 4, 1);
+                end = new DateTime(currentYear + 1, 3, 31);
+                break;
+            case DateFilter.PastYear:
+                start = today.AddYears(-1);
+                end = today;
+                break;
+            case DateFilter.AllTime:
+                start = null;
+                end = null;
+                break;
+        }
+
+        _dateRange = new DateRange(start, end);
     }
 
     private async Task<IEnumerable<CustomerListDto>> SearchCustomersAsync(string value, CancellationToken token)
@@ -352,9 +413,39 @@
     private async Task DownloadStatementPdf()
     {
         if (_selectedCustomer == null) return;
-        var name = _selectedCustomer.CompanyName ?? $"{_selectedCustomer.FirstName}_{_selectedCustomer.LastName}";
-        var cleanName = name.Replace(" ", "_").Replace("/", "_").Replace("\\", "_");
-        var filename = $"Ledger_Statement_{cleanName}_{DateTime.Today:ddMMyyyy}.pdf";
-        await JSRuntime.InvokeVoidAsync("downloadInvoicePdf", "printable-statement", filename);
+        
+        try
+        {
+            _isLoadingData = true;
+            StateHasChanged();
+            
+            var pdfBytes = await CustomerService.GetLedgerPdfAsync(
+                _selectedCustomer.Id, 
+                _dateRange?.Start, 
+                _dateRange?.End);
+                
+            if (pdfBytes != null)
+            {
+                var name = _selectedCustomer.CompanyName ?? $"{_selectedCustomer.FirstName}_{_selectedCustomer.LastName}";
+                var cleanName = name.Replace(" ", "_").Replace("/", "_").Replace("\\", "_");
+                var filename = $"Ledger_Statement_{cleanName}_{DateTime.Today:ddMMyyyy}.pdf";
+                
+                using var streamRef = new DotNetStreamReference(new MemoryStream(pdfBytes));
+                await JSRuntime.InvokeVoidAsync("downloadFileFromStream", filename, streamRef);
+            }
+            else
+            {
+                Snackbar.Add("Failed to generate PDF.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoadingData = false;
+            StateHasChanged();
+        }
     }
 }

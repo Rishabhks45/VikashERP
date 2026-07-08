@@ -25,6 +25,12 @@ public class TimezoneService : ITimezoneService
     public string FormatDate(DateTime? utc, string empty = "—")
         => DateFormatHelper.FormatDate(utc, GetIanaId(), empty);
 
+    public DateTime ToUtcDate(DateTime localDate)
+        => DateFormatHelper.ToUtcDate(localDate, GetIanaId());
+
+    public DateTime GetUserTime(DateTime utc)
+        => DateFormatHelper.GetUserTime(utc, GetIanaId());
+
     public string FormatDateTime(DateTime utc)
         => DateFormatHelper.FormatDateTime(utc, GetIanaId());
 

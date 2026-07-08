@@ -124,7 +124,7 @@
 .sn-ledger-head,
 .sn-ledger-row {
     display: grid;
-    grid-template-columns: 2.4fr 0.85fr 0.85fr 1fr 1fr 42px;
+    grid-template-columns: 2.4fr 1.3fr 1fr 1fr 42px;
     gap: .5rem;
     align-items: center;
 }

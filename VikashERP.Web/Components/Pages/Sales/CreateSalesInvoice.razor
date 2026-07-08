@@ -1,11 +1,14 @@
 @page "/sales/create"
 @using VikashERP.Web.Models
 @using VikashERP.Web.Services
+@using VikashERP.Web.Services.Interfaces
 @inject ISalesWebService SalesService
 @inject ICustomerWebService CustomerService
 @inject IProductWebService ProductService
+@inject ITimezoneService TimezoneService
 @inject NavigationManager NavManager
 @inject MudBlazor.ISnackbar Snackbar
+@inject MudBlazor.IDialogService DialogService
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 <PageTitle>Transaction Audit</PageTitle>
@@ -72,6 +75,14 @@
                                         <MudSelectItem T="Guid" Value="@c.Id">@c.CompanyName (@c.FirstName @c.LastName)</MudSelectItem>
                                     }
                                 </MudSelect>
+                                <div class="d-flex justify-content-end mt-1">
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" 
+                                               StartIcon="@Icons.Material.Rounded.PersonAdd" 
+                                               OnClick="AddNewCustomerProfile"
+                                               Style="font-weight: 700; font-size: 0.75rem;">
+                                        + Add New Profile
+                                    </MudButton>
+                                </div>
                             </MudItem>
                             <MudItem xs="12" md="4">
                                 <MudDatePicker Variant="Variant.Outlined"
@@ -92,9 +103,42 @@
                                          || _selectedCustomer.CompanyName?.Contains("KHUDRA", StringComparison.OrdinalIgnoreCase) == true;
                             if (isKhudra)
                             {
-                                <MudTextField Class="mt-3" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                              @bind-Value="_khudraName" Label="Walk-in Customer Name (Optional)"
-                                              Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.PersonOutline" />
+                                <div class="khudra-details-container mt-3 pa-3" style="background-color: var(--mud-palette-background-grey); border-radius: 8px; border: 1px dashed var(--mud-palette-lines-default);">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--mud-palette-text-secondary); text-transform: uppercase;">Walk-in Customer Details</span>
+                                    </div>
+                                    <MudGrid Spacing="2">
+                                        <MudItem xs="12" md="6">
+                                            <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                          @bind-Value="_khudraName" Label="Customer Name *"
+                                                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.PersonOutline" />
+                                        </MudItem>
+                                        <MudItem xs="12" md="6">
+                                            <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                          @bind-Value="_khudraPhone" Label="Mobile Number"
+                                                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Rounded.Phone" />
+                                        </MudItem>
+                                    </MudGrid>
+                                    
+                                    @if (_showAdvancedKhudra)
+                                    {
+                                        <MudGrid Spacing="2" Class="mt-0">
+                                            <MudItem xs="12" md="6">
+                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                              @bind-Value="_khudraGstin" Label="GSTIN (Optional)" />
+                                            </MudItem>
+                                            <MudItem xs="12" md="6">
+                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                              @bind-Value="_khudraAddress" Label="Address/City (Optional)" />
+                                            </MudItem>
+                                        </MudGrid>
+                                    }
+                                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="mt-2 px-1"
+                                               OnClick="@(() => _showAdvancedKhudra = !_showAdvancedKhudra)"
+                                               Style="font-weight: 600; font-size: 0.75rem;">
+                                        @(_showAdvancedKhudra ? "- Hide Details" : "+ Add GST/Address")
+                                    </MudButton>
+                                </div>
                             }
                             else
                             {
@@ -128,13 +172,8 @@
                         <!-- Column Headers -->
                         <div class="sn-ledger-head">
                             <span>Resource</span>
-                            @if (_model.Items.Any(x => x.RateOn == VikashERP.SharedKernel.Enums.RateOn.Pcs))
-                            {
-                                <span>Qty (Pcs)</span>
-                            }
-                           
-                            <span>Weight (Kg)</span>
-                            <span>Rate (₹ / Kg)</span>
+                            <span>Quantity</span>
+                            <span>Rate (₹)</span>
                             <span>Total (₹)</span>
                             <span></span>
                         </div>
@@ -167,23 +206,22 @@
                                     }
                                 </div>
 
-                                <!-- Qty (Pcs) -->
+                                <!-- Quantity -->
                                 @if (item.RateOn == VikashERP.SharedKernel.Enums.RateOn.Pcs)
                                 {
                                     <MudNumericField T="int" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      HideSpinButtons="true" Value="@item.QtyPcs"
                                                      ValueChanged="@((int v) => OnQtyChanged(item, v))"
-                                                     Class="sn-num" />
+                                                     Adornment="Adornment.End" AdornmentText="PCS"
+                                                     Class="sn-num quantity-input" />
                                 }
-                              
-                                
-                                <!-- Weight (Kg) -->
-                                @if (item.RateOn != VikashERP.SharedKernel.Enums.RateOn.Pcs)
+                                else
                                 {
                                     <MudNumericField T="decimal" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      HideSpinButtons="true" Format="N2" Value="@item.WeightKg"
                                                      ValueChanged="@((decimal v) => OnWeightChanged(item, v))"
-                                                     Class="sn-num" />
+                                                     Adornment="Adornment.End" AdornmentText="KG"
+                                                     Class="sn-num quantity-input" />
                                 }
                               
 
@@ -442,10 +480,22 @@
     private bool _isLoadingData = true;
     private bool _isSaving = false;
     private bool _isGstApplied = false;
+    
+    // Khudra Details
     private string _khudraName = string.Empty;
+    private string _khudraPhone = string.Empty;
+    private string _khudraGstin = string.Empty;
+    private string _khudraAddress = string.Empty;
+    private bool _showAdvancedKhudra = false;
+    
     private Guid? _editingDraftId = null;
     private decimal _cashPayment = 0;
     private decimal _acPayment = 0;
+
+    private void AddNewCustomerProfile()
+    {
+        NavManager.NavigateTo("/customers/create");
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -466,6 +516,25 @@
                     c.FirstName.Contains("Cash", StringComparison.OrdinalIgnoreCase) ||
                     c.CompanyName?.Contains("CASH", StringComparison.OrdinalIgnoreCase) == true ||
                     c.CompanyName?.Contains("KHUDRA", StringComparison.OrdinalIgnoreCase) == true);
+                
+                if (cash == null)
+                {
+                    // Create the default generic cash customer automatically
+                    cash = await CustomerService.CreateCustomerAsync(new CreateCustomerDto
+                    {
+                        FirstName = "Cash",
+                        LastName = "Customer",
+                        Phone = "0000000000",
+                        CompanyName = "CASH / KHUDRA",
+                        DefaultPaymentMode = "Cash"
+                    });
+                    
+                    if (cash != null)
+                    {
+                        _customers.Add(cash);
+                    }
+                }
+
                 if (cash != null) OnCustomerChanged(cash.Id);
             }
         }
@@ -476,7 +545,22 @@
     {
         _model.CustomerId = id;
         _selectedCustomer = _customers.FirstOrDefault(c => c.Id == id);
-        if (_selectedCustomer != null) { _model.FreightCharge = _selectedCustomer.DefaultFreightRate; CalculateTotals(); }
+        if (_selectedCustomer != null) 
+        { 
+            _model.FreightCharge = _selectedCustomer.DefaultFreightRate; 
+            
+            bool isKhudra = _selectedCustomer.FirstName.Contains("Cash", StringComparison.OrdinalIgnoreCase) ||
+                 _selectedCustomer.CompanyName?.Contains("CASH", StringComparison.OrdinalIgnoreCase) == true ||
+                 _selectedCustomer.CompanyName?.Contains("KHUDRA", StringComparison.OrdinalIgnoreCase) == true;
+                 
+            if (isKhudra)
+            {
+                if (string.IsNullOrWhiteSpace(_khudraName)) _khudraName = "KHUDRA Customer";
+                if (string.IsNullOrWhiteSpace(_khudraPhone)) _khudraPhone = "1234567891";
+            }
+            
+            CalculateTotals(); 
+        }
     }
 
     private void AddItem() => _model.Items.Add(new CreateInvoiceItemModel());
@@ -554,18 +638,86 @@
         _isSaving = true;
         try
         {
-            bool isKhudra = _selectedCustomer != null && !string.IsNullOrWhiteSpace(_khudraName) &&
+            bool isKhudra = _selectedCustomer != null &&
                 (_selectedCustomer.FirstName.Contains("Cash", StringComparison.OrdinalIgnoreCase) ||
                  _selectedCustomer.CompanyName?.Contains("CASH", StringComparison.OrdinalIgnoreCase) == true ||
                  _selectedCustomer.CompanyName?.Contains("KHUDRA", StringComparison.OrdinalIgnoreCase) == true);
-            if (isKhudra)
+                 
+            if (isKhudra && string.IsNullOrWhiteSpace(_khudraName))
             {
-                var nc = await CustomerService.CreateCustomerAsync(new CreateCustomerDto
-                { FirstName = _khudraName.Trim(), LastName = " (Retail)", Phone = "0000000000", DefaultPaymentMode = "Cash" });
-                if (nc != null) { _model.CustomerId = nc.Id; _khudraName = string.Empty; }
+                Snackbar.Add("Walk-in Customer Name is required.", MudBlazor.Severity.Warning);
+                _isSaving = false;
+                return;
             }
 
-            _model.InvoiceDate = _invoiceDate ?? DateTime.Today;
+            if (_model.DueAmount > 0)
+            {
+                bool? result = await DialogService.ShowMessageBoxAsync(
+                    "Pending Dues Action", 
+                    $"This bill has a pending due of ₹{_model.DueAmount:N0}.\nDo you want to register this amount in the account (Udhaar), or write it off (Maaf/Discount)?", 
+                    yesText: "Register in Account", noText: "Write it off (Maaf)", cancelText: "Cancel / Enter Payment");
+                    
+                if (result == null) 
+                {
+                    _isSaving = false;
+                    return;
+                }
+
+                if (result == false)
+                {
+                    // Write off
+                    _model.RoundingAmount -= _model.DueAmount;
+                    _model.TotalAmount -= _model.DueAmount;
+                    _model.DueAmount = 0;
+                }
+                else if (result == true && isKhudra)
+                {
+                    // Register Khudra
+                    if (_khudraName.Trim().Equals("KHUDRA Customer", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Snackbar.Add("Cannot register credit for generic 'KHUDRA Customer'. Please enter the real name.", MudBlazor.Severity.Warning);
+                        _isSaving = false;
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(_khudraPhone) || _khudraPhone.Trim() == "1234567891")
+                    {
+                        Snackbar.Add("A valid Mobile Number is mandatory when allowing credit for a retail customer.", MudBlazor.Severity.Warning);
+                        _isSaving = false;
+                        return;
+                    }
+
+                    var nc = await CustomerService.CreateCustomerAsync(new CreateCustomerDto
+                    { 
+                        FirstName = _khudraName.Trim(), 
+                        LastName = " (Retail)", 
+                        Phone = _khudraPhone.Trim(),
+                        Address = _khudraAddress?.Trim(),
+                        Gstin = _khudraGstin?.Trim(),
+                        DefaultPaymentMode = "Cash" 
+                    });
+                    if (nc != null) { _model.CustomerId = nc.Id; _khudraName = string.Empty; }
+                }
+            }
+
+            // Append details to remarks if it was Khudra and NO profile was created
+            if (isKhudra && !string.IsNullOrWhiteSpace(_khudraName))
+            {
+                string retailDetails = $"Retail: {_khudraName}";
+                if (!string.IsNullOrWhiteSpace(_khudraPhone)) retailDetails += $", Ph: {_khudraPhone}";
+                if (!string.IsNullOrWhiteSpace(_khudraGstin)) retailDetails += $", GST: {_khudraGstin}";
+                if (!string.IsNullOrWhiteSpace(_khudraAddress)) retailDetails += $", Addr: {_khudraAddress}";
+                
+                if (string.IsNullOrWhiteSpace(_model.Remarks))
+                    _model.Remarks = retailDetails;
+                else
+                    _model.Remarks = retailDetails + " | " + _model.Remarks;
+            }
+
+            var selectedDate = _invoiceDate ?? DateTime.UtcNow.Date;
+            _model.InvoiceDate = _invoiceDate.HasValue 
+                ? TimezoneService.ToUtcDate(_invoiceDate.Value)
+                : DateTime.UtcNow.Date;
             _model.CashAmount = _cashPayment;
             _model.BankAmount = _acPayment;
 

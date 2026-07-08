@@ -57,3 +57,57 @@ public class InvoiceItemDetailDto
     public decimal SgstRate { get; set; }
     public decimal TotalPrice { get; set; }
 }
+
+public enum RateOn
+{
+    Kg,
+    Pcs
+}
+
+public class CreateInvoiceItemModel
+{
+    public Guid VariantId { get; set; }
+    public string VariantName { get; set; } = string.Empty;
+    public string Unit { get; set; } = string.Empty;
+    public int QtyPcs { get; set; }
+    public decimal WeightKg { get; set; }
+    public decimal Rate { get; set; }
+    public RateOn RateOn { get; set; } = RateOn.Kg;
+    public decimal CgstRate { get; set; } = 9m;
+    public decimal SgstRate { get; set; } = 9m;
+    public decimal IgstRate { get; set; }
+    public decimal TotalPrice { get; set; }
+
+    // Helpers
+    public ProductVariantDto? SelectedVariant { get; set; }
+    public Guid SelectedProductId { get; set; }
+    public System.Collections.Generic.List<ProductVariantDto>? SelectedProductVariants { get; set; }
+}
+
+public class CreateInvoiceModel
+{
+    public Guid CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public CustomerListDto? SelectedCustomer { get; set; }
+    
+    public decimal Subtotal { get; set; }
+    public decimal FreightCharge { get; set; }
+    public decimal LoadingCharge { get; set; }
+    public decimal CgstAmount { get; set; }
+    public decimal SgstAmount { get; set; }
+    public decimal IgstAmount { get; set; }
+    public decimal RoundingAmount { get; set; }
+    public decimal TotalAmount { get; set; }
+    
+    public string PaymentMode { get; set; } = "A/C";
+    
+    public decimal PaidAmount { get; set; }
+    public decimal CashAmount { get; set; }
+    public decimal BankAmount { get; set; }
+    public decimal DueAmount { get; set; }
+    public string? VehicleNumber { get; set; }
+    public string? Remarks { get; set; }
+    public DateTime InvoiceDate { get; set; } = DateTime.UtcNow.Date;
+    
+    public System.Collections.Generic.List<CreateInvoiceItemModel> Items { get; set; } = new();
+}

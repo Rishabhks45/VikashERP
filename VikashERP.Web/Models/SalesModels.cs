@@ -48,7 +48,7 @@ public class CreateInvoiceModel
     public decimal DueAmount { get; set; }
     public string? VehicleNumber { get; set; }
     public string? Remarks { get; set; }
-    public DateTime InvoiceDate { get; set; } = DateTime.Today;
+    public DateTime InvoiceDate { get; set; } = DateTime.UtcNow.Date;
     
     public List<CreateInvoiceItemModel> Items { get; set; } = new();
 }

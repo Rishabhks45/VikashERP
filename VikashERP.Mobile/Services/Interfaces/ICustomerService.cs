@@ -14,4 +14,6 @@ public interface ICustomerService
     Task<(bool IsSuccess, string ErrorMessage)> DeleteAsync(Guid id);
     Task<List<RecentCustomerPaymentDto>> GetRecentPaymentsAsync();
     Task<bool> RecordCustomerPaymentAsync(CustomerPaymentFormModel model);
+    Task<List<CustomerLedgerEntryDto>> GetCustomerLedgerAsync(Guid id, DateTime? fromDate = null, DateTime? toDate = null);
+    Task<byte[]?> GetLedgerPdfAsync(Guid id, DateTime? fromDate = null, DateTime? toDate = null);
 }

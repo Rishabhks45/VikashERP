@@ -31,4 +31,18 @@ public class InventoryService : IInventoryService
             return new List<GodownStockDto>();
         }
     }
+    public async Task<List<ProductDto>> GetProductsAsync()
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            var products = await client.GetFromJsonAsync<List<ProductDto>>("api/products/with-variants");
+            return products ?? new List<ProductDto>();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"GetProductsAsync exception: {ex.Message}");
+            return new List<ProductDto>();
+        }
+    }
 }

@@ -14,6 +14,19 @@ public static class DateFormatHelper
         return localTime.ToString("dd MMM yyyy");
     }
 
+    public static DateTime ToUtcDate(DateTime localDate, string ianaId)
+    {
+        var tz = GetTimeZone(ianaId);
+        var unspecifiedDate = new DateTime(localDate.Year, localDate.Month, localDate.Day, 0, 0, 0, DateTimeKind.Unspecified);
+        return TimeZoneInfo.ConvertTimeToUtc(unspecifiedDate, tz);
+    }
+
+    public static DateTime GetUserTime(DateTime utc, string ianaId)
+    {
+        var tz = GetTimeZone(ianaId);
+        return TimeZoneInfo.ConvertTimeFromUtc(utc, tz);
+    }
+
     public static string FormatDateTime(DateTime utc, string ianaId)
     {
         var tz = GetTimeZone(ianaId);

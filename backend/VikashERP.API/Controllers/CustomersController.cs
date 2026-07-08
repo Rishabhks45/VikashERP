@@ -11,6 +11,7 @@ using VikashERP.SharedKernel.Enums;
 using VikashERP.SharedKernel.Settings;
 using VikashERP.SharedKernel.Extensions;
 using Microsoft.AspNetCore.Authorization;
+using QuestPDF.Fluent;
 
 namespace VikashERP.API.Controllers;
 
@@ -501,6 +502,50 @@ public class CustomersController : ControllerBase
             }).ToList();
 
             return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Message = ex.Message });
+        }
+    }
+
+    [HttpGet("{id:guid}/ledger/pdf")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetCustomerLedgerPdf(
+        Guid id,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+            if (customer == null) return NotFound("Customer not found.");
+
+            var query = _context.CustomerLedgers
+                .Where(l => l.CustomerId == id && !l.IsDeleted)
+                .OrderBy(l => l.TransactionDate)
+                .AsQueryable();
+
+            if (fromDate.HasValue)
+            {
+                var utcFrom = DateTime.SpecifyKind(fromDate.Value.Date, DateTimeKind.Utc);
+                query = query.Where(l => l.TransactionDate >= utcFrom);
+            }
+
+            if (toDate.HasValue)
+            {
+                var utcTo = DateTime.SpecifyKind(toDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+                query = query.Where(l => l.TransactionDate <= utcTo);
+            }
+
+            var entries = await query.ToListAsync(cancellationToken);
+
+            var document = new VikashERP.Application.Features.Customers.Documents.LedgerDocument(customer, entries, fromDate, toDate);
+            var pdfBytes = document.GeneratePdf();
+
+            var filename = $"Ledger_{customer.CompanyName ?? customer.FirstName}.pdf";
+            return File(pdfBytes, "application/pdf", filename);
         }
         catch (Exception ex)
         {

@@ -6,237 +6,413 @@
 @inject ISnackbar Snackbar
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
-<div class="godown-page">
-    @* Page Header *@
-    <div class="d-flex justify-space-between align-end mb-4">
-        <div>
-            <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">Live Inventory</MudText>
-            <MudText Typo="Typo.body2" Style="color: #666;">
-                Real-time tracking and stock alerts
-            </MudText>
-        </div>
-        <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadData" Disabled="_isLoading" />
+<div class="godown-dashboard-container">
+    @* Decorative Background *@
+    <div class="dashboard-bg-mesh">
+        <div class="mesh-blob mesh-blob-1"></div>
+        <div class="mesh-blob mesh-blob-2"></div>
     </div>
 
-    @* KPIs Grid *@
-    <MudGrid Spacing="2" Class="mb-4">
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #e3f2fd;">
-                        <MudIcon Icon="@Icons.Material.Filled.Inventory2" Style="color: #1976d2;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Total Items</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_stockList.Count</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #e8f5e9;">
-                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: #388e3c;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Healthy</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_stockList.Count(x => x.StockStatus == "In Stock")</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #fff3e0;">
-                        <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Style="color: #f57c00;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Low Stock</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_stockList.Count(x => x.StockStatus == "Low Stock")</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #ffebee;">
-                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Style="color: #d32f2f;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Out of Stock</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">@_stockList.Count(x => x.StockStatus == "Out of Stock")</MudText>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-
-    @* Controls (Tabs & Filters) *@
-    <MudPaper Elevation="0" Class="pa-3 mb-4 controls-card">
-        <MudTabs @bind-ActivePanelIndex="_activeTabIndex" Elevation="0" Rounded="true" Color="Color.Primary" Class="mb-3 category-tabs">
-            <MudTabPanel Text="All" />
-            @foreach (var cat in _categories)
-            {
-                <MudTabPanel Text="@cat" />
-            }
-        </MudTabs>
-
-        <div class="d-flex gap-2">
-            <MudSelect T="string" @bind-Value="_statusFilter" Variant="Variant.Outlined" Class="light-input flex-1" Margin="Margin.Dense" Dense="true" AnchorOrigin="Origin.BottomCenter">
-                <MudSelectItem Value="@("All")">All Status</MudSelectItem>
-                <MudSelectItem Value="@("In Stock")">In Stock</MudSelectItem>
-                <MudSelectItem Value="@("Low Stock")">Low Stock</MudSelectItem>
-                <MudSelectItem Value="@("Out of Stock")">Out of Stock</MudSelectItem>
-            </MudSelect>
-            <MudTextField @bind-Value="_searchQuery" Placeholder="Search products..." 
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" 
-                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="light-input flex-2" 
-                          Immediate="true" />
+    <div class="dashboard-content">
+        @* Page Header *@
+        <div class="d-flex justify-space-between align-center mb-6 pt-2">
+            <div>
+                <MudText Typo="Typo.h5" Class="dashboard-title">Live Inventory</MudText>
+                <MudText Typo="Typo.body2" Class="dashboard-subtitle">
+                    Real-time tracking and stock alerts
+                </MudText>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Rounded.Sync" Class="sync-btn" OnClick="LoadData" Disabled="_isLoading" />
         </div>
-    </MudPaper>
 
-    @* Inventory List *@
-    <div class="inventory-list d-flex flex-column gap-3 mb-6">
-        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Syncing Ledger..." Absolute="true" />
-        
-        @if (!_isLoading)
-        {
-            var filtered = GetFilteredItems().ToList();
-            if (!filtered.Any())
-            {
-                <div class="d-flex flex-column align-center justify-center py-8">
-                    <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Style="color: #ccc; font-size: 3rem;" />
-                    <MudText Typo="Typo.body2" Class="mt-2" Style="color: #666;">No products found.</MudText>
+        @* KPIs Grid *@
+        <MudGrid Spacing="3" Class="mb-6">
+            <MudItem xs="6">
+                <div class="premium-stat-card">
+                    <div class="stat-icon-wrapper blue-glow">
+                        <MudIcon Icon="@Icons.Material.Rounded.Inventory2" Class="stat-icon blue-icon" />
+                    </div>
+                    <div class="stat-info mt-2">
+                        <MudText Typo="Typo.h5" Class="stat-value">@_stockList.Count</MudText>
+                        <MudText Typo="Typo.caption" Class="stat-label">Total Items</MudText>
+                    </div>
                 </div>
-            }
-            else
-            {
-                @foreach (var item in filtered)
+            </MudItem>
+            <MudItem xs="6">
+                <div class="premium-stat-card">
+                    <div class="stat-icon-wrapper green-glow">
+                        <MudIcon Icon="@Icons.Material.Rounded.CheckCircle" Class="stat-icon green-icon" />
+                    </div>
+                    <div class="stat-info mt-2">
+                        <MudText Typo="Typo.h5" Class="stat-value">@_stockList.Count(x => x.StockStatus == "In Stock")</MudText>
+                        <MudText Typo="Typo.caption" Class="stat-label">Healthy</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="6">
+                <div class="premium-stat-card">
+                    <div class="stat-icon-wrapper orange-glow">
+                        <MudIcon Icon="@Icons.Material.Rounded.WarningAmber" Class="stat-icon orange-icon" />
+                    </div>
+                    <div class="stat-info mt-2">
+                        <MudText Typo="Typo.h5" Class="stat-value">@_stockList.Count(x => x.StockStatus == "Low Stock")</MudText>
+                        <MudText Typo="Typo.caption" Class="stat-label">Low Stock</MudText>
+                    </div>
+                </div>
+            </MudItem>
+            <MudItem xs="6">
+                <div class="premium-stat-card">
+                    <div class="stat-icon-wrapper red-glow">
+                        <MudIcon Icon="@Icons.Material.Rounded.ErrorOutline" Class="stat-icon red-icon" />
+                    </div>
+                    <div class="stat-info mt-2">
+                        <MudText Typo="Typo.h5" Class="stat-value">@_stockList.Count(x => x.StockStatus == "Out of Stock")</MudText>
+                        <MudText Typo="Typo.caption" Class="stat-label">Out of Stock</MudText>
+                    </div>
+                </div>
+            </MudItem>
+        </MudGrid>
+
+        @* Controls (Tabs & Filters) *@
+        <div class="premium-controls-container mb-6">
+            <MudTabs @bind-ActivePanelIndex="_activeTabIndex" Elevation="0" Rounded="true" Class="premium-tabs mb-4">
+                <MudTabPanel Text="All" />
+                @foreach (var cat in _categories)
                 {
-                    <MudPaper Class="inventory-card pa-3" Elevation="0">
-                        <div class="d-flex justify-space-between align-start mb-2">
-                            <div class="flex-1 pr-2">
-                                @if (_activeTabIndex == 0)
-                                {
-                                    <MudText Typo="Typo.caption" Style="color: #1976d2; font-weight: 700; text-transform: uppercase;">
-                                        @item.CategoryName
-                                    </MudText>
-                                }
-                                <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 800; line-height: 1.2;">
-                                    @item.ProductName
-                                </MudText>
-                                <MudText Typo="Typo.caption" Style="color: #666; display: block; margin-top: 2px;">
-                                    Size: @item.Size | Thick: @item.Thickness
-                                </MudText>
+                    <MudTabPanel Text="@cat" />
+                }
+            </MudTabs>
+
+            <div class="d-flex gap-3">
+                <MudSelect T="string" @bind-Value="_statusFilter" Variant="Variant.Outlined" Class="premium-input flex-1" Margin="Margin.Dense" Dense="true" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("All")">All Status</MudSelectItem>
+                    <MudSelectItem Value="@("In Stock")">In Stock</MudSelectItem>
+                    <MudSelectItem Value="@("Low Stock")">Low Stock</MudSelectItem>
+                    <MudSelectItem Value="@("Out of Stock")">Out of Stock</MudSelectItem>
+                </MudSelect>
+                <MudTextField @bind-Value="_searchQuery" Placeholder="Search products..." 
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Search" 
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Class="premium-input flex-2" 
+                              Immediate="true" />
+            </div>
+        </div>
+
+        @* Inventory List *@
+        <div class="inventory-list d-flex flex-column gap-4 mb-8">
+            <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Syncing Ledger..." Absolute="true" />
+            
+            @if (!_isLoading)
+            {
+                var filtered = GetFilteredItems().ToList();
+                if (!filtered.Any())
+                {
+                    <div class="empty-state-container py-12">
+                        <div class="empty-icon-circle mb-4">
+                            <MudIcon Icon="@Icons.Material.Rounded.SearchOff" Class="empty-icon" />
+                        </div>
+                        <MudText Typo="Typo.h6" Class="empty-title">No products found</MudText>
+                        <MudText Typo="Typo.body2" Class="empty-subtitle">Try adjusting your filters or search query.</MudText>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in filtered)
+                    {
+                        <div class="premium-inventory-card">
+                            <div class="d-flex justify-space-between align-start mb-3">
+                                <div class="flex-1 pr-3">
+                                    @if (_activeTabIndex == 0)
+                                    {
+                                        <div class="category-chip">@item.CategoryName</div>
+                                    }
+                                    <MudText Typo="Typo.subtitle1" Class="product-name mt-1">@item.ProductName</MudText>
+                                    <MudText Typo="Typo.caption" Class="product-meta">Size: @item.Size | Thick: @item.Thickness</MudText>
+                                </div>
+                                <div class="status-container">
+                                    @if (item.StockStatus == "In Stock")
+                                    {
+                                        <div class="premium-badge badge-success">
+                                            <span class="pulse-dot dot-success"></span> IN STOCK
+                                        </div>
+                                    }
+                                    else if (item.StockStatus == "Low Stock")
+                                    {
+                                        <div class="premium-badge badge-warning">
+                                            <span class="pulse-dot dot-warning"></span> LOW STOCK
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="premium-badge badge-error">
+                                            <span class="pulse-dot dot-error"></span> OUT OF STOCK
+                                        </div>
+                                    }
+                                </div>
                             </div>
-                            <div class="d-flex flex-column align-end">
-                                @if (item.StockStatus == "In Stock")
+                            
+                            <div class="stock-footer">
+                                <span class="stock-label">Current Stock</span>
+                                @if (item.CategoryName == "Cosmetic")
                                 {
-                                    <span class="status-badge status-success">IN STOCK</span>
-                                }
-                                else if (item.StockStatus == "Low Stock")
-                                {
-                                    <span class="status-badge status-warning">LOW STOCK</span>
+                                    <div class="stock-value-container blue-bg">
+                                        <span class="stock-amount blue-text">@item.RunningPcs.ToString("N0")</span>
+                                        <span class="stock-unit blue-text">Pcs</span>
+                                    </div>
                                 }
                                 else
                                 {
-                                    <span class="status-badge status-error">OUT OF STOCK</span>
+                                    <div class="stock-value-container pink-bg">
+                                        <span class="stock-amount pink-text">@item.RunningWeightKg.ToString("N2")</span>
+                                        <span class="stock-unit pink-text">Kg</span>
+                                    </div>
                                 }
                             </div>
                         </div>
-                        
-                        <div class="d-flex justify-space-between align-center mt-2 pt-2" style="border-top: 1px dashed rgba(0,0,0,0.1);">
-                            <MudText Typo="Typo.caption" Style="color: #666;">Current Stock</MudText>
-                            @if (item.CategoryName == "Cosmetic")
-                            {
-                                <MudText Typo="Typo.h6" Style="color: #1976d2; font-weight: 800; font-family: monospace;">
-                                    @item.RunningPcs.ToString("N0") <span style="font-size: 0.7rem; color: #666;">Pcs</span>
-                                </MudText>
-                            }
-                            else
-                            {
-                                <MudText Typo="Typo.h6" Style="color: #d81b60; font-weight: 800; font-family: monospace;">
-                                    @item.RunningWeightKg.ToString("N2") <span style="font-size: 0.7rem; color: #666;">Kg</span>
-                                </MudText>
-                            }
-                        </div>
-                    </MudPaper>
+                    }
                 }
             }
-        }
+        </div>
     </div>
 </div>
 
 <style>
-    .godown-page {
-        background-color: #fafbfc;
+    /* Base Container */
+    .godown-dashboard-container {
         min-height: 100vh;
+        background-color: #f8fafc;
+        position: relative;
+        overflow-x: hidden;
+        padding-bottom: 80px;
+    }
+    
+    .dashboard-content {
+        position: relative;
+        z-index: 10;
         padding: 16px;
-        padding-bottom: 80px; /* Space for bottom nav */
+        padding-top: env(safe-area-inset-top, 16px);
     }
-    
-    .stat-card {
-        background-color: white !important;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+
+    /* Mesh Background */
+    .dashboard-bg-mesh {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        z-index: 0; pointer-events: none; overflow: hidden;
     }
-    
-    .stat-icon-wrapper {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
+    .mesh-blob {
+        position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.4;
+    }
+    .mesh-blob-1 {
+        top: -10%; right: -10%; width: 300px; height: 300px; background: #6366f1;
+        animation: float 8s ease-in-out infinite;
+    }
+    .mesh-blob-2 {
+        top: 20%; left: -10%; width: 250px; height: 250px; background: #a855f7;
+        animation: float 10s ease-in-out infinite reverse;
+    }
+    @@keyframes float {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(20px) scale(1.05); }
+    }
+
+    /* Typography */
+    .dashboard-title {
+        font-weight: 800 !important; color: #0f172a !important; letter-spacing: -0.5px !important;
+    }
+    .dashboard-subtitle {
+        color: #64748b !important; font-weight: 500 !important;
+    }
+
+    /* Sync Button */
+    .sync-btn {
+        background: white !important;
+        color: #4f46e5 !important;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important;
+        transition: transform 0.2s ease !important;
+    }
+    .sync-btn:active { transform: scale(0.9); }
+
+    /* KPI Cards */
+    .premium-stat-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 20px;
+        padding: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-direction: column;
     }
+    .premium-stat-card:active {
+        transform: scale(0.97);
+    }
+    .stat-icon-wrapper {
+        width: 40px; height: 40px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .blue-glow { background: #eff6ff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); }
+    .blue-icon { color: #3b82f6 !important; }
+    .green-glow { background: #f0fdf4; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15); }
+    .green-icon { color: #22c55e !important; }
+    .orange-glow { background: #fff7ed; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15); }
+    .orange-icon { color: #f97316 !important; }
+    .red-glow { background: #fef2f2; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15); }
+    .red-icon { color: #ef4444 !important; }
+    
+    .stat-value { font-weight: 800 !important; color: #0f172a !important; line-height: 1.2 !important; }
+    .stat-label { font-weight: 600 !important; color: #64748b !important; font-size: 0.75rem !important; }
 
-    .controls-card {
+    /* Controls */
+    .premium-controls-container {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 20px;
+        padding: 16px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.02);
+    }
+    .premium-tabs ::deep .mud-tabs-tab {
+        text-transform: none !important;
+        font-weight: 700 !important;
+        letter-spacing: 0px !important;
+        min-width: auto !important;
+        padding: 8px 16px !important;
+        border-radius: 24px !important;
+        margin: 0 4px;
+        transition: all 0.3s ease;
+        color: #64748b;
+    }
+    .premium-tabs ::deep .mud-tabs-tab.mud-tab-active {
+        background: #4f46e5 !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .premium-tabs ::deep .mud-tabs-toolbar-inner {
+        background: rgba(241, 245, 249, 0.5);
+        border-radius: 28px;
+        padding: 4px;
+    }
+    .premium-tabs ::deep .mud-tab-slider { display: none !important; }
+
+    .premium-input .mud-input-outlined {
         background-color: white !important;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
         border-radius: 12px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+        font-weight: 500;
+        color: #0f172a;
+    }
+    .premium-input .mud-input-outlined-border {
+        border-color: #e2e8f0 !important;
+    }
+    .premium-input:focus-within .mud-input-outlined-border {
+        border-color: #4f46e5 !important;
+        border-width: 2px !important;
     }
 
-    .category-tabs ::deep .mud-tabs-tab {
-        min-width: auto;
-        padding: 6px 12px;
-        font-weight: 700;
-        text-transform: none;
-        font-size: 0.85rem;
+    /* Inventory Cards */
+    .premium-inventory-card {
+        background: white;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .premium-inventory-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     }
 
-    .inventory-card {
-        background-color: white !important;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
-    }
-
-    .status-badge {
-        font-size: 0.6rem;
+    .category-chip {
+        display: inline-block;
+        background: #eff6ff;
+        color: #3b82f6;
+        font-size: 0.65rem;
         font-weight: 800;
-        padding: 4px 8px;
-        border-radius: 6px;
+        text-transform: uppercase;
         letter-spacing: 0.5px;
-        white-space: nowrap;
+        padding: 4px 8px;
+        border-radius: 8px;
+        margin-bottom: 6px;
     }
-    .status-success {
-        background-color: #e8f5e9;
-        color: #388e3c;
+    .product-name {
+        font-weight: 800 !important; color: #0f172a !important; line-height: 1.3 !important;
     }
-    .status-warning {
-        background-color: #fff3e0;
-        color: #f57c00;
-    }
-    .status-error {
-        background-color: #ffebee;
-        color: #d32f2f;
+    .product-meta {
+        color: #64748b !important; font-weight: 500 !important; margin-top: 4px !important; display: block;
     }
 
-    .light-input .mud-input-outlined {
-        background-color: white !important;
-        color: #1a2530 !important;
-        border-radius: 8px !important;
+    /* Status Badges */
+    .premium-badge {
+        display: flex; align-items: center; gap: 6px;
+        padding: 6px 10px;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
     }
-    .light-input .mud-input-outlined-border {
-        border-color: rgba(0, 0, 0, 0.1) !important;
+    .pulse-dot {
+        width: 6px; height: 6px; border-radius: 50%;
     }
+    .badge-success { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+    .dot-success { background: #22c55e; box-shadow: 0 0 0 rgba(34, 197, 94, 0.4); animation: pulse-green 2s infinite; }
+    
+    .badge-warning { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
+    .dot-warning { background: #f97316; box-shadow: 0 0 0 rgba(249, 115, 22, 0.4); animation: pulse-orange 2s infinite; }
+    
+    .badge-error { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+    .dot-error { background: #ef4444; box-shadow: 0 0 0 rgba(239, 68, 68, 0.4); animation: pulse-red 2s infinite; }
+
+    @@keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+        70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    @@keyframes pulse-orange {
+        0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+        70% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+    }
+    @@keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* Stock Footer */
+    .stock-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-top: 12px; padding-top: 12px;
+        border-top: 1px solid #f1f5f9;
+    }
+    .stock-label {
+        font-size: 0.75rem; font-weight: 600; color: #64748b;
+    }
+    .stock-value-container {
+        padding: 4px 12px; border-radius: 12px; display: flex; align-items: baseline; gap: 4px;
+    }
+    .stock-amount { font-weight: 800; font-size: 1.1rem; font-family: 'JetBrains Mono', monospace, sans-serif; }
+    .stock-unit { font-weight: 700; font-size: 0.7rem; text-transform: uppercase; }
+    
+    .blue-bg { background: #eff6ff; }
+    .blue-text { color: #2563eb; }
+    
+    .pink-bg { background: #fdf2f8; }
+    .pink-text { color: #db2777; }
+
+    /* Empty State */
+    .empty-state-container {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.5); border-radius: 20px;
+    }
+    .empty-icon-circle {
+        width: 80px; height: 80px; border-radius: 50%; background: #f1f5f9;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .empty-icon { font-size: 3rem !important; color: #94a3b8 !important; }
+    .empty-title { font-weight: 800 !important; color: #0f172a !important; margin-bottom: 4px; }
+    .empty-subtitle { color: #64748b !important; font-weight: 500 !important; text-align: center; }
 </style>
 
 @code {

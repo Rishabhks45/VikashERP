@@ -22,22 +22,7 @@ else if (_pdfBase64Url == null)
 }
 else
 {
-    <div class="control-bar no-print">
-        <div class="control-bar-content">
-            <div class="control-actions">
-                <button class="btn-control btn-print" @onclick="PrintInvoice">
-                    <MudIcon Icon="@Icons.Material.Filled.Print" Size="Size.Small" />
-                    <span>Print</span>
-                </button>
-                <button class="btn-control btn-download" @onclick="DownloadPdf">
-                    <MudIcon Icon="@Icons.Material.Filled.Download" Size="Size.Small" />
-                    <span>Download PDF</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="pdf-container">
+     <div class="pdf-container">
         <iframe src="@_pdfBase64Url" title="Invoice PDF" width="100%" height="100%" style="border: none;"></iframe>
     </div>
 
@@ -142,6 +127,7 @@ else
 
     private bool _isLoading = true;
     private string? _pdfBase64Url;
+    private byte[]? _pdfBytes;
     private string _invoiceNumber = "Invoice";
 
     protected override async Task OnInitializedAsync()
@@ -159,6 +145,7 @@ else
             var bytes = await SalesService.GetInvoicePdfAsync(Id);
             if (bytes != null)
             {
+                _pdfBytes = bytes;
                 _pdfBase64Url = $"data:application/pdf;base64,{Convert.ToBase64String(bytes)}";
             }
             else
@@ -179,33 +166,17 @@ else
     private async Task PrintInvoice()
     {
         if (_pdfBase64Url == null) return;
-
-        var js = @"
-            var printWindow = window.open("""", ""_blank"");
-            printWindow.document.write('<html><head><title>Print PDF</title></head><body style=""margin:0;padding:0;""><embed src=""" + _pdfBase64Url + @""" type=""application/pdf"" width=""100%"" height=""100%"" id=""pdfEmbed""></embed></body></html>');
-            printWindow.document.close();
-            setTimeout(function() {
-                printWindow.print();
-            }, 500);
-        ";
-        await JSRuntime.InvokeVoidAsync("eval", js);
+        await JSRuntime.InvokeVoidAsync("printPdfBase64", _pdfBase64Url);
     }
 
     private async Task DownloadPdf()
     {
-        if (_pdfBase64Url == null) return;
+        if (_pdfBytes == null) return;
 
         var safeInvoiceNumber = _invoiceNumber.Replace("/", "-").Replace("\\", "-");
         var filename = $"Invoice_{safeInvoiceNumber}.pdf";
 
-        var js = @"
-            var link = document.createElement('a');
-            link.href = '" + _pdfBase64Url + @"';
-            link.download = '" + filename + @"';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        ";
-        await JSRuntime.InvokeVoidAsync("eval", js);
+        using var streamRef = new DotNetStreamReference(new MemoryStream(_pdfBytes));
+        await JSRuntime.InvokeVoidAsync("downloadFileFromStream", filename, streamRef);
     }
 }

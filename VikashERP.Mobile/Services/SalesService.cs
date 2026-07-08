@@ -64,4 +64,54 @@ public class SalesService : ISalesService
             return null;
         }
     }
+
+    public async Task<(bool IsSuccess, string ErrorMessage, Guid? InvoiceId)> CreateInvoiceAsync(CreateInvoiceModel invoice)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            var response = await client.PostAsJsonAsync("api/sales", invoice);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+                Guid? newId = null;
+                if (result.TryGetProperty("id", out var idProp) || result.TryGetProperty("Id", out idProp))
+                {
+                    if (Guid.TryParse(idProp.GetString(), out var parsedId))
+                        newId = parsedId;
+                }
+                return (true, string.Empty, newId);
+            }
+            else
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                return (false, err ?? "Failed to create invoice", null);
+            }
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message, null);
+        }
+    }
+
+    public async Task<(bool IsSuccess, string ErrorMessage)> ApproveInvoiceAsync(Guid id)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient("ApiClient");
+            var response = await client.PostAsync($"api/sales/{id}/approve", null);
+            if (response.IsSuccessStatusCode)
+            {
+                return (true, string.Empty);
+            }
+            var err = await response.Content.ReadAsStringAsync();
+            return (false, err ?? "Failed to approve invoice");
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
 }
+

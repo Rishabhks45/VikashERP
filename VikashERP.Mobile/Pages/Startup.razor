@@ -12,15 +12,13 @@
     [Inject] private IAuthService AuthService { get; set; } = default!;
     [Inject] private VikashERP.Mobile.State.AppStateService AppState { get; set; } = default!;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (!firstRender) return;
-
         var token = await SecureStorage.Default.GetAsync("jwt_token");
 
         if (string.IsNullOrEmpty(token))
         {
-            Navigation.NavigateTo("/login", true);
+            Navigation.NavigateTo("/login");
             return;
         }
 
@@ -30,7 +28,7 @@
             // Note: In a real app with multiple roles, you'd extract the role from the token 
             // and navigate to the respective dashboard. Hardcoding to manager-dashboard for now 
             // based on existing navigation logic.
-            Navigation.NavigateTo("/manager-dashboard", true);
+            Navigation.NavigateTo("/manager-dashboard");
             return;
         }
 
@@ -38,11 +36,11 @@
 
         if (hasPin)
         {
-            Navigation.NavigateTo("/pin-login", true);
+            Navigation.NavigateTo("/pin-login");
         }
         else
         {
-            Navigation.NavigateTo("/create-pin", true);
+            Navigation.NavigateTo("/create-pin");
         }
     }
 }

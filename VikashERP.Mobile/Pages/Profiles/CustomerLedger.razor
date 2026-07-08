@@ -1,0 +1,234 @@
+@page "/profiles/ledger/{Id:guid}"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@inject ICustomerService CustomerService
+@inject IPdfExportService PdfExportService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<div class="ledger-page pb-16">
+    <MudAppBar Color="Color.Primary" Fixed="true" Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" OnClick="GoBack" />
+        <MudText Typo="Typo.h6">Customer Ledger</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Inherit" OnClick="DownloadPdfAsync" Disabled="@_isPdfGenerating" />
+    </MudAppBar>
+    <MudToolbar /> <!-- Spacer for fixed appbar -->
+
+    @if (_isLoading)
+    {
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="true" Text="Loading Ledger..." Absolute="true" />
+    }
+    else if (_customer != null)
+    {
+        <!-- Customer Info Card -->
+        <div class="pa-3">
+            <MudPaper Class="pa-3 mb-3" Elevation="0" Style="border-radius: 12px; background: white; border: 1px solid rgba(0,0,0,0.05);">
+                <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1a2530;">@($"{_customer.FirstName} {_customer.LastName}".Trim())</MudText>
+                @if (!string.IsNullOrWhiteSpace(_customer.CompanyName))
+                {
+                    <MudText Typo="Typo.body2" Style="color: #64748b;">@_customer.CompanyName</MudText>
+                }
+                <div class="d-flex justify-space-between mt-2 pt-2" style="border-top: 1px dashed rgba(0,0,0,0.1);">
+                    <MudText Typo="Typo.caption" Style="color: #666;">A/C: @_customer.AccountNumber</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #666;">Ph: @_customer.Phone</MudText>
+                </div>
+            </MudPaper>
+
+            <!-- Filters -->
+            <MudPaper Class="pa-3 mb-3" Elevation="0" Style="border-radius: 12px; background: white; border: 1px solid rgba(0,0,0,0.05);">
+                <MudSelect T="DateFilter" Value="@_selectedFilter" ValueChanged="OnDateFilterChanged" Label="Select Date Range" Variant="Variant.Outlined" Margin="Margin.Dense" Color="Color.Primary" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="DateFilter.CurrentMonth">Current Month</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.PastMonth">Past Month</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.Last6Months">Last 6 Months</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.FinancialYear">Financial Year</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.PastYear">Past Year</MudSelectItem>
+                    <MudSelectItem Value="DateFilter.AllTime">All Time</MudSelectItem>
+                </MudSelect>
+            </MudPaper>
+
+            <!-- Ledger Entries -->
+            @if (_entries.Any())
+            {
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var entry in _entries)
+                    {
+                        <MudPaper Class="pa-3" Elevation="0" Style="border-radius: 12px; background: white; border: 1px solid rgba(0,0,0,0.05);">
+                            <div class="d-flex justify-space-between align-center mb-1">
+                                <MudText Typo="Typo.caption" Style="color: #64748b; font-weight: 600;">@entry.TransactionDate.ToString("dd MMM yyyy")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #94a3b8;">@entry.TransactionType</MudText>
+                            </div>
+                            <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 500;" Class="mb-2">@entry.Remarks</MudText>
+                            
+                            <div class="d-flex justify-space-between align-end">
+                                <div class="d-flex gap-3">
+                                    @if (entry.Debit > 0)
+                                    {
+                                        <div>
+                                            <MudText Typo="Typo.caption" Style="color: #64748b; display: block; font-size: 0.6rem;">Dr</MudText>
+                                            <MudText Typo="Typo.body2" Style="color: #d32f2f; font-weight: 600;">@entry.Debit.ToString("C2", new System.Globalization.CultureInfo("en-IN"))</MudText>
+                                        </div>
+                                    }
+                                    @if (entry.Credit > 0)
+                                    {
+                                        <div>
+                                            <MudText Typo="Typo.caption" Style="color: #64748b; display: block; font-size: 0.6rem;">Cr</MudText>
+                                            <MudText Typo="Typo.body2" Style="color: #2e7d32; font-weight: 600;">@entry.Credit.ToString("C2", new System.Globalization.CultureInfo("en-IN"))</MudText>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="text-right">
+                                    <MudText Typo="Typo.caption" Style="color: #64748b; display: block; font-size: 0.6rem;">Balance</MudText>
+                                    <MudText Typo="Typo.body2" Style="color: #1a2530; font-weight: 700;">@Math.Abs(entry.RunningBalance).ToString("C2", new System.Globalization.CultureInfo("en-IN")) @(entry.RunningBalance > 0 ? "Dr" : (entry.RunningBalance < 0 ? "Cr" : ""))</MudText>
+                                </div>
+                            </div>
+                        </MudPaper>
+                    }
+                </div>
+            }
+            else
+            {
+                <MudPaper Class="pa-5 text-center mt-4" Elevation="0" Style="border-radius: 12px; background: transparent; border: 1px dashed rgba(0,0,0,0.1);">
+                    <MudIcon Icon="@Icons.Material.Outlined.ReceiptLong" Size="Size.Large" Style="color: #94a3b8;" Class="mb-2" />
+                    <MudText Typo="Typo.body2" Style="color: #64748b;">No ledger entries found for the selected dates.</MudText>
+                </MudPaper>
+            }
+        </div>
+    }
+</div>
+
+<VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isPdfGenerating" Text="Generating PDF..." Absolute="true" />
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    public enum DateFilter
+    {
+        CurrentMonth,
+        PastMonth,
+        Last6Months,
+        FinancialYear,
+        PastYear,
+        AllTime
+    }
+
+    private bool _isLoading = true;
+    private bool _isPdfGenerating = false;
+    private CustomerListDto? _customer;
+    private List<CustomerLedgerEntryDto> _entries = new();
+    
+    private DateFilter _selectedFilter = DateFilter.CurrentMonth;
+    private DateRange _dateRange = new DateRange();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        _customer = await CustomerService.GetByIdAsync(Id);
+        UpdateDateRangeForFilter();
+        await LoadLedgerDataAsync();
+        _isLoading = false;
+    }
+
+    private async Task OnDateFilterChanged(DateFilter newFilter)
+    {
+        _selectedFilter = newFilter;
+        UpdateDateRangeForFilter();
+        await LoadLedgerDataAsync();
+    }
+
+    private void UpdateDateRangeForFilter()
+    {
+        var today = DateTime.Today;
+        DateTime? start = null;
+        DateTime? end = null;
+
+        switch (_selectedFilter)
+        {
+            case DateFilter.CurrentMonth:
+                start = new DateTime(today.Year, today.Month, 1);
+                end = start.Value.AddMonths(1).AddDays(-1);
+                break;
+            case DateFilter.PastMonth:
+                start = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
+                end = start.Value.AddMonths(1).AddDays(-1);
+                break;
+            case DateFilter.Last6Months:
+                start = today.AddMonths(-6);
+                end = today;
+                break;
+            case DateFilter.FinancialYear:
+                var currentYear = today.Month >= 4 ? today.Year : today.Year - 1;
+                start = new DateTime(currentYear, 4, 1);
+                end = new DateTime(currentYear + 1, 3, 31);
+                break;
+            case DateFilter.PastYear:
+                start = today.AddYears(-1);
+                end = today;
+                break;
+            case DateFilter.AllTime:
+                start = null;
+                end = null;
+                break;
+        }
+
+        _dateRange = new DateRange(start, end);
+    }
+
+    private async Task LoadLedgerDataAsync()
+    {
+        if (_customer == null) return;
+        _isLoading = true;
+        
+        DateTime? fromDate = _dateRange?.Start;
+        DateTime? toDate = _dateRange?.End;
+        
+        _entries = await CustomerService.GetCustomerLedgerAsync(Id, fromDate, toDate);
+        _isLoading = false;
+    }
+
+    private async Task DownloadPdfAsync()
+    {
+        if (_isPdfGenerating) return;
+
+        try
+        {
+            _isPdfGenerating = true;
+            
+            DateTime? fromDate = _dateRange?.Start;
+            DateTime? toDate = _dateRange?.End;
+            
+            var bytes = await CustomerService.GetLedgerPdfAsync(Id, fromDate, toDate);
+            if (bytes != null)
+            {
+                var safeName = _customer?.FirstName.Replace(" ", "_") ?? "Customer";
+                var filename = $"Ledger_{safeName}.pdf";
+                
+                var base64String = Convert.ToBase64String(bytes);
+                var result = await PdfExportService.SaveAndOpenPdfAsync(base64String, filename);
+                
+                if (result.IsSuccess) Snackbar.Add("Ledger downloaded successfully!", Severity.Success);
+                else Snackbar.Add($"Download failed: {result.ErrorMessage}", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add("Could not load PDF from the server.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error downloading ledger: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isPdfGenerating = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/profiles");
+    }
+}
