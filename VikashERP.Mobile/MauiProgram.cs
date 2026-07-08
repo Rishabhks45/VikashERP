@@ -29,15 +29,23 @@ public static class MauiProgram
 		// Configure HttpClient for Auth (No Interceptor)
 		builder.Services.AddHttpClient("AuthClient", client => 
 		{
-			client.BaseAddress = new Uri("https://vikasherp-api.onrender.com/");
+			// Render server
+			//client.BaseAddress = new Uri("https://vikasherp-api.onrender.com/");
+			// local server
 			//client.BaseAddress = new Uri("https://1m59w80r-7013.inc1.devtunnels.ms/");
+			// MonsterAsp Server
+			client.BaseAddress = new Uri("https://vikashironapi.runasp.net/");
 		});
 
 		// Configure HttpClient for API (With Interceptor)
 		builder.Services.AddHttpClient("ApiClient", client => 
 		{
-			client.BaseAddress = new Uri("https://vikasherp-api.onrender.com/");
-			// client.BaseAddress = new Uri("https://1m59w80r-7013.inc1.devtunnels.ms/");
+			// Render server
+			//client.BaseAddress = new Uri("https://vikasherp-api.onrender.com/");
+			// local server
+			//client.BaseAddress = new Uri("https://1m59w80r-7013.inc1.devtunnels.ms/");
+			// MonsterAsp Server
+			client.BaseAddress = new Uri("https://vikashironapi.runasp.net/");
 		})
 		.AddHttpMessageHandler<JwtDelegatingHandler>();
 

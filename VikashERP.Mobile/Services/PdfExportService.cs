@@ -88,6 +88,13 @@ public class PdfExportService : IPdfExportService
             }
 #endif
             
+            // Open the file with the default system PDF viewer
+            await Launcher.Default.OpenAsync(new OpenFileRequest
+            {
+                Title = "Open PDF",
+                File = new ReadOnlyFile(downloadPath)
+            });
+
             return (true, "PDF saved successfully!");
         }
         catch (Exception ex)

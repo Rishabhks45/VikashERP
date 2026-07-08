@@ -164,8 +164,28 @@ public class UsersController : ControllerBase
         user.Role = role;
         if (!string.IsNullOrEmpty(dto.ProfilePictureUrl) && dto.ProfilePictureUrl.StartsWith("data:image"))
         {
-            // Save base64 directly in the database to persist across server restarts
-            user.ProfilePictureUrl = dto.ProfilePictureUrl;
+            try
+            {
+                var base64Data = dto.ProfilePictureUrl.Substring(dto.ProfilePictureUrl.IndexOf(",") + 1);
+                var imageBytes = Convert.FromBase64String(base64Data);
+                
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+                
+                var fileName = $"{Guid.NewGuid()}.jpg";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+                
+                await System.IO.File.WriteAllBytesAsync(filePath, imageBytes, cancellationToken);
+                
+                user.ProfilePictureUrl = $"/uploads/profiles/{fileName}";
+            }
+            catch
+            {
+                user.ProfilePictureUrl = null;
+            }
         }
         else if (!string.IsNullOrEmpty(dto.ProfilePictureUrl))
         {

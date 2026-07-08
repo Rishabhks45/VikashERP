@@ -88,6 +88,7 @@
         {
             @foreach (var customer in _filteredCustomers)
             {
+                var currentCustomer = customer;
                 <div class="customer-card pa-3">
                     <div class="d-flex justify-space-between align-start mb-2">
                         <div class="flex-1 mr-2">
@@ -118,9 +119,9 @@
                             @customer.Phone
                         </MudText>
                         <div class="d-flex gap-1">
-                            <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" Style="color: #4caf50; padding: 4px;" OnClick="() => NavigateToLedger(customer)" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #0066ff; padding: 4px;" OnClick="() => OpenEditSheet(customer)" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #dc3545; padding: 4px;" OnClick="() => DeleteCustomer(customer)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" Style="color: #4caf50; padding: 4px;" OnClick="() => NavigateToLedger(currentCustomer)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #0066ff; padding: 4px;" OnClick="() => OpenEditSheet(currentCustomer)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #dc3545; padding: 4px;" OnClick="() => DeleteCustomer(currentCustomer)" />
                         </div>
                     </div>
                 </div>
