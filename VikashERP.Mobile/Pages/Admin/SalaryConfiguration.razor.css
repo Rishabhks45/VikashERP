@@ -1,0 +1,80 @@
+.salary-config-page {
+    /* Layout padding will handle container bounds, but we can set bg */
+}
+
+.salary-card {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.05);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.salary-card:active {
+    transform: scale(0.98);
+}
+
+.salary-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1976d2, #6366f1);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+.status-chip {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.status-chip.active {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.status-chip.inactive {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* Bottom Sheet Styles */
+.custom-bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 1500;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+}
+
+.custom-bottom-sheet.open {
+    transform: translateY(0);
+}
+
+::deep .light-input .mud-input {
+    background-color: #f8f9fa !important;
+    border-radius: 8px;
+}

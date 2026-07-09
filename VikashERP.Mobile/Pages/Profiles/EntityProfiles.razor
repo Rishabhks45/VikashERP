@@ -18,57 +18,25 @@
         </MudText>
     </div>
 
-    @* Stats Grid (KPIs) *@
-    <MudGrid Spacing="2" Class="mb-4">
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #e3f2fd;">
-                        <MudIcon Icon="@Icons.Material.Filled.Groups" Style="color: #1976d2;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Total Customers</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700;">@_customers.Count</MudText>
-                <MudText Typo="Typo.caption" Style="color: #28a745; font-size: 0.65rem;">Active profiles</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #fff3e0;">
-                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Style="color: #f57c00;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Dues</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700;">@FormatCurrency(TotalDues)</MudText>
-                <MudText Typo="Typo.caption" Style="color: #dc3545; font-size: 0.65rem;">@DueCustomerCount accounts</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #e8f5e9;">
-                        <MudIcon Icon="@Icons.Material.Filled.Savings" Style="color: #388e3c;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Advance</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700;">@FormatCurrency(TotalAdvance)</MudText>
-                <MudText Typo="Typo.caption" Style="color: #28a745; font-size: 0.65rem;">@AdvanceCustomerCount accounts</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #f3e5f5;">
-                        <MudIcon Icon="@Icons.Material.Filled.Payments" Style="color: #7b1fa2;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">A/C Cust.</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700;">@_customers.Count(c => c.DefaultPaymentMode == "A/C")</MudText>
-                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">Credit accounts</MudText>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+    @* Stats Grid (KPIs) - Dense *@
+    <div class="kpi-dense-grid mb-3">
+        <div class="kpi-dense-item blue">
+            <div class="kpi-val">@_customers.Count</div>
+            <div class="kpi-lbl">Customers</div>
+        </div>
+        <div class="kpi-dense-item orange">
+            <div class="kpi-val" style="font-size: 0.9rem;">@FormatCurrency(TotalDues)</div>
+            <div class="kpi-lbl">Dues (@DueCustomerCount)</div>
+        </div>
+        <div class="kpi-dense-item green">
+            <div class="kpi-val" style="font-size: 0.9rem;">@FormatCurrency(TotalAdvance)</div>
+            <div class="kpi-lbl">Advance (@AdvanceCustomerCount)</div>
+        </div>
+        <div class="kpi-dense-item purple">
+            <div class="kpi-val">@_customers.Count(c => c.DefaultPaymentMode == "A/C")</div>
+            <div class="kpi-lbl">A/C Cust</div>
+        </div>
+    </div>
 
     @* Search Bar *@
     <MudTextField @bind-Value="_searchQuery" Placeholder="Search by name, account no, phone..." 
@@ -77,8 +45,8 @@
                   Immediate="true" TextChanged="FilterCustomers" />
 
     @* Customer List *@
-    <div class="customer-list d-flex flex-column gap-3">
-        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Profiles..." Absolute="true" />
+    <div class="customer-list d-flex flex-column">
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Profiles..."  />
         
         @if (!_isLoading && !_filteredCustomers.Any())
         {
@@ -89,40 +57,33 @@
             @foreach (var customer in _filteredCustomers)
             {
                 var currentCustomer = customer;
-                <div class="customer-card pa-3">
-                    <div class="d-flex justify-space-between align-start mb-2">
+                <div class="customer-card-dense">
+                    <div class="d-flex justify-space-between align-start">
                         <div class="flex-1 mr-2">
-                            <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 700; line-height: 1.2;">
-                                @($"{customer.FirstName} {customer.LastName}".Trim())
-                            </MudText>
+                            <div class="dense-cust-name">@($"{customer.FirstName} {customer.LastName}".Trim())</div>
                             @if (!string.IsNullOrWhiteSpace(customer.CompanyName))
                             {
-                                <MudText Typo="Typo.caption" Style="color: #64748b; display: block;">@customer.CompanyName</MudText>
+                                <div class="dense-cust-company">@customer.CompanyName</div>
                             }
-                            <MudText Typo="Typo.caption" Style="color: #666; display: block; margin-top: 4px;">
-                                A/C: @customer.AccountNumber
-                            </MudText>
+                            <div class="dense-cust-meta">
+                                <span>A/C: @customer.AccountNumber</span>
+                                <span style="color:#cbd5e1">|</span>
+                                <span><MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Style="font-size: 0.7rem; vertical-align: middle;" /> @customer.Phone</span>
+                            </div>
                         </div>
                         <div class="d-flex flex-column align-end">
-                            <span class="payment-badge @(customer.DefaultPaymentMode == "Cash" ? "badge-cash" : "badge-ac")">
+                            <span class="payment-badge-dense @(customer.DefaultPaymentMode == "Cash" ? "badge-cash" : "badge-ac")">
                                 @customer.DefaultPaymentMode
                             </span>
-                            <MudText Typo="Typo.body2" Style="font-weight: 700; margin-top: 4px;" Class="@GetBalanceClass(customer.CurrentBalance)">
+                            <div class="dense-cust-bal @GetBalanceClass(customer.CurrentBalance)">
                                 @FormatCurrency(customer.CurrentBalance)
-                            </MudText>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="d-flex justify-space-between align-center mt-2 pt-2" style="border-top: 1px dashed rgba(0,0,0,0.1);">
-                        <MudText Typo="Typo.caption" Style="color: #666;">
-                            <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Style="font-size: 0.8rem; margin-right: 4px; vertical-align: text-bottom;" />
-                            @customer.Phone
-                        </MudText>
-                        <div class="d-flex gap-1">
-                            <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" Style="color: #4caf50; padding: 4px;" OnClick="() => NavigateToLedger(currentCustomer)" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #0066ff; padding: 4px;" OnClick="() => OpenEditSheet(currentCustomer)" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #dc3545; padding: 4px;" OnClick="() => DeleteCustomer(currentCustomer)" />
-                        </div>
+                    <div class="dense-actions-row mt-1 pt-1">
+                        <MudIconButton Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" Style="color: #4caf50; padding: 2px;" OnClick="() => NavigateToLedger(currentCustomer)" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #0066ff; padding: 2px;" OnClick="() => OpenEditSheet(currentCustomer)" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #dc3545; padding: 2px;" OnClick="() => DeleteCustomer(currentCustomer)" />
                     </div>
                 </div>
             }
@@ -135,9 +96,10 @@
             OnClick="OpenAddSheet" />
 </div>
 
-@* Bottom Sheet for Add/Edit using MudDrawer *@
-<MudDrawer @bind-Open="_isSheetOpen" Anchor="Anchor.Bottom" Elevation="2" Variant="DrawerVariant.Temporary" Height="auto" Style="background-color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; padding-bottom: env(safe-area-inset-bottom);">
-    <div class="pa-4 d-flex flex-column" style="padding-bottom: 80px !important;">
+@* Bottom Sheet for Add Entity *@
+<MudOverlay Visible="_isSheetOpen" OnClick="CloseSheet" DarkBackground="true" ZIndex="1400" />
+<div class="custom-bottom-sheet @(_isSheetOpen ? "open" : "")">
+    <div class="pa-4 d-flex flex-column">
         <div class="d-flex align-center justify-space-between mb-4">
             <div class="d-flex align-center gap-3">
                 <MudIcon Icon="@(_isEditing ? Icons.Material.Filled.ManageAccounts : Icons.Material.Filled.PersonAddAlt1)" Style="color: #1a2530;" />
@@ -183,38 +145,93 @@
             </div>
         </MudForm>
     </div>
-</MudDrawer>
+</div>
 
 <style>
     .profiles-page {
         background-color: #fafbfc;
-        padding: 16px;
-        padding-bottom: 80px; /* Space so last item clears FAB */
         color: #1a2530;
     }
     
-    .stat-card {
-        background-color: white !important;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    .custom-bottom-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: white;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        padding-bottom: env(safe-area-inset-bottom);
+        z-index: 1500;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    }
+    .custom-bottom-sheet.open {
+        transform: translateY(0);
     }
     
-    .stat-icon-wrapper {
-        width: 28px;
-        height: 28px;
+    /* Dense KPIs */
+    .kpi-dense-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
+    .kpi-dense-item {
+        background: white;
         border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        padding: 8px 4px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+    .kpi-dense-item.blue { border-bottom: 3px solid #3b82f6; }
+    .kpi-dense-item.green { border-bottom: 3px solid #22c55e; }
+    .kpi-dense-item.orange { border-bottom: 3px solid #f97316; }
+    .kpi-dense-item.purple { border-bottom: 3px solid #a855f7; }
+    
+    .kpi-val { font-weight: 800; font-size: 1.05rem; color: #0f172a; line-height: 1.1; }
+    .kpi-lbl { font-size: 0.55rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 2px;}
+
+    /* Dense Customer Cards */
+    .customer-card-dense {
+        background-color: white;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        padding: 8px 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0, 0, 0, 0.03);
+    }
+    .dense-cust-name {
+        font-weight: 800; font-size: 0.9rem; color: #0f172a; line-height: 1.2;
+    }
+    .dense-cust-company {
+        font-size: 0.7rem; color: #64748b; margin-top: 2px;
+    }
+    .dense-cust-meta {
+        font-size: 0.7rem; color: #64748b; margin-top: 4px;
+        display: flex; gap: 6px; align-items: center;
+    }
+    .dense-cust-bal {
+        font-weight: 800; font-size: 0.9rem; margin-top: 4px; text-align: right;
+    }
+    .dense-actions-row {
+        border-top: 1px dashed rgba(0,0,0,0.1);
+        display: flex; justify-content: flex-end; gap: 8px;
     }
 
-    .customer-card {
-        background-color: white;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    .payment-badge-dense {
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
+    .badge-cash { background-color: #e8f5e9; color: #2e7d32; }
+    .badge-ac { background-color: #e3f2fd; color: #1565c0; }
 
     .payment-badge {
         font-size: 0.65rem;

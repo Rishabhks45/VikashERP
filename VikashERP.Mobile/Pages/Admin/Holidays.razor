@@ -1,0 +1,431 @@
+@page "/admin/holidays"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@inject IHolidayService HolidayService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<div class="holidays-page">
+    @* Page Header *@
+    <div class="d-flex justify-space-between align-end mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">Holidays</MudText>
+            <MudText Typo="Typo.body2" Style="color: #666;">
+                Manage calendar closures
+            </MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadHolidaysAsync" Disabled="_isLoading" />
+    </div>
+
+    @* Calendar Widget Area *@
+    <div class="calendar-widget mb-6">
+        <div class="calendar-header">
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small" OnClick="PrevMonth" />
+            <MudText Typo="Typo.subtitle1" Style="font-weight: 700; color: #1e293b;">@_currentMonth.ToString("MMMM yyyy")</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" OnClick="NextMonth" />
+        </div>
+        
+        <div class="calendar-grid">
+            <div class="calendar-day-label">S</div>
+            <div class="calendar-day-label">M</div>
+            <div class="calendar-day-label">T</div>
+            <div class="calendar-day-label">W</div>
+            <div class="calendar-day-label">T</div>
+            <div class="calendar-day-label">F</div>
+            <div class="calendar-day-label">S</div>
+            
+            @foreach (var cell in GetCalendarDays())
+            {
+                if (cell.IsEmpty)
+                {
+                    <div class="calendar-cell empty"></div>
+                }
+                else
+                {
+                    bool isToday = cell.Date.Date == DateTime.Today;
+                    bool hasHoliday = cell.Holidays.Any();
+                    
+                    <div class="calendar-cell @(isToday ? "today" : "") @(hasHoliday ? "has-holiday" : "")" 
+                         @onclick="() => OnDayClick(cell)">
+                        <span>@cell.DayNumber</span>
+                        @if (hasHoliday)
+                        {
+                            <div class="holiday-dot"></div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    @* List Area *@
+    <div>
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center my-8">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            </div>
+        }
+        else if (!_holidays.Any())
+        {
+            <div class="d-flex flex-column align-center justify-center my-8 p-4 text-center">
+                <MudIcon Icon="@Icons.Material.Outlined.EventBusy" Style="font-size: 3rem; color: #cbd5e1;" Class="mb-3" />
+                <MudText Typo="Typo.h6" Style="color: #64748b; font-weight: 600;">No Holidays Found</MudText>
+                <MudText Typo="Typo.body2" Style="color: #94a3b8;">Tap the + button to add a new holiday.</MudText>
+            </div>
+        }
+        else
+        {
+            @foreach (var monthGroup in _holidays.GroupBy(h => h.Date.ToString("MMMM yyyy")).OrderBy(g => g.First().Date))
+            {
+                <div class="mb-4">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="color: #64748b; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+                        @monthGroup.Key
+                    </MudText>
+                    
+                    @foreach (var h in monthGroup.OrderBy(x => x.Date))
+                    {
+                        var cat = GetCategory(h);
+                        <div class="holiday-card mb-2" @onclick="() => OpenEditSheet(h)">
+                            <div class="holiday-date">
+                                <span class="holiday-day">@h.Date.Day</span>
+                                <span class="holiday-dow">@h.Date.ToString("ddd")</span>
+                            </div>
+                            <div class="holiday-info">
+                                <MudText Typo="Typo.body1" Style="font-weight: 600; color: #1e293b; line-height: 1.2;">@h.Name</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #64748b;">
+                                    @if(h.IsRecurring) { <MudIcon Icon="@Icons.Material.Filled.Loop" Size="Size.Small" Class="mr-1" Style="font-size: 10px;" /> }
+                                    @GetDisplayDescription(h)
+                                </MudText>
+                            </div>
+                            <div class="holiday-category">
+                                <span class="holiday-chip @cat.ToLowerInvariant()">@cat</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    @* Floating Action Button *@
+    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+            Style="position: fixed; bottom: 120px; right: 24px; background-color: #1976d2;" 
+            OnClick="OpenAddSheet" />
+</div>
+
+@* Bottom Sheet for Add/Edit Holiday *@
+<MudOverlay Visible="_isSheetOpen" OnClick="CloseSheet" DarkBackground="true" ZIndex="1400" />
+<div class="custom-bottom-sheet @(_isSheetOpen ? "open" : "")">
+    <div class="pa-4 d-flex flex-column">
+        <div class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-center gap-3">
+                <MudIcon Icon="@(_isEditing ? Icons.Material.Filled.EditCalendar : Icons.Material.Filled.EventAvailable)" Style="color: #1a2530;" />
+                <div>
+                    <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700; line-height: 1.2;">@(_isEditing ? "Edit Holiday" : "New Holiday")</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #666;">@(_isEditing ? "Modify this calendar closure." : "Add a new calendar closure.")</MudText>
+                </div>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Style="color: #666; background-color: rgba(0,0,0,0.05);" OnClick="CloseSheet" />
+        </div>
+
+        <EditForm Model="@_editModel">
+            <MudTextField @bind-Value="_editModel.Name" Label="Holiday Name *" Required="true" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense" />
+            
+            <MudDatePicker @bind-Date="_editModel.Date" Label="Date *" Required="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3 light-input" />
+            
+            <MudSelect T="string" @bind-Value="_category" Label="Category *" Required="true" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense">
+                <MudSelectItem Value="@("National")">National</MudSelectItem>
+                <MudSelectItem Value="@("Regional")">Regional</MudSelectItem>
+                <MudSelectItem Value="@("Company")">Company</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField @bind-Value="_editModel.Description" Label="Remarks / Descriptions" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense" Lines="2" />
+
+            <div class="d-flex align-center mb-4">
+                <MudSwitch @bind-Value="_editModel.IsRecurring" Color="Color.Primary" />
+                <MudText Typo="Typo.body2" Style="color: #1a2530;" Class="ml-2">Repeats Annually</MudText>
+            </div>
+
+            @if (_isEditing)
+            {
+                <div class="d-flex align-center mb-4">
+                    <MudSwitch @bind-Value="_editModel.IsActive" Color="Color.Success" />
+                    <MudText Typo="Typo.body2" Style="color: #1a2530;" Class="ml-2">Is Active</MudText>
+                </div>
+            }
+
+            <div class="d-flex justify-space-between mt-auto pt-2 pb-6">
+                @if (_isEditing)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="DeleteHoliday" Disabled="@_isSaving">DELETE</MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Text" Style="color: #666;" OnClick="CloseSheet">CANCEL</MudButton>
+                }
+                
+                <MudButton Variant="Variant.Filled" Style="background-color: #1976d2; color: white;" OnClick="SaveHoliday" Disabled="@_isSaving">
+                    @if(_isSaving){ <MudProgressCircular Size="Size.Small" Indeterminate="true"/> } else { <span>@(_isEditing ? "UPDATE HOLIDAY" : "ADD HOLIDAY")</span> }
+                </MudButton>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+
+
+@code {
+    private List<HolidayDto> _holidays = new();
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    
+    private bool _isSheetOpen = false;
+    private bool _isEditing = false;
+    private Guid _editingId;
+    private string _category = "Regional";
+    
+    private DateTime _currentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    
+    private class CalendarDay
+    {
+        public bool IsEmpty { get; set; }
+        public int DayNumber { get; set; }
+        public DateTime Date { get; set; }
+        public List<HolidayDto> Holidays { get; set; } = new();
+    }
+    
+    // Using a simpler model for the form
+    private class HolidayFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public DateTime? Date { get; set; }
+        public bool IsRecurring { get; set; }
+        public string? Description { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+    
+    private HolidayFormModel _editModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHolidaysAsync();
+    }
+
+    private async Task LoadHolidaysAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        
+        var result = await HolidayService.GetHolidaysAsync();
+        _holidays = result.OrderBy(h => h.Date).ToList();
+        
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private List<CalendarDay> GetCalendarDays()
+    {
+        var days = new List<CalendarDay>();
+        var firstDayOfMonth = new DateTime(_currentMonth.Year, _currentMonth.Month, 1);
+        int firstDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
+        int daysInMonth = DateTime.DaysInMonth(_currentMonth.Year, _currentMonth.Month);
+        
+        for (int i = 0; i < firstDayOfWeek; i++)
+            days.Add(new CalendarDay { IsEmpty = true });
+        
+        for (int day = 1; day <= daysInMonth; day++)
+        {
+            var date = new DateTime(_currentMonth.Year, _currentMonth.Month, day);
+            days.Add(new CalendarDay
+            {
+                IsEmpty = false,
+                DayNumber = day,
+                Date = date,
+                Holidays = _holidays.Where(h => h.Date.Date == date.Date).ToList()
+            });
+        }
+        
+        while (days.Count % 7 != 0)
+            days.Add(new CalendarDay { IsEmpty = true });
+            
+        return days;
+    }
+
+    private void PrevMonth() => _currentMonth = _currentMonth.AddMonths(-1);
+    private void NextMonth() => _currentMonth = _currentMonth.AddMonths(1);
+
+    private void OnDayClick(CalendarDay cell)
+    {
+        if (cell.IsEmpty) return;
+        
+        if (cell.Holidays.Any())
+            OpenEditSheet(cell.Holidays.First());
+        else
+        {
+            _isEditing = false;
+            _category = "Regional";
+            _editModel = new HolidayFormModel { Date = cell.Date };
+            _isSheetOpen = true;
+        }
+    }
+
+    private void OpenAddSheet()
+    {
+        _isEditing = false;
+        _category = "Regional";
+        _editModel = new HolidayFormModel { Date = DateTime.Today };
+        _isSheetOpen = true;
+    }
+
+    private void OpenEditSheet(HolidayDto holiday)
+    {
+        _isEditing = true;
+        _editingId = holiday.Id;
+        _category = GetCategory(holiday);
+        
+        _editModel = new HolidayFormModel
+        {
+            Name = holiday.Name,
+            Date = holiday.Date,
+            IsRecurring = holiday.IsRecurring,
+            Description = GetDisplayDescription(holiday),
+            IsActive = holiday.IsActive
+        };
+        
+        _isSheetOpen = true;
+    }
+
+    private void CloseSheet()
+    {
+        _isSheetOpen = false;
+    }
+
+    private string GetCategory(HolidayDto h)
+    {
+        if (h.Description != null && h.Description.StartsWith("["))
+        {
+            var closeIndex = h.Description.IndexOf("]");
+            if (closeIndex > 1)
+            {
+                return h.Description.Substring(1, closeIndex - 1);
+            }
+        }
+        
+        var n = h.Name?.ToLowerInvariant() ?? "";
+        if (n.Contains("audit") || n.Contains("company") || n.Contains("maintenance") || n.Contains("shutdown"))
+            return "Company";
+
+        if (n.Contains("republic") || n.Contains("independence") || n.Contains("gandhi") || n.Contains("national"))
+            return "National";
+
+        return "Regional";
+    }
+
+    private string GetDisplayDescription(HolidayDto h)
+    {
+        if (h.Description != null && h.Description.StartsWith("["))
+        {
+            var closeIndex = h.Description.IndexOf("]");
+            if (closeIndex > 1)
+            {
+                return h.Description.Substring(closeIndex + 1).Trim();
+            }
+        }
+        return h.Description ?? "";
+    }
+
+    private async Task SaveHoliday()
+    {
+        if (string.IsNullOrWhiteSpace(_editModel.Name) || !_editModel.Date.HasValue)
+        {
+            Snackbar.Add("Name and Date are required", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        StateHasChanged();
+
+        var desc = $"[{_category}] {(_editModel.Description ?? "")}".Trim();
+
+        if (_isEditing)
+        {
+            var request = new UpdateHolidayDto
+            {
+                Name = _editModel.Name,
+                Date = _editModel.Date.Value,
+                IsRecurring = _editModel.IsRecurring,
+                Description = desc,
+                IsActive = _editModel.IsActive
+            };
+            
+            var result = await HolidayService.UpdateHolidayAsync(_editingId, request);
+            if (result != null)
+            {
+                Snackbar.Add("Holiday updated", Severity.Success);
+                CloseSheet();
+                await LoadHolidaysAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to update holiday", Severity.Error);
+            }
+        }
+        else
+        {
+            var request = new CreateHolidayDto
+            {
+                Name = _editModel.Name,
+                Date = _editModel.Date.Value,
+                IsRecurring = _editModel.IsRecurring,
+                Description = desc
+            };
+            
+            var result = await HolidayService.CreateHolidayAsync(request);
+            if (result != null)
+            {
+                Snackbar.Add("Holiday created", Severity.Success);
+                CloseSheet();
+                await LoadHolidaysAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to create holiday", Severity.Error);
+            }
+        }
+        
+        _isSaving = false;
+        StateHasChanged();
+    }
+    
+    private async Task DeleteHoliday()
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Delete Holiday", 
+            $"Are you sure you want to delete '{_editModel.Name}'?", 
+            yesText:"Delete", cancelText:"Cancel");
+            
+        if (result == true)
+        {
+            _isSaving = true;
+            StateHasChanged();
+            
+            var success = await HolidayService.DeleteHolidayAsync(_editingId);
+            if (success)
+            {
+                Snackbar.Add("Holiday deleted", Severity.Success);
+                CloseSheet();
+                await LoadHolidaysAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete", Severity.Error);
+            }
+            
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -17,57 +17,25 @@
         </MudText>
     </div>
 
-    @* Stats Grid *@
-    <MudGrid Spacing="2" Class="mb-4">
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: rgba(100, 150, 255, 0.2);">
-                        <MudIcon Icon="@Icons.Material.Filled.PeopleAlt" Style="color: #6496ff;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #9ea7b0; margin-left: 8px;">Total Accounts</MudText>
-                </div>
-                <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">@_users.Count</MudText>
-                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">Active directory</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: rgba(100, 255, 150, 0.2);">
-                        <MudIcon Icon="@Icons.Material.Filled.Security" Style="color: #28a745;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Administrators</MudText>
-                </div>
-                <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">@_users.Count(u => u.Role == "Super Admin")</MudText>
-                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">System owners</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: rgba(255, 200, 100, 0.2);">
-                        <MudIcon Icon="@Icons.Material.Filled.SupportAgent" Style="color: #ff9800;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Managers</MudText>
-                </div>
-                <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">@_users.Count(u => u.Role == "Manager")</MudText>
-                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">Operations</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: rgba(255, 100, 100, 0.2);">
-                        <MudIcon Icon="@Icons.Material.Filled.Engineering" Style="color: #dc3545;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px;">Employees</MudText>
-                </div>
-                <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">@_users.Count(u => u.Role == "Employee")</MudText>
-                <MudText Typo="Typo.caption" Style="color: #666; font-size: 0.65rem;">Field agents</MudText>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+    @* Stats Grid - Dense *@
+    <div class="kpi-dense-grid mb-3">
+        <div class="kpi-dense-item blue">
+            <div class="kpi-val">@_users.Count</div>
+            <div class="kpi-lbl">Total</div>
+        </div>
+        <div class="kpi-dense-item green">
+            <div class="kpi-val">@_users.Count(u => u.Role == "Super Admin")</div>
+            <div class="kpi-lbl">Admins</div>
+        </div>
+        <div class="kpi-dense-item orange">
+            <div class="kpi-val">@_users.Count(u => u.Role == "Manager")</div>
+            <div class="kpi-lbl">Managers</div>
+        </div>
+        <div class="kpi-dense-item red">
+            <div class="kpi-val">@_users.Count(u => u.Role == "Employee")</div>
+            <div class="kpi-lbl">Employees</div>
+        </div>
+    </div>
 
     @* Search Bar *@
     <MudTextField @bind-Value="_searchQuery" Placeholder="Search by name or email..." 
@@ -76,8 +44,8 @@
                   Immediate="true" TextChanged="FilterUsers" />
 
     @* Users List *@
-    <div class="user-list d-flex flex-column gap-3 mb-6">
-        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Accounts..." Absolute="true" />
+    <div class="user-list d-flex flex-column">
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Accounts..."  />
         
         @if (!_isLoading && !_filteredUsers.Any())
         {
@@ -87,8 +55,8 @@
         {
             @foreach (var user in _filteredUsers)
             {
-                <div class="user-card d-flex align-center pa-3">
-                    <MudAvatar Style="height: 48px; width: 48px; font-size: 1rem; font-weight: 600; background-color: #e6f0ff; color: #0066ff;" Class="mr-3">
+                <div class="user-card-dense d-flex align-center">
+                    <MudAvatar Style="height: 40px; width: 40px; font-size: 0.85rem; font-weight: 600; background-color: #e6f0ff; color: #0066ff;" Class="mr-3">
                         @if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
                         {
                             <MudImage Src="@user.ProfilePictureUrl" Style="width: 100%; height: 100%; object-fit: cover;" fetchpriority="high" />
@@ -100,25 +68,18 @@
                     </MudAvatar>
 
                     <div class="flex-1 overflow-hidden mr-2">
-                        <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            @user.FirstName @user.LastName
-                        </MudText>
-                        <MudText Typo="Typo.caption" Style="color: #666; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            @user.Email
-                        </MudText>
+                        <div class="dense-usr-name">@user.FirstName @user.LastName</div>
+                        <div class="dense-usr-email">@user.Email</div>
+                        <div class="dense-usr-role">
+                            <span class="role-badge-dense">@user.Role.ToUpper()</span>
+                            <span style="color: @(user.IsActive ? "#28a745" : "#dc3545");"> • @(user.IsActive ? "Active" : "Inactive")</span>
+                        </div>
                     </div>
 
                     <div class="d-flex flex-column align-end">
-                        <div class="d-flex align-center mb-1 gap-2">
-                            <span class="role-badge">@user.Role.ToUpper()</span>
-                            <div class="d-flex align-center">
-                                <div style="width: 6px; height: 6px; border-radius: 50%; background-color: @(user.IsActive ? "#28a745" : "#dc3545"); margin-right: 4px;"></div>
-                                <span style="font-size: 0.65rem; color: #666;">@(user.IsActive ? "Active" : "Inactive")</span>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #0066ff;" OnClick="() => OpenEditSheet(user)" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #dc3545;" OnClick="() => DeleteUser(user)" />
+                        <div class="d-flex gap-1">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Style="color: #0066ff; padding: 4px;" OnClick="() => OpenEditSheet(user)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Style="color: #dc3545; padding: 4px;" OnClick="() => DeleteUser(user)" />
                         </div>
                     </div>
                 </div>
@@ -132,9 +93,10 @@
             OnClick="OpenAddSheet" />
 </div>
 
-@* Bottom Sheet for Add/Edit using MudDrawer *@
-<MudDrawer @bind-Open="_isSheetOpen" Anchor="Anchor.Bottom" Elevation="2" Variant="DrawerVariant.Temporary" Height="auto" Style="background-color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; padding-bottom: env(safe-area-inset-bottom);">
-    <div class="pa-4 d-flex flex-column" style="padding-bottom: 80px !important;">
+@* Bottom Sheet for Add/Edit Staff *@
+<MudOverlay Visible="_isSheetOpen" OnClick="CloseSheet" DarkBackground="true" ZIndex="1400" />
+<div class="custom-bottom-sheet @(_isSheetOpen ? "open" : "")">
+    <div class="pa-4 d-flex flex-column">
         <div class="d-flex align-center justify-space-between mb-4">
             <div class="d-flex align-center gap-3">
                 <MudIcon Icon="@Icons.Material.Filled.PersonAddAlt1" Style="color: #1a2530;" />
@@ -180,31 +142,57 @@
             </div>
         </MudForm>
     </div>
-</MudDrawer>
+</div>
 
 <style>
     .staff-page {
         background-color: #fafbfc;
-        padding: 16px;
-        padding-bottom: 80px; /* Space so last item clears FAB */
         color: #1a2530;
     }
     
-    .stat-card {
-        background-color: white !important;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    .custom-bottom-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: white;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        padding-bottom: env(safe-area-inset-bottom);
+        z-index: 1500;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    }
+    .custom-bottom-sheet.open {
+        transform: translateY(0);
     }
     
-    .stat-icon-wrapper {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* Dense KPIs */
+    .kpi-dense-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
     }
+    .kpi-dense-item {
+        background: white;
+        border-radius: 8px;
+        padding: 8px 4px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+    .kpi-dense-item.blue { border-bottom: 3px solid #3b82f6; }
+    .kpi-dense-item.green { border-bottom: 3px solid #28a745; }
+    .kpi-dense-item.orange { border-bottom: 3px solid #ff9800; }
+    .kpi-dense-item.red { border-bottom: 3px solid #dc3545; }
+    
+    .kpi-val { font-weight: 800; font-size: 1.05rem; color: #0f172a; line-height: 1.1; }
+    .kpi-lbl { font-size: 0.55rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 2px;}
+
+
 
     .search-bar .mud-input-outlined {
         background-color: white !important;
@@ -215,18 +203,31 @@
         border-color: rgba(0, 0, 0, 0.1) !important;
     }
 
-    .user-card {
+    .user-card-dense {
         background-color: white;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        border-radius: 8px;
+        margin-bottom: 6px;
+        padding: 8px 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0, 0, 0, 0.03);
+    }
+    .dense-usr-name {
+        font-weight: 800; font-size: 0.9rem; color: #1a2530;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dense-usr-email {
+        font-size: 0.7rem; color: #666;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dense-usr-role {
+        font-size: 0.65rem; color: #666; margin-top: 2px;
     }
 
-    .role-badge {
+    .role-badge-dense {
         font-size: 0.55rem;
         font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 12px;
+        padding: 1px 6px;
+        border-radius: 8px;
         background-color: #f0f5ff;
         color: #0066ff;
         letter-spacing: 0.5px;

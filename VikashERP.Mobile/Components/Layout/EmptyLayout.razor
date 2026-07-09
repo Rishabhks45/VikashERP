@@ -1,8 +1,21 @@
 @inherits LayoutComponentBase
 
-<MudThemeProvider />
+<MudThemeProvider Theme="_customTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 @Body
+
+@code {
+    private MudTheme _customTheme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Background = "#fafbfc",
+            AppbarBackground = "#ffffff",
+            Surface = "#ffffff",
+            DrawerBackground = "#ffffff"
+        }
+    };
+}

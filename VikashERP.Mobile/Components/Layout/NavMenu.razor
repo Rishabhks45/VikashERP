@@ -16,13 +16,13 @@
 
     /* Premium Nav Links Styling */
     .premium-sidebar .mud-nav-link {
-        margin: 4px 12px !important;
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-        color: #475569 !important;
+        margin: 2px 10px !important;
+        border-radius: 8px !important;
+        padding: 8px 14px !important;
+        color: #334155 !important;
         font-weight: 600 !important;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        min-height: 46px !important;
+        min-height: 40px !important;
     }
     
     .premium-sidebar .mud-nav-link:hover {
@@ -32,14 +32,14 @@
     }
     
     .premium-sidebar .mud-nav-link .mud-nav-link-text {
-        font-size: 0.95rem !important;
+        font-size: 0.9rem !important;
         letter-spacing: 0.2px;
     }
     
     .premium-sidebar .mud-nav-link .mud-icon-root {
         color: #64748b !important;
-        margin-right: 14px !important;
-        font-size: 1.25rem !important;
+        margin-right: 12px !important;
+        font-size: 1.2rem !important;
         transition: all 0.2s ease-in-out !important;
     }
     
@@ -47,7 +47,7 @@
         background-color: #E6F1FB !important; /* Brand subtle blue */
         color: #0C447C !important;            /* Brand deep blue */
         font-weight: 700 !important;
-        box-shadow: 0 4px 12px rgba(24, 95, 165, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(24, 95, 165, 0.08) !important;
     }
     
     .premium-sidebar .mud-nav-link.active .mud-icon-root {
@@ -60,13 +60,13 @@
 
     /* Section headers */
     .premium-sidebar .mud-typography-caption {
-        font-size: 0.72rem !important;
+        font-size: 0.65rem !important;
         font-weight: 800 !important;
         color: #94a3b8 !important;
-        letter-spacing: 1.2px !important;
-        padding-left: 18px !important;
-        margin-top: 16px !important;
-        margin-bottom: 4px !important;
+        letter-spacing: 1px !important;
+        padding-left: 14px !important;
+        margin-top: 10px !important;
+        margin-bottom: 2px !important;
         text-transform: uppercase;
     }
 </style>
@@ -74,29 +74,29 @@
 <MudDrawer Open="@Open" OpenChanged="@OnDrawerOpenChanged" Elevation="0" Variant="@DrawerVariant.Temporary" Width="280px" Class="premium-sidebar">
 
     @* ===== User profile header ===== *@
-    <div style="padding: 20px 16px 16px; border-bottom: 0.5px solid var(--mud-palette-lines-default);">
-        <div style="display: flex; align-items: center; gap: 10px;">
+    <div style="padding: 16px; margin: 12px 10px 8px; background: linear-gradient(135deg, #185FA5, #0B3A68); border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(24, 95, 165, 0.2);">
+        <div style="display: flex; align-items: center; gap: 12px;">
             @if (!string.IsNullOrEmpty(_profilePictureUrl))
             {
-                <MudAvatar Style="height: 42px; width: 42px;">
+                <MudAvatar Style="height: 42px; width: 42px; border: 2px solid rgba(255,255,255,0.2);">
                     <MudImage Src="@GetImageUrl(_profilePictureUrl)" Style="width: 100%; height: 100%; object-fit: cover;" />
                 </MudAvatar>
             }
             else
             {
-                <div style="width: 42px; height: 42px; border-radius: 50%; background: #185FA5; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #fff;">
+                <div style="width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff;">
                     @GetInitials(CurrentUserName)
                 </div>
             }
-            <div>
-                <p style="margin: 0; font-size: 13.5px; font-weight: 500;">@CurrentUserName</p>
-                <span style="font-size: 9px; background: #E6F1FB; color: #0C447C; padding: 2px 8px; border-radius: 20px;">@CurrentUserRole</span>
+            <div style="flex: 1;">
+                <div style="font-size: 14px; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">@CurrentUserName</div>
+                <div style="font-size: 10px; color: rgba(255,255,255,0.85); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">@CurrentUserRole</div>
             </div>
         </div>
     </div>
 
     @* ===== Scrollable menu sections ===== *@
-    <div class="no-scrollbar" style="flex: 1; overflow-y: auto; padding: 14px 12px;">
+    <div class="no-scrollbar" style="flex: 1; overflow-y: auto; padding: 6px 4px 20px;">
 
         @* ---- Dashboard section (visible to Manager, Admin, SuperAdmin) ---- *@
         <AuthorizeView Roles="Manager,Super Admin">
@@ -174,6 +174,9 @@
                             <MudNavLink Href="/admin/staff" Icon="@Icons.Material.Filled.Badge">
                                 Staff accounts
                             </MudNavLink>
+                            <MudNavLink Href="/admin/salary-config" Icon="@Icons.Material.Filled.Payments">
+                                Salary config
+                            </MudNavLink>
                         </Authorized>
                     </AuthorizeView>
                 </MudNavMenu>
@@ -185,11 +188,11 @@
             <Authorized>
                 <MudText Typo="Typo.caption" Class="px-2 mud-text-secondary mt-2" Style="letter-spacing:0.5px;">ADMINISTRATION</MudText>
                 <MudNavMenu Class="mb-3">
-                    <MudNavLink Href="/admin/staff" Icon="@Icons.Material.Filled.Badge">
-                        Staff accounts
-                    </MudNavLink>
                     <MudNavLink Href="/expenses" Icon="@Icons.Material.Filled.AccountBalanceWallet">
                         Daily expenses
+                    </MudNavLink>
+                    <MudNavLink Href="/admin/holidays" Icon="@Icons.Material.Filled.Event">
+                        Holidays
                     </MudNavLink>
                     <MudNavLink Href="/admin/system" Icon="@Icons.Material.Filled.DisplaySettings">
                         System settings

@@ -4,7 +4,7 @@
 *@
 @inherits LayoutComponentBase
 
-<MudThemeProvider />
+<MudThemeProvider Theme="_customTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -47,4 +47,15 @@
 
 @code {
     private bool _drawerOpen = false;
+
+    private MudTheme _customTheme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Background = "#fafbfc",
+            AppbarBackground = "#ffffff",
+            Surface = "#ffffff",
+            DrawerBackground = "#ffffff"
+        }
+    };
 }

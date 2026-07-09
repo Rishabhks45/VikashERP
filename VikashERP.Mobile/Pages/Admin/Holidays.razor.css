@@ -1,0 +1,185 @@
+    .holidays-page {
+        background-color: #fafbfc;
+    }
+
+    /* Calendar Widget Styles */
+    .calendar-widget {
+        background: white;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        text-align: center;
+    }
+
+    .calendar-day-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #94a3b8;
+        padding-bottom: 8px;
+    }
+
+    .calendar-cell {
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+        border-radius: 50%;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+    }
+
+    .calendar-cell:active {
+        background-color: #f1f5f9;
+        transform: scale(0.9);
+    }
+
+    .calendar-cell.empty {
+        pointer-events: none;
+    }
+
+    .calendar-cell.today {
+        background-color: #1976d2;
+        color: white;
+    }
+
+    .calendar-cell.has-holiday:not(.today) {
+        font-weight: 800;
+        color: #1976d2;
+    }
+
+    .holiday-dot {
+        width: 4px;
+        height: 4px;
+        background-color: #ef4444;
+        border-radius: 50%;
+        position: absolute;
+        bottom: 6px;
+    }
+
+    .calendar-cell.today .holiday-dot {
+        background-color: white;
+    }
+
+    .holiday-card {
+        display: flex;
+        align-items: center;
+        background: white;
+        border-radius: 12px;
+        padding: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .holiday-card:active {
+        transform: scale(0.98);
+    }
+
+    .holiday-date {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 50px;
+        height: 50px;
+        background-color: #f1f5f9;
+        border-radius: 8px;
+        margin-right: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .holiday-day {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+    }
+
+    .holiday-dow {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+
+    .holiday-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .holiday-category {
+        margin-left: 8px;
+    }
+
+    .holiday-chip {
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+
+    .holiday-chip.national {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .holiday-chip.regional {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .holiday-chip.company {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+
+    /* Bottom Sheet Styles */
+    .custom-bottom-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: white;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        padding-bottom: env(safe-area-inset-bottom);
+        z-index: 1500;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .custom-bottom-sheet.open {
+        transform: translateY(0);
+    }
+
+    ::deep .light-input .mud-input {
+        background-color: #f8f9fa !important;
+        border-radius: 8px;
+    }

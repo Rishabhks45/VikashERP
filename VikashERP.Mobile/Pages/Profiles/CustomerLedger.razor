@@ -8,7 +8,7 @@
 @inject NavigationManager NavigationManager
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
-<div class="ledger-page pb-16">
+<div class="ledger-page">
     <MudAppBar Color="Color.Primary" Fixed="true" Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Inherit" OnClick="GoBack" />
         <MudText Typo="Typo.h6">Customer Ledger</MudText>
@@ -19,7 +19,7 @@
 
     @if (_isLoading)
     {
-        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="true" Text="Loading Ledger..." Absolute="true" />
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="true" Text="Loading Ledger..."  />
     }
     else if (_customer != null)
     {
@@ -99,7 +99,7 @@
     }
 </div>
 
-<VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isPdfGenerating" Text="Generating PDF..." Absolute="true" />
+<VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isPdfGenerating" Text="Generating PDF..."  />
 
 @code {
     [Parameter]

@@ -63,12 +63,33 @@ public class AppStateService
     private void NotifyStateChanged() => OnChange?.Invoke();
 
     // --- User Profile State ---
-    public string? UserProfilePictureUrl { get; private set; }
+    private string? _userProfilePictureUrl;
+    
+    public string? UserProfilePictureUrl 
+    { 
+        get
+        {
+            if (_userProfilePictureUrl == null)
+            {
+                _userProfilePictureUrl = Microsoft.Maui.Storage.Preferences.Default.Get("cached_profile_pic", (string?)null);
+            }
+            return _userProfilePictureUrl;
+        }
+        private set
+        {
+            _userProfilePictureUrl = value;
+        }
+    }
+    
     public event Action<string?>? OnProfilePictureChanged;
 
     public void UpdateProfilePicture(string? newUrl)
     {
         UserProfilePictureUrl = newUrl;
+        if (!string.IsNullOrEmpty(newUrl))
+        {
+            Microsoft.Maui.Storage.Preferences.Default.Set("cached_profile_pic", newUrl);
+        }
         OnProfilePictureChanged?.Invoke(newUrl);
     }
 }

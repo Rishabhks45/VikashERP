@@ -88,7 +88,7 @@
 
     @* Invoices List *@
     <div class="invoice-list d-flex flex-column gap-3 mb-6">
-        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Invoices..." Absolute="true" />
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Invoices..."  />
         
         @if (!_isLoading && !_filteredInvoices.Any())
         {
@@ -164,9 +164,7 @@
 <style>
     .sales-list-page {
         background-color: #fafbfc;
-        min-height: 100vh;
         padding: 16px;
-        padding-bottom: 80px; /* Space for bottom nav */
     }
     
     .stat-card {

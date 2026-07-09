@@ -10,6 +10,7 @@
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
 @inject VikashERP.Mobile.State.AppStateService AppState
 @inject IHttpClientFactory HttpClientFactory
+@inject IUserProfileService UserProfileService
 
 <div class="pin-login-page-container d-flex flex-column">
     @* Background Image Decorations *@
@@ -249,6 +250,13 @@
         var role = user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? 
                    user.FindFirst("role")?.Value ?? "";
 
+        // Attempt to load cached values from Preferences for instant rendering
+        string cachedName = Microsoft.Maui.Storage.Preferences.Default.Get("cached_user_name", "");
+        if (!string.IsNullOrEmpty(cachedName)) 
+        {
+            name = cachedName;
+        }
+
         if (!string.IsNullOrEmpty(name))
         {
             UserName = name;
@@ -260,9 +268,70 @@
 
         UserRole = role;
         
-        _profilePictureUrl = AppState.UserProfilePictureUrl ?? user.FindFirst("picture")?.Value ?? user.FindFirst(System.Security.Claims.ClaimTypes.Uri)?.Value;
+        // Prefer cached picture for instant load
+        string cachedPic = Microsoft.Maui.Storage.Preferences.Default.Get("cached_profile_pic", "");
+        _profilePictureUrl = !string.IsNullOrEmpty(cachedPic) 
+            ? cachedPic 
+            : (AppState.UserProfilePictureUrl ?? user.FindFirst("picture")?.Value ?? user.FindFirst(System.Security.Claims.ClaimTypes.Uri)?.Value);
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdStr = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(userIdStr, out var userId))
+            {
+                // Background sync to keep cached data fresh without blocking UI
+                _ = Task.Run(async () => 
+                {
+                    try
+                    {
+                        var profile = await UserProfileService.GetProfileAsync(userId);
+                        if (profile != null)
+                        {
+                            bool shouldUpdate = false;
+                            
+                            if (!string.IsNullOrEmpty(profile.ProfilePictureUrl) && _profilePictureUrl != profile.ProfilePictureUrl)
+                            {
+                                _profilePictureUrl = profile.ProfilePictureUrl;
+                                AppState.UpdateProfilePicture(profile.ProfilePictureUrl);
+                                Microsoft.Maui.Storage.Preferences.Default.Set("cached_profile_pic", profile.ProfilePictureUrl);
+                                shouldUpdate = true;
+                            }
+                            
+                            var fullName = $"{profile.FirstName} {profile.LastName}".Trim();
+                            if (!string.IsNullOrEmpty(fullName) && UserName != fullName)
+                            {
+                                UserName = fullName;
+                                var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                                Initials = parts.Length >= 2 ? $"{parts[0][0]}{parts[1][0]}" : fullName[..1].ToUpper();
+                                Microsoft.Maui.Storage.Preferences.Default.Set("cached_user_name", fullName);
+                                shouldUpdate = true;
+                            }
+                            
+                            if (shouldUpdate)
+                            {
+                                await InvokeAsync(StateHasChanged);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore errors during silent background sync
+                    }
+                });
+            }
+        }
         
         _isBiometricEnabled = await AuthService.IsBiometricEnabledAsync();
+
+        if (_isBiometricEnabled)
+        {
+            // Auto-trigger biometric prompt after a short delay to ensure UI is rendered
+            _ = Task.Run(async () => 
+            {
+                await Task.Delay(400);
+                await InvokeAsync(LoginWithFingerprint);
+            });
+        }
     }
 
     private void KeyPressed(int num)

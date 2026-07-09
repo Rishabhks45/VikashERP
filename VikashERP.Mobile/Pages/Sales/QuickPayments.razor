@@ -18,44 +18,21 @@
         <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadDataAsync" Disabled="_isLoading" />
     </div>
 
-    @* KPIs Grid *@
-    <MudGrid Spacing="2" Class="mb-4">
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #e3f2fd;">
-                        <MudIcon Icon="@Icons.Material.Filled.Today" Style="color: #1976d2;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Today Total</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">₹@_todayPayments.ToString("N0")</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center mb-1">
-                    <div class="stat-icon-wrapper" style="background-color: #e8f5e9;">
-                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Style="color: #388e3c;" Size="Size.Small" />
-                    </div>
-                    <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Month Total</MudText>
-                </div>
-                <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800;">₹@_monthlyPayments.ToString("N0")</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12">
-            <MudPaper Class="stat-card pa-3 d-flex flex-column" Elevation="0">
-                <div class="d-flex align-center justify-space-between mb-1">
-                    <div class="d-flex align-center">
-                        <div class="stat-icon-wrapper" style="background-color: #fff3e0;">
-                            <MudIcon Icon="@Icons.Material.Filled.Person" Style="color: #f57c00;" Size="Size.Small" />
-                        </div>
-                        <MudText Typo="Typo.caption" Style="color: #666; margin-left: 8px; font-weight: 700;">Top Payer (This Month)</MudText>
-                    </div>
-                    <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 800; font-size: 1rem;">@_topPayer</MudText>
-                </div>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+    @* KPIs Grid - Dense *@
+    <div class="kpi-dense-grid mb-3">
+        <div class="kpi-dense-item green">
+            <div class="kpi-val" style="font-size: 0.9rem;">₹@_todayPayments.ToString("N0")</div>
+            <div class="kpi-lbl">Today Total</div>
+        </div>
+        <div class="kpi-dense-item blue">
+            <div class="kpi-val" style="font-size: 0.9rem;">₹@_monthlyPayments.ToString("N0")</div>
+            <div class="kpi-lbl">Month Total</div>
+        </div>
+        <div class="kpi-dense-item orange" style="grid-column: span 2;">
+            <div class="kpi-val" style="font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@_topPayer</div>
+            <div class="kpi-lbl">Top Payer</div>
+        </div>
+    </div>
 
     @* Search Bar *@
     <MudTextField @bind-Value="_searchQuery" Placeholder="Search by customer or remarks..." 
@@ -64,8 +41,8 @@
                   Immediate="true" TextChanged="FilterPayments" />
 
     @* Payments List *@
-    <div class="payment-list d-flex flex-column gap-3 mb-6">
-        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Payments..." Absolute="true" />
+    <div class="payment-list d-flex flex-column">
+        <VikashERP.Mobile.Components.Shared.AdvanceLoader Visible="@_isLoading" Text="Loading Payments..."  />
         
         @if (!_isLoading && !_filteredPayments.Any())
         {
@@ -75,42 +52,38 @@
         {
             @foreach (var payment in _filteredPayments)
             {
-                <MudPaper Class="payment-card pa-3" Elevation="0">
-                    <div class="d-flex justify-space-between align-start mb-2">
+                <div class="payment-card-dense">
+                    <div class="d-flex justify-space-between align-start">
                         <div class="flex-1 pr-2">
-                            <MudText Typo="Typo.body1" Style="color: #1a2530; font-weight: 800; line-height: 1.2;">
-                                @payment.CustomerName
-                            </MudText>
-                            <MudText Typo="Typo.caption" Style="color: #666; display: block; margin-top: 2px;">
+                            <div class="dense-pay-name">@payment.CustomerName</div>
+                            <div class="dense-pay-meta">
                                 @payment.TransactionDate.ToString("MMM dd, yyyy")
                                 @if (!string.IsNullOrEmpty(payment.PaymentMode))
                                 {
                                     <span> • @payment.PaymentMode</span>
                                 }
-                            </MudText>
+                            </div>
                         </div>
                         <div class="d-flex flex-column align-end">
-                            <span class="status-badge status-success">PAYMENT</span>
+                            <span class="status-badge-dense status-success">PAYMENT</span>
                         </div>
                     </div>
                     
-                    <div class="d-flex justify-space-between align-center mt-2 pt-2" style="border-top: 1px dashed rgba(0,0,0,0.1);">
+                    <div class="d-flex justify-space-between align-center mt-1 pt-1" style="border-top: 1px dashed rgba(0,0,0,0.1);">
                         @if (!string.IsNullOrEmpty(payment.Remarks))
                         {
-                            <MudText Typo="Typo.caption" Style="color: #666; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                @payment.Remarks
-                            </MudText>
+                            <div class="dense-pay-remarks">@payment.Remarks</div>
                         }
                         else
                         {
-                            <MudText Typo="Typo.caption" Style="color: #ccc;">No remarks</MudText>
+                            <div class="dense-pay-remarks" style="color: #ccc;">No remarks</div>
                         }
                         
-                        <MudText Typo="Typo.h6" Style="color: #388e3c; font-weight: 800; font-family: monospace;">
+                        <div class="dense-pay-amount">
                             +₹@payment.Amount.ToString("N0")
-                        </MudText>
+                        </div>
                     </div>
-                </MudPaper>
+                </div>
             }
         }
     </div>
@@ -122,8 +95,9 @@
 </div>
 
 @* Bottom Sheet for Add Payment *@
-<MudDrawer @bind-Open="_isSheetOpen" Anchor="Anchor.Bottom" Elevation="2" Variant="DrawerVariant.Temporary" Height="auto" Style="background-color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; padding-bottom: env(safe-area-inset-bottom);">
-    <div class="pa-4 d-flex flex-column" style="padding-bottom: 80px !important;">
+<MudOverlay Visible="_isSheetOpen" OnClick="() => _isSheetOpen = false" DarkBackground="true" ZIndex="1400" />
+<div class="custom-bottom-sheet @(_isSheetOpen ? "open" : "")">
+    <div class="pa-4 d-flex flex-column">
         <div class="d-flex align-center justify-space-between mb-4">
             <div class="d-flex align-center gap-3">
                 <MudIcon Icon="@Icons.Material.Filled.Payments" Style="color: #1a2530;" />
@@ -182,44 +156,83 @@
             </MudButton>
         </EditForm>
     </div>
-</MudDrawer>
+</div>
 
 <style>
     .quick-payments-page {
         background-color: #fafbfc;
-        min-height: 100vh;
-        padding: 16px;
-        padding-bottom: 80px; /* Space for bottom nav */
     }
     
-    .stat-card {
-        background-color: white !important;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
+    .custom-bottom-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: white;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        padding-bottom: env(safe-area-inset-bottom);
+        z-index: 1500;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    }
+    .custom-bottom-sheet.open {
+        transform: translateY(0);
     }
     
-    .stat-icon-wrapper {
-        width: 28px;
-        height: 28px;
+    /* Dense KPIs */
+    .kpi-dense-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
+    .kpi-dense-item {
+        background: white;
         border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        padding: 8px 4px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.02);
+        grid-column: span 2;
+    }
+    .kpi-dense-item.blue { border-bottom: 3px solid #3b82f6; }
+    .kpi-dense-item.green { border-bottom: 3px solid #22c55e; }
+    .kpi-dense-item.orange { border-bottom: 3px solid #f97316; }
+    
+    .kpi-val { font-weight: 800; font-size: 1.05rem; color: #0f172a; line-height: 1.1; }
+    .kpi-lbl { font-size: 0.55rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 2px;}
+
+    /* Dense Payment Cards */
+    .payment-card-dense {
+        background-color: white;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        padding: 8px 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0, 0, 0, 0.03);
+    }
+    .dense-pay-name {
+        font-weight: 800; font-size: 0.9rem; color: #0f172a; line-height: 1.2;
+    }
+    .dense-pay-meta {
+        font-size: 0.7rem; color: #64748b; margin-top: 2px;
+    }
+    .dense-pay-remarks {
+        font-size: 0.7rem; color: #666;
+        max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dense-pay-amount {
+        color: #388e3c; font-weight: 800; font-family: monospace; font-size: 1rem;
     }
 
-    .payment-card {
-        background-color: white !important;
-        border: 1px solid rgba(0, 0, 0, 0.05) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02) !important;
-    }
-
-    .status-badge {
+    .status-badge-dense {
         font-size: 0.6rem;
         font-weight: 800;
-        padding: 4px 8px;
-        border-radius: 6px;
+        padding: 2px 6px;
+        border-radius: 4px;
         letter-spacing: 0.5px;
         white-space: nowrap;
     }

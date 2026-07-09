@@ -1,0 +1,304 @@
+@page "/admin/salary-config"
+@using MudBlazor
+@using VikashERP.Mobile.Models
+@using VikashERP.Mobile.Services.Interfaces
+@inject ISalaryConfigurationService SalaryService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Super Admin,Administrator")]
+
+<div class="salary-config-page">
+    @* Page Header *@
+    <div class="d-flex justify-space-between align-end mb-4">
+        <div>
+            <MudText Typo="Typo.h5" Style="color: #1a2530; font-weight: 700;">Salary Setup</MudText>
+            <MudText Typo="Typo.body2" Style="color: #666;">
+                Manage staff basic salaries
+            </MudText>
+        </div>
+        <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" OnClick="LoadDataAsync" Disabled="_isLoading" />
+    </div>
+
+    @* List Area *@
+    <div>
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-center my-8">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            </div>
+        }
+        else if (!_configurations.Any())
+        {
+            <div class="d-flex flex-column align-center justify-center my-8 p-4 text-center">
+                <MudIcon Icon="@Icons.Material.Outlined.Payments" Style="font-size: 3rem; color: #cbd5e1;" Class="mb-3" />
+                <MudText Typo="Typo.h6" Style="color: #64748b; font-weight: 600;">No Salaries Configured</MudText>
+                <MudText Typo="Typo.body2" Style="color: #94a3b8;">Tap the + button to configure a salary.</MudText>
+            </div>
+        }
+        else
+        {
+            <MudTable Items="@_configurations" Dense="true" Hover="true" Elevation="0" Class="border-solid border-2 mud-border-lines-default" Style="border-radius: 8px;">
+                <HeaderContent>
+                    <MudTh>User</MudTh>
+                    <MudTh>Role</MudTh>
+                    <MudTh Style="text-align:right">Basic Salary</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="User" Style="font-weight:600;">@context.UserName</MudTd>
+                    <MudTd DataLabel="Role" Style="color:#64748b;">@context.UserRole</MudTd>
+                    <MudTd DataLabel="Basic Salary" Style="text-align:right; font-weight:700; color:#10b981;">₹@context.BasicSalary.ToString("N0")</MudTd>
+                    <MudTd DataLabel="Status">
+                        @if (context.IsActive)
+                        {
+                            <span class="status-chip active">Active</span>
+                        }
+                        else
+                        {
+                            <span class="status-chip inactive">Inactive</span>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Action" Style="text-align:right;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="() => OpenEditSheet(context)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </div>
+
+    @* Floating Action Button *@
+    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" 
+            Style="position: fixed; bottom: 120px; right: 24px; background-color: #1976d2;" 
+            OnClick="OpenAddSheet" />
+</div>
+
+@* Bottom Sheet for Add/Edit *@
+<MudOverlay Visible="_isSheetOpen" OnClick="CloseSheet" DarkBackground="true" ZIndex="1400" />
+<div class="custom-bottom-sheet @(_isSheetOpen ? "open" : "")">
+    <div class="pa-4 d-flex flex-column">
+        <div class="d-flex align-center justify-space-between mb-4">
+            <div class="d-flex align-center gap-3">
+                <MudIcon Icon="@(_isEditing ? Icons.Material.Filled.Edit : Icons.Material.Filled.AddCard)" Style="color: #1a2530;" />
+                <div>
+                    <MudText Typo="Typo.h6" Style="color: #1a2530; font-weight: 700; line-height: 1.2;">@(_isEditing ? "Edit Salary" : "Configure Salary")</MudText>
+                </div>
+            </div>
+            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Style="color: #666; background-color: rgba(0,0,0,0.05);" OnClick="CloseSheet" />
+        </div>
+
+        <EditForm Model="@_editModel">
+            @if (!_isEditing)
+            {
+                <MudSelect T="string" Value="@_selectedRole" ValueChanged="OnRoleChanged" Label="Select Role *" Required="true" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense">
+                    <MudSelectItem Value="@("Employee")">Employee</MudSelectItem>
+                    <MudSelectItem Value="@("Manager")">Manager</MudSelectItem>
+                    <MudSelectItem Value="@("Back Office User")">Back Office User</MudSelectItem>
+                </MudSelect>
+
+                <MudSelect T="Guid" @bind-Value="_editModel.UserId" Label="Select User *" Required="true" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense" Disabled="@(!_availableUsers.Any())">
+                    @foreach(var u in _availableUsers)
+                    {
+                        <MudSelectItem Value="@u.Id">@u.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            else
+            {
+                <div class="mb-3 px-2 py-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                    <MudText Typo="Typo.caption" Style="color: #666;">User</MudText>
+                    <MudText Typo="Typo.body1" Style="font-weight: 600; color: #1a2530;">@_editUserName</MudText>
+                </div>
+            }
+
+            <MudNumericField @bind-Value="_editModel.BasicSalary" Label="Basic Salary (₹) *" Required="true" Min="0" Variant="Variant.Outlined" Class="light-input mb-3" Margin="Margin.Dense" HideSpinButtons="true" />
+            
+            <div class="d-flex align-center mb-4">
+                <MudSwitch @bind-Value="_editModel.IsActive" Color="Color.Success" />
+                <MudText Typo="Typo.body2" Style="color: #1a2530;" Class="ml-2">Is Active</MudText>
+            </div>
+
+            <div class="d-flex justify-space-between mt-auto pt-2 pb-6">
+                @if (_isEditing)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="DeleteConfig" Disabled="@_isSaving">DELETE</MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Text" Style="color: #666;" OnClick="CloseSheet">CANCEL</MudButton>
+                }
+                
+                <MudButton Variant="Variant.Filled" Style="background-color: #1976d2; color: white;" OnClick="SaveConfig" Disabled="@_isSaving">
+                    @if(_isSaving){ <MudProgressCircular Size="Size.Small" Indeterminate="true"/> } else { <span>@(_isEditing ? "UPDATE" : "SAVE")</span> }
+                </MudButton>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private List<SalaryConfigDto> _configurations = new();
+    private List<RoleUserDto> _availableUsers = new();
+    
+    private bool _isLoading = true;
+    private bool _isSaving = false;
+    
+    private bool _isSheetOpen = false;
+    private bool _isEditing = false;
+    private Guid _editingId;
+    private string _editUserName = "";
+    
+    private string _selectedRole = "Employee";
+    
+    private class ConfigFormModel
+    {
+        public Guid UserId { get; set; }
+        public decimal BasicSalary { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+    
+    private ConfigFormModel _editModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        
+        _configurations = await SalaryService.GetConfigurationsAsync();
+        
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnRoleChanged(string role)
+    {
+        _selectedRole = role;
+        _availableUsers.Clear();
+        _editModel.UserId = Guid.Empty;
+        StateHasChanged();
+        
+        _availableUsers = await SalaryService.GetUsersByRoleAsync(role);
+        StateHasChanged();
+    }
+
+    private async Task OpenAddSheet()
+    {
+        _isEditing = false;
+        _editModel = new ConfigFormModel { IsActive = true };
+        _selectedRole = "Employee";
+        await OnRoleChanged("Employee");
+        _isSheetOpen = true;
+    }
+
+    private void OpenEditSheet(SalaryConfigDto config)
+    {
+        _isEditing = true;
+        _editingId = config.Id;
+        _editUserName = config.UserName;
+        
+        _editModel = new ConfigFormModel
+        {
+            UserId = config.UserId,
+            BasicSalary = config.BasicSalary,
+            IsActive = config.IsActive
+        };
+        
+        _isSheetOpen = true;
+    }
+
+    private void CloseSheet()
+    {
+        _isSheetOpen = false;
+    }
+
+    private async Task SaveConfig()
+    {
+        if (_editModel.UserId == Guid.Empty || _editModel.BasicSalary < 0)
+        {
+            Snackbar.Add("Please select a user and enter a valid salary.", Severity.Warning);
+            return;
+        }
+
+        _isSaving = true;
+        StateHasChanged();
+
+        if (_isEditing)
+        {
+            var request = new UpdateSalaryConfigDto
+            {
+                BasicSalary = _editModel.BasicSalary,
+                IsActive = _editModel.IsActive
+            };
+            
+            var success = await SalaryService.UpdateConfigurationAsync(_editingId, request);
+            if (success)
+            {
+                Snackbar.Add("Salary updated", Severity.Success);
+                CloseSheet();
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to update salary", Severity.Error);
+            }
+        }
+        else
+        {
+            var request = new CreateSalaryConfigDto
+            {
+                UserId = _editModel.UserId,
+                BasicSalary = _editModel.BasicSalary,
+                IsActive = _editModel.IsActive
+            };
+            
+            var success = await SalaryService.CreateConfigurationAsync(request);
+            if (success)
+            {
+                Snackbar.Add("Salary configured", Severity.Success);
+                CloseSheet();
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed or user already configured", Severity.Error);
+            }
+        }
+        
+        _isSaving = false;
+        StateHasChanged();
+    }
+    
+    private async Task DeleteConfig()
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Delete Configuration", 
+            $"Are you sure you want to delete salary config for '{_editUserName}'?", 
+            yesText:"Delete", cancelText:"Cancel");
+            
+        if (result == true)
+        {
+            _isSaving = true;
+            StateHasChanged();
+            
+            var success = await SalaryService.DeleteConfigurationAsync(_editingId);
+            if (success)
+            {
+                Snackbar.Add("Configuration deleted", Severity.Success);
+                CloseSheet();
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add("Failed to delete", Severity.Error);
+            }
+            
+            _isSaving = false;
+            StateHasChanged();
+        }
+    }
+}

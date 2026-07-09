@@ -59,8 +59,10 @@ public static class MauiProgram
 		builder.Services.AddScoped<ISalesService, SalesService>();
 		builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 		builder.Services.AddScoped<IPdfExportService, PdfExportService>();
+		builder.Services.AddScoped<IHolidayService, HolidayService>();
 		builder.Services.AddScoped<IBrokerService, BrokerService>();
 		builder.Services.AddScoped<IExpenseService, ExpenseService>();
+		builder.Services.AddScoped<ISalaryConfigurationService, SalaryConfigurationService>();
 		builder.Services.AddScoped<IAuthService, AuthService>();
 		builder.Services.AddAuthorizationCore();
 		builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider, VikashERP.Mobile.State.CustomAuthStateProvider>();
