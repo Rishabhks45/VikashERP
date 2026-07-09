@@ -72,6 +72,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         options.SaveToken = true;
         options.TokenValidationParameters = jwtProvider.GetTokenValidationParameters();
+        options.MapInboundClaims = false;
     });
 
 builder.Services.AddAuthorization(options =>

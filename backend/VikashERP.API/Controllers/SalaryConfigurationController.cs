@@ -14,7 +14,7 @@ namespace VikashERP.API.Controllers;
 
 [Route("api/salary-configuration")]
 [ApiController]
-[Authorize(Roles = "Super Admin,Administrator")]
+[Authorize(Roles = "Super Admin,Administrator,Manager")]
 public class SalaryConfigurationController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -104,7 +104,7 @@ public class SalaryConfigurationController : ControllerBase
             .Select(u => new 
             {
                 Id = u.Id,
-                Name = $"{u.FirstName} {u.LastName}".Trim(),
+                Name = u.FirstName + " " + u.LastName,
                 Email = u.Email
             })
             .ToListAsync(cancellationToken);

@@ -99,6 +99,7 @@ public static class DependencyInjection
         builder.Services.AddScoped<IExpenseWebService, ExpenseWebService>();
         builder.Services.AddScoped<IHolidayWebService, HolidayWebService>();
         builder.Services.AddScoped<ITimezoneService, TimezoneService>();
+        builder.Services.AddScoped<ISalaryConfigurationService, SalaryConfigurationService>();
         builder.Services.AddValidatorsFromAssemblyContaining<LoginFormModelValidator>();
     }
 

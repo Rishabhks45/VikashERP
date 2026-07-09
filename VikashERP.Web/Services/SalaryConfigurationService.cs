@@ -4,10 +4,9 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using VikashERP.Mobile.Models;
-using VikashERP.Mobile.Services.Interfaces;
+using VikashERP.Web.Models;
 
-namespace VikashERP.Mobile.Services;
+namespace VikashERP.Web.Services;
 
 public class SalaryConfigurationService : ISalaryConfigurationService
 {
@@ -16,7 +15,7 @@ public class SalaryConfigurationService : ISalaryConfigurationService
 
     public SalaryConfigurationService(IHttpClientFactory httpClientFactory, ILogger<SalaryConfigurationService> logger)
     {
-        _httpClient = httpClientFactory.CreateClient("ApiClient");
+        _httpClient = httpClientFactory.CreateClient("VikashERP.Api");
         _logger = logger;
     }
 
@@ -48,11 +47,11 @@ public class SalaryConfigurationService : ISalaryConfigurationService
         }
     }
 
-    public async Task<bool> CreateConfigurationAsync(CreateSalaryConfigDto dto)
+    public async Task<bool> CreateConfigurationAsync(CreateSalaryConfigDto request)
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("api/salary-configuration", dto);
+            var response = await _httpClient.PostAsJsonAsync("api/salary-configuration", request);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -62,11 +61,11 @@ public class SalaryConfigurationService : ISalaryConfigurationService
         }
     }
 
-    public async Task<bool> UpdateConfigurationAsync(Guid id, UpdateSalaryConfigDto dto)
+    public async Task<bool> UpdateConfigurationAsync(Guid id, UpdateSalaryConfigDto request)
     {
         try
         {
-            var response = await _httpClient.PutAsJsonAsync($"api/salary-configuration/{id}", dto);
+            var response = await _httpClient.PutAsJsonAsync($"api/salary-configuration/{id}", request);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)

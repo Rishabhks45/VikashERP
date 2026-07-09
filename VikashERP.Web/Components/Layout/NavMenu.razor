@@ -19,7 +19,7 @@
         <div style="padding: 0 24px; margin-bottom: 8px;">
             <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">BILLING & COLLECTIONS</div>
         </div>
-        <MudNavLink Href="/sales" Icon="@Icons.Material.Filled.ReceiptLong"
+        <MudNavLink Href="/sales" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ReceiptLong"
                     Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
             Sales Invoices
         </MudNavLink>
@@ -69,21 +69,6 @@
         <div style="height: 16px;"></div>
     </AuthorizeView>
 
-    <!-- CUSTOMER PORTAL (CUSTOMER VIEW) -->
-    <AuthorizeView Roles="Customer">
-        <div style="padding: 0 24px; margin-bottom: 8px;">
-            <div style="font-size: 0.65rem; font-weight: 800; color: #475569; letter-spacing: 1.5px; text-transform: uppercase;">CUSTOMER PORTAL</div>
-        </div>
-        <MudNavLink Href="/customer-dashboard" Icon="@Icons.Material.Filled.DashboardCustomize"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Customer Portal
-        </MudNavLink>
-        <MudNavLink Href="/material-catalog" Icon="@Icons.Material.Filled.Category"
-                    Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-            Material Catalog
-        </MudNavLink>
-        <div style="height: 16px;"></div>
-    </AuthorizeView>
 
     <!-- INVENTORY & STOCK -->
     <AuthorizeView Roles="SuperAdmin, Super Admin, Admin, Manager, Employee, BackOfficeUser, Back Office User">
@@ -170,9 +155,9 @@
                             Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
                     Staff Accounts
                 </MudNavLink>
-                <MudNavLink Href="/admin/salary" Icon="@Icons.Material.Filled.PriceChange"
+                <MudNavLink Href="/admin/salary-config" Icon="@Icons.Material.Filled.PriceChange"
                             Style="margin: 0 12px; border-radius: 8px; color: #cbd5e1; font-weight: 500;">
-                    Salary Pricing
+                    Salary Config
                 </MudNavLink>
             </AuthorizeView>
             <AuthorizeView Roles="SuperAdmin, Super Admin, Admin, Manager, Employee, BackOfficeUser, Back Office User" Context="innerContext">
